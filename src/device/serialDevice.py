@@ -959,14 +959,14 @@ class serialDevice(device):
                 vals = []
                 for i in range(len(rawData)):
 
-                    if len(rawData[i])>=15: # \x00\x00 starting
+                    if len(rawData[i])==15: # \x00\x00 starting
                         strdata = struct.unpack('15c',rawData[i])
-                    elif len(rawData[i])>=13:
+                    elif len(rawData[i])==13:
                         strdata = struct.unpack('13c',rawData[i])
                         strdata = ['','']+strdata
                     else:
                         strdata = struct.unpack('%ic' % len(rawData[i]),rawData[i])
-
+                        if len(strdata)>15: strdata = strdata[-15:]
                     vals.append(float(''.join(strdata[-8:]))*0.1)
                     print repr(''.join(strdata[:9])) # this bit probably indicates -ve sign, units, etc.
                 return vals
