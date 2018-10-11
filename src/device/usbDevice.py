@@ -107,3 +107,20 @@ def search_for_usb_devices(debugMode=False):
             found_entries.append(table_entry)
 
     return found_entries
+
+# Load up USB devices detected.
+def load_usb_devices(devs=None):
+    device_list=[]
+    if devs is None: devs=search_for_usb_devices()
+    for d in devs:
+        print d['name'], '-', d['driver']
+        driverClass = d['driver'].split('/')[0].lower()
+        # USB serial types
+        if driverClass == 'serial':
+            from pyLabDataLogger.device import serialDevice
+            device_list.append(serialDevice(params=d))
+        else:
+            print "\tI don't know what to do with this device"
+
+    return device_list
+
