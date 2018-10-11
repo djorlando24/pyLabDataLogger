@@ -24,6 +24,9 @@ Laboratory datalogging for USB and Serial devices
         - Tenma 72-2710 USB programmable bench power supply
         - Omega IR-USB thermometer 
 	- OHAUS digital lab scales via RS232
+	- Microcontrollers using FTDI or CP2102 serial over USB chips
+           that push strings with format "VARNAME=VALUE, VARNAME=..."
+           (i.e. Arduinos, RS-232 and RS-485 to serial adapters)
 
     Soon to be supported hardware:
         - pyAPT devices (ie Thorlabs translation stages)
@@ -33,8 +36,6 @@ Laboratory datalogging for USB and Serial devices
         - Picolog TC-08 thermocouple logger
         - PicoScope headless oscilloscopes
         - Measurement Computing devices via mcc-libusb
-	- USB serial port devices that write strings with format "VARNAME=VALUE, ..."
-          (i.e. Arduino via FTDI, RS-232 and RS-485 to serial adapters)
 	- Thorlabs PM120 power meter
 	- CENTER humidity meters
 	- USB audio capture devices (via alsa-record)
