@@ -8,7 +8,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 11/10/2018
+    @date 12/10/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -130,6 +130,9 @@ def load_usb_devices(devs=None):
             elif driverClass == 'sigrok':
                 from pyLabDataLogger.device import sigrokUsbDevice
                 device_list.append(sigrokUsbDevice.srdevice(params=d))
+            elif driverClass == 'pyapt':
+                from pyLabDataLogger.device import pyAPTDevice
+                device_list.append(pyAPTDevice.pyAPTDevice(params=d))
             else:
                 print "\tI don't know what to do with this device"
         except KeyError as e: # driver couldn't handle the subdriver settings

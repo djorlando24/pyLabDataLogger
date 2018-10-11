@@ -106,7 +106,10 @@ class serialDevice(device):
                 e=self.config['set_emissivity']
                 if (e is not None) and (e>0) and (e<=1.): self.Serial.write("E%0.2f\n" % float(e))
                 else: raise ValueError
-
+            elif subdriver=='ohaus7k':
+                # No settings can be modified at present. In future we could allow tare/zero or
+                # a change of units.
+                pass
             else:
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
 
