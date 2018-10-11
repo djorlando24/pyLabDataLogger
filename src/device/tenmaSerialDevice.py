@@ -29,15 +29,20 @@ except ImportError:
 ########################################################################################################################
 class tenmaPowerSupplySerialDevice(serialDevice):
     """ Class for TENMA 72-2710 power supply communicating via serial port.
-        It has one output channel with two variables (V and I). """
+        It has one output channel with two variables (V and I). 
 
-    def __init__(self,params={}):
+        By default we assume that the ttys can be found in /dev (*nix OS)
+        However this can be overridden by passing 'port' or 'tty' directly
+        in the params dict."""
+
+    def __init__(self,params={},tty_prefix='/dev/'):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
         self.Serial = None
+        self.tty_prefix = tty_prefix
         self.name=params['name']
         self.params['baudrate']=115200
         self.config['channel_names']=['Voltage','Current']
@@ -75,7 +80,7 @@ class tenmaPowerSupplySerialDevice(serialDevice):
                     if s[-1] == '\n':
                         self.params['ID'] = s[:-1]
                         break
-                print "\t",s
+                #print "\t",s
         
                 # Get setpoints
                 s=''
@@ -96,6 +101,7 @@ class tenmaPowerSupplySerialDevice(serialDevice):
                         self.params['set_current']=float(s.strip())
                         break
                 
+		#On first pass or reset, show user the set points are recorded
                 print "\tVSET1=",self.params['set_voltage'],"\tISET1=",self.params['set_current']
             
             # Get values

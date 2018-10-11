@@ -151,6 +151,27 @@ class serialDevice(device):
             self.queryTerminator='\r\n'
             self.responseTerminator='\r'
             self.config['set_emissivity']=None
+        elif subdriver=='ohaus7k':
+            #Get the units currently set on the display
+            s=''
+            unit='?'
+            self.Serial.write('PU\r\n')
+            time.sleep(0.01)
+            while len(s)<1024:
+                s+=self.Serial.read(1)
+                if s[-1] == '\r':
+                    unit=s.strip()
+                    break
+            # Fixed settings.
+            self.config['channel_names']=['weight']
+            self.params['raw_units']=[unit]
+            self.config['eng_units']=[unit]
+            self.config['scale']=[1.]
+            self.config['offset']=[0.]
+            self.params['n_channels']=1
+            self.serialQuery=['IP']
+            self.queryTerminator='\r\n'
+            self.responseTerminator='\r'
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         return
@@ -160,10 +181,17 @@ class serialDevice(device):
         subdriver = self.subdriver
         try:
             if subdriver=='omega-ir-usb':
+                if len(rawData)<2: return [None]*self.params['n_channels']
                 vals= [float(rawData[0].strip('>')), float(rawData[1].strip('>'))]
-                vals.extend([float(v) for v in rawData[2].split('=')[1].split(',')])
-                vals.append(float(rawData[3].split('=')[1]))
-                return vals    
+                if len(rawData)<3: vals.extend([np.nan, np.nan])
+                else: vals.extend([float(v) for v in rawData[2].split('=')[1].split(',')])
+                if len(rawData)<4: vals.append(np.nan)
+                else: vals.append(float(rawData[3].split('=')[1]))
+                return vals
+            elif subdriver=='ohaus7k':
+                vals=rawData[0].split(' ')
+                self.params['raw_units']=[vals[-1].strip()]
+                return [float(vals[0])]
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         except ValueError:

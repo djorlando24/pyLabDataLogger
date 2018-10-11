@@ -9,4 +9,6 @@ pyLabDataLogger also requires the following external software:
 - sigrok, see https://sigrok.org/wiki/Downloads
   You will need to build from source code to get support for the latest devices.
   I found the versions shipped with Ubuntu didn't support all my hardware.
+- sigrok-firmware-fx2lafw for USBee ADCs, with udev rules installed to avoid need for root
+  (see https://sigrok.org/wiki/Fx2lafw)
 - python2 and python3 development headers

@@ -35,7 +35,7 @@ usb_device_table = [
     {'vid':0x1313, 'pid':0x807b, 'driver':'thorlabs/pm120', 'name':'Thorlabs PM120'},
     
     # Serial-over-USB devices
-    {'vid':0x0416, 'pid':0x5011, 'driver':'tenmaSerial/722710', 'name':'Tenma 72-2710 Power Supply'},
+    {'vid':0x0416, 'pid':0x5011, 'driver':'tenmaserial/722710', 'name':'Tenma 72-2710 Power Supply'},
     {'vid':0x0557, 'pid':0x2008, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-ir-usb', 'name':'Omega IR-USB', 'manufacturer':'Omega Engineering'},
     {'vid':0x10c4, 'pid':0xea60, 'driver':'serial/center310', 'name':'CENTER 310 Humidity meter', 'manufacturer':'Silicon Labs'},
@@ -121,7 +121,7 @@ def load_usb_devices(devs=None):
 
         # USB serial types -- load appropriate top level driver here.
         try:
-            if driverClass == 'tenmaSerial':
+            if driverClass == 'tenmaserial':
                 from pyLabDataLogger.device import tenmaSerialDevice
                 device_list.append(tenmaSerialDevice.tenmaPowerSupplySerialDevice(params=d))
             elif driverClass == 'serial':
