@@ -5,7 +5,7 @@ pyLabDataLogger depends on the following python packages:
 - numpy 
 
 pyLabDataLogger also requires the following external software:
-- sigrok dependencies: libftdi, libusb, doxygen, swig
+- sigrok dependencies: libftdi, libusb, doxygen, swig, glibmm, python-gobject, python-gi-dev
 - sigrok, see https://sigrok.org/wiki/Downloads
   You will need to build from source code to get support for the latest devices.
   I found the versions shipped with Ubuntu didn't support all my hardware.

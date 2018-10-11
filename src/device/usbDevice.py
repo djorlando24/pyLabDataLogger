@@ -35,7 +35,7 @@ usb_device_table = [
     {'vid':0x1313, 'pid':0x807b, 'driver':'thorlabs/pm120', 'name':'Thorlabs PM120'},
     
     # Serial-over-USB devices
-    {'vid':0x0416, 'pid':0x5011, 'driver':'serial/tenma722710', 'name':'Tenma 72-2710 Power Supply'},
+    {'vid':0x0416, 'pid':0x5011, 'driver':'tenmaSerial/722710', 'name':'Tenma 72-2710 Power Supply'},
     {'vid':0x0557, 'pid':0x2008, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-ir-usb', 'name':'Omega IR-USB', 'manufacturer':'Omega Engineering'},
     {'vid':0x10c4, 'pid':0xea60, 'driver':'serial/center310', 'name':'CENTER 310 Humidity meter', 'manufacturer':'Silicon Labs'},
@@ -106,19 +106,28 @@ def search_for_usb_devices(debugMode=False):
             print '- found %s, driver=%s' % (table_entry['name'],table_entry['driver'])
             found_entries.append(table_entry)
 
+    print 'Detected %i devices.\n' % len(found_entries)
     return found_entries
 
 # Load up USB devices detected.
 def load_usb_devices(devs=None):
     device_list=[]
     if devs is None: devs=search_for_usb_devices()
+
+    print '\nLoading drivers...'
     for d in devs:
         print d['name'], '-', d['driver']
         driverClass = d['driver'].split('/')[0].lower()
-        # USB serial types
+
+        # USB serial types -- load appropriate driver module here.
+        if driverClass == 'tenmaSerial':
+            from pyLabDataLogger.device import tenmaSerialDevice
+            device_list.append(tenmaSerialDevice.tenmaPowerSupplySerialDevice(params=d))
+
         if driverClass == 'serial':
             from pyLabDataLogger.device import serialDevice
             device_list.append(serialDevice.serialDevice(params=d))
+
         else:
             print "\tI don't know what to do with this device"
 

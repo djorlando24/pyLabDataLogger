@@ -84,7 +84,7 @@ class serialDevice(device):
                                     rtscts=self.params['rtscts'])
                                     
         # Make first query to get units, description, etc.
-        print self.query(reset=True), self.config['eng_units'], self.params['channel_names']
+        print self.query(reset=True)
         
         import time
         for n in range(10):
@@ -119,6 +119,35 @@ class serialDevice(device):
         if self.driverConnected: self.activate()
         else: print "Error resetting %s: device is not detected" % self.name
 
+    # Configure device based on what sub-driver is being used.
+    def configure_device(self, subdriver):
+        if subdriver=='omega-ir-usb':
+            self.config['channel_names']=['tempC','tempF','ambientC','ambientF']
+            self.params['raw_units']=['C','F','C','F']
+            self.config['eng_units']=['C','F','C','F']
+            self.config['scale']=[1.,1.]
+            self.config['offset']=[0.,0.]
+            self.params['n_channels']=4
+        else:
+            raise ValueError("I don't know what to do with a device driver %s" % self.params['driver'])
+        return
 
+    # Handle query depending on what kind of device we have.
+    def query(self, reset=False):
+
+        # Check
+        try:
+            assert(self.Serial)
+            if self.Serial is None: raise IOError
+        except:
+            print "Serial connection to the device is not open."
+
+        if not 'raw_units' in self.params.keys() or reset:
+            driver = self.params['driver'].split('/')[1:]
+            self.configure_device(driver[0].lower())
+            
+        
+        self.updateTimestamp()
+        return self.lastValue
 
 
