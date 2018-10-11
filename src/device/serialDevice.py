@@ -1,5 +1,5 @@
 """
-    Serial device class - general serial port support and arduino-like device support
+    Serial device class - general serial port support
     
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018 LTRAC
@@ -28,9 +28,13 @@ except ImportError:
 
 ########################################################################################################################
 class serialDevice(device):
-    """ Class providing support for any tty type serial device. """
+    """ Class providing support for any tty type serial device. 
+        By default we assume that the ttys can be found in /dev (*nix OS)
+        However this can be overridden by passing 'port' or 'tty' directly
+        in the params dict.
+    """
 
-    def __init__(self,params={}):
+    def __init__(self,params={},tty_prefix='/dev/'):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
@@ -38,6 +42,7 @@ class serialDevice(device):
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
         self.Serial = None
+        self.tty_prefix = tty_prefix
         if params is not {}: self.scan()
         
         return
@@ -58,8 +63,8 @@ class serialDevice(device):
             for serialport in list_ports.comports():
                 if serialport.vid==self.params['vid'] and serialport.pid==self.params['pid']:
                     print '\t',serialport.hwid, serialport.name
-                    self.port = serialport.name
-                    self.params['tty']=serialport.name
+                    self.port = self.tty_prefix + serialport.name
+                    self.params['tty']=self.port
                     
         if self.port is None: print "Unable to connect to serial port - port unknown."
         else: self.activate()
@@ -116,101 +121,4 @@ class serialDevice(device):
 
 
 
-########################################################################################################################
-class arduinoSerialDevice(serialDevice):
-    """ Class defining an Arduino type microcontroller that communicates over the serial
-        port, typically via USB. """
 
-    # Update device with new value, update lastValue and lastValueTimestamp
-    def query(self, reset=False, buffer_limit=1024):
-    
-        # Check
-        try:
-            assert(self.Serial)
-            if self.Serial is None: raise IOError
-        except:
-            print "Serial connection to Arduino device is not open."
-        
-        # The serial arduino device should report repeated strings with the structure
-        # DESCRIPTION: VARIABLE = VALUE UNITS, VARIABLE = VALUE UNITS\n
-        
-        nbytes=0
-        desc=''
-        while nbytes<buffer_limit:
-            desc += self.Serial.read(1)
-            if desc[-1] == ':':
-                desc=desc[:-1]
-                break
-            nbytes+=1
-
-        # First pass?
-        values=[]
-        if not 'channel_names' in self.params.keys() or reset:
-            reset=True
-            self.params['channel_names']=[]
-            self.params['raw_units']=[]
-            self.config['eng_units']=[]
-            self.params['n_channels']=0
-            self.name = desc
-            print '\t',self.name
-    
-            while self.config['eng_units'] == []:
-                nbytes=0; s=''
-                while nbytes<buffer_limit:
-                    s+=self.Serial.read(1)
-                    if s[-1] == '=':
-                        self.params['channel_names'].append(s[:-2].strip())
-                        self.params['n_channels']+=1
-                        break
-                    nbytes+=1
-                
-                nbytes=0; s=''
-                while nbytes<buffer_limit:
-                    s+=self.Serial.read(1)
-                    if s[-1] == ' ' and len(s)>1:
-                        values.append( float(s.strip()) )
-                        break
-                    nbytes+=1
-                
-                nbytes=0; s=''
-                while nbytes<buffer_limit:
-                    s+=self.Serial.read(1)
-                    if s[-1] == ',' or s[-1] == '\n':
-                        self.params['raw_units'].append( s[:-1].strip() )
-                        break
-                    nbytes+=1
-                
-                if s[-1] == '\n':
-                    self.config['eng_units']=self.params['raw_units']
-                    break
-                elif s[-1] != ',':
-                    while self.Serial.read(1) != ',': pass
-
-            if not 'scale' in self.config.keys():
-                self.config['scale'] = np.ones(self.params['n_channels'],)
-            if not 'offset' in self.config.keys():
-                self.config['offset'] = np.zeros(self.params['n_channels'],)
-
-
-        else:
-            # Repeat query, no need to worry about the description and variable names
-            nbytes=0; s=''; invar=False
-            while nbytes<buffer_limit:
-                s+=self.Serial.read(1)
-                if s[-1] == '=':
-                    s=''; nbytes=0
-                    invar=True
-                    s+=self.Serial.read(1)
-                if s[-1] == ' ' and invar and len(s) > 1:
-                    values.append( float(s.strip()) )
-                    s=''; nbytes=0
-                    invar=False
-                    s+=self.Serial.read(1)
-                if s[-1] == '\n': break
-                nbytes+=1
-    
-        self.lastValue = np.array(values)
-        self.lastScaled = np.array(self.lastValue) * self.config['scale'] + self.config['offset']
-        self.updateTimestamp()
-        
-        return self.lastValue

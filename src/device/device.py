@@ -47,7 +47,7 @@ class device:
     def apply_config(self):
         print "apply_config not yet implemented for",self.name
 
-    # Update configuration (ie change sample rate or number of samples)
+    # Update configuration (ie change sample rate or number of samplezzs)
     def update_config(self,config_keys={}):
         for key in config_keys.keys():
             self.config[key]=self.config_keys[key]

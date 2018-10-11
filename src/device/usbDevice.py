@@ -118,7 +118,7 @@ def load_usb_devices(devs=None):
         # USB serial types
         if driverClass == 'serial':
             from pyLabDataLogger.device import serialDevice
-            device_list.append(serialDevice(params=d))
+            device_list.append(serialDevice.serialDevice(params=d))
         else:
             print "\tI don't know what to do with this device"
 
