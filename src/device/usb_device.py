@@ -76,7 +76,7 @@ def match_device(dev):
 # scan USB busses on current machine for matching devices.
 def search_for_usb_devices(debugMode=False):
     try:
-        import usb.core as usbcore
+        import usb.core
     except ImportError as e:
         print "Please install pyUSB"
         print '\t',e
@@ -84,7 +84,7 @@ def search_for_usb_devices(debugMode=False):
 
     print "Scanning for USB devices..."
     found_entries = []
-    for dev in usbcore.find(find_all=True):
+    for dev in usb.core.find(find_all=True):
         if debugMode: print 'bus=%03i address=%03i : vid=0x%04x pid=0x%04x : class=0x%02x device=0x%04x serial=%s' % (dev.bus, dev.address, dev.idVendor, dev.idProduct,dev.bDeviceClass,dev.bcdDevice,dev.serial_number)
         table_entry = match_device(dev)
         if table_entry is not None:

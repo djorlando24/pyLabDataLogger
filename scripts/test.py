@@ -22,7 +22,7 @@ from pyLabDataLogger.device import usb_device
 
 if __name__ == '__main__':
     usbDevicesFound = usb_device.search_for_usb_devices(debugMode=True)
-    print len(usbDevicesFound),'devices found'
+    print len(usbDevicesFound),'recognised devices found'
     
     '''
     from sigrokUsbDevice import srdevice
