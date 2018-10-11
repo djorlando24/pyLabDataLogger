@@ -1,7 +1,8 @@
 #/usr/bin/env python2.7
 # -*- coding: UTF-8 -*-
 """
-    master USB device support for pyLabDataLogger
+    USB device support for pyLabDataLogger.
+    - Find USB supported devices on the bus.
     
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018 LTRAC
