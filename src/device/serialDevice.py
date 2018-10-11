@@ -122,17 +122,42 @@ class serialDevice(device):
     # Configure device based on what sub-driver is being used.
     def configure_device(self, subdriver):
         if subdriver=='omega-ir-usb':
-            self.config['channel_names']=['tempC','tempF','ambientC','ambientF']
-            self.params['raw_units']=['C','F','C','F']
-            self.config['eng_units']=['C','F','C','F']
-            self.config['scale']=[1.,1.]
-            self.config['offset']=[0.,0.]
-            self.params['n_channels']=4
+            self.config['channel_names']=['tempC','tempF','ambientC','ambientF','emissivity']
+            self.params['raw_units']=['C','F','C','F','']
+            self.config['eng_units']=['C','F','C','F','']
+            self.config['scale']=[1.,1.,1.,1.,1.]
+            self.config['offset']=[0.,0.,0.,0.,0.]
+            self.params['n_channels']=5
+            self.serialQuery=['',]
         else:
             raise ValueError("I don't know what to do with a device driver %s" % self.params['driver'])
         return
 
-    # Handle query depending on what kind of device we have.
+    # Read latest values
+    def get_values(self, subdriver):
+        try:
+            self.lastValue=[]
+            for n in range(self.params['n_channels']):
+
+                # This method block is for devices that use a standard 
+                # method; call<CR/LF> -short delay- response<CR/LF>.
+                s=''
+                self.Serial.write(self.serialQuery[n])
+                time.sleep(0.01)
+                while len(s)<1024:
+                    s+=self.Serial.read(1)
+                    if s[-1] == '\n':
+                        self.lastValue.append(float(s.strip()))
+                        break
+    
+        except IOError:
+            print "%s communication error" % self.name
+            return None
+
+        return
+
+
+    # Handle query for values
     def query(self, reset=False):
 
         # Check
@@ -142,11 +167,13 @@ class serialDevice(device):
         except:
             print "Serial connection to the device is not open."
 
+        # If first time or reset, get configuration
         if not 'raw_units' in self.params.keys() or reset:
             driver = self.params['driver'].split('/')[1:]
             self.configure_device(driver[0].lower())
-            
         
+        self.get_values(driver[0].lower())
+        self.lastScaled = np.array(self.lastValue) * self.config['scale'] + self.config['offset']
         self.updateTimestamp()
         return self.lastValue
 
