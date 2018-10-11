@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
-    @version 1.0.0
-    @date 07/06/2018
+    @version 0.0.1
+    @date 11/10/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -35,7 +35,7 @@ class i2cDevice(device):
         self.lastValueTimestamp = None # Time when last value was obtained
         
         # Default I2C bus parameters
-        if not 'bus' in params.keys() params['bus']=1
+        if not 'bus' in params.keys(): params['bus']=1
         
         if params is {}: return
         self.scan()

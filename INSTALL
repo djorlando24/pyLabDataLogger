@@ -10,3 +10,4 @@ pyLabDataLogger also requires the following external software:
   I found the versions shipped with Ubuntu didn't support all my hardware.
 - libusb, which pyUSB needs (but it may not tell you during its installation).
   On macOS you can use homebrew to get it, on Linux install python-libusb1 or libusb-dev
+- python2 and python3 development headers
