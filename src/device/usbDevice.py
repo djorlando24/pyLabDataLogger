@@ -119,17 +119,22 @@ def load_usb_devices(devs=None):
         print d['name'], '-', d['driver']
         driverClass = d['driver'].split('/')[0].lower()
 
-        # USB serial types -- load appropriate driver module here.
-        if driverClass == 'tenmaSerial':
-            from pyLabDataLogger.device import tenmaSerialDevice
-            device_list.append(tenmaSerialDevice.tenmaPowerSupplySerialDevice(params=d))
-
-        if driverClass == 'serial':
-            from pyLabDataLogger.device import serialDevice
-            device_list.append(serialDevice.serialDevice(params=d))
-
-        else:
-            print "\tI don't know what to do with this device"
+        # USB serial types -- load appropriate top level driver here.
+        try:
+            if driverClass == 'tenmaSerial':
+                from pyLabDataLogger.device import tenmaSerialDevice
+                device_list.append(tenmaSerialDevice.tenmaPowerSupplySerialDevice(params=d))
+            elif driverClass == 'serial':
+                from pyLabDataLogger.device import serialDevice
+                device_list.append(serialDevice.serialDevice(params=d))
+            elif driverClass == 'sigrok':
+                from pyLabDataLogger.device import sigrokUsbDevice
+                device_list.append(sigrokUsbDevice.srdevice(params=d))
+            else:
+                print "\tI don't know what to do with this device"
+        except KeyError as e: # driver couldn't handle the subdriver settings
+            print '\tKeyError:',e
+            continue
 
     return device_list
 

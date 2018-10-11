@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
-    @version 1.0.0
-    @date 27/05/2018
+    @version 0.0.1
+    @date 12/10/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -17,6 +17,7 @@
 """
 
 import datetime
+import numpy as np
 
 class device:
     """ Main class defining a device in pyPiDataLogger.
@@ -68,3 +69,29 @@ class device:
         if self.driverConnected: self.activate()
         else: print "Error resetting %s: device is not detected" % self.name
 
+    # Print values with units
+    def pprint(self,lead='\t'):
+        show_scaled = ('eng_units' in self.config) and ('scale' in self.config) and\
+                      ('offset' in self.config) and ('eng_units' in self.config) and\
+                      not (np.all(np.array(self.config['scale'])==1.) and  np.all(np.array(self.config['offset'])==0.))
+        # Scalars.
+        if isinstance( self.lastValue[0], float ) or isinstance( self.lastValue[0], int ):
+            if 'raw_units' in self.params:
+                print lead+'Raw values:',\
+                ['%f %s' % (self.lastValue[n],self.params['raw_units'][n]) for n in range(self.params['n_channels'])]
+            else:
+                print lead+'Raw values:',self.lastValue
+            # Only show the scaled units if they exist.
+            if show_scaled:
+                print lead+'Scaled values:',\
+                     ['%f %s' % (self.lastScaled[n],self.config['eng_units'][n]) for n in range(self.params['n_channels'])]
+    
+        # Vectors
+        elif isinstance( self.lastValue[0], list) or isinstance(self.lastValue[0], np.ndarray):
+            for n in range(self.params['n_channels']):
+                if ~show_scaled: print lead+'%i: %s = %s %s' % (n,self.config['channel_names'][n],\
+                                    self.lastValue[n],self.params['raw_units'][n])
+                else: print lead+'%i: %s = %s %s \t %s %s' % (n,self.config['channel_names'][n],self.lastValue[n],\
+                        self.params['raw_units'][n],self.lastScaled[n],self.config['eng_units'][n])
+                    
+        return

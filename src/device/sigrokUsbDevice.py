@@ -122,6 +122,7 @@ class srdevice(device):
             #self.params['sr_channels'] = [c for c in self.srdev.channels if c.type!=sr.ChannelType.LOGIC]
             #self.config['channel_names'].append('Digital Input')
             #self.params['sr_channels'].append([c for c in self.srdev.channels if c.type==sr.ChannelType.LOGIC])
+            #self.params['raw_units'].append('')
             self.has_digital_input = True
         
         self.config['channel_names'] = [c.name for c in self.srdev.channels]
@@ -150,7 +151,8 @@ class srdevice(device):
         self.sraoutput = self.srcontext.output_formats['analog'].create_output(self.srdev)
         
         # Run one set of samples to update raw_units and check connection is good.
-        print self.query(), self.params['raw_units']
+        self.query()
+        self.pprint()
         
         return
 
@@ -168,6 +170,9 @@ class srdevice(device):
                 self.params['sr_channels'][i].enable = self.config['enabled'][i]
     
         try:
+            if not self.config['samplerate'] in self.config['valid_samplerates']:
+                print "Samplerate",self.config['samplerate'],"not accepted"
+                print "Valid sample rates =",self.config['valid_samplerates']
             self.srdev.config_set(sr.ConfigKey.SAMPLERATE, self.config['samplerate'])
         except ValueError as err:
             pass
@@ -208,19 +213,21 @@ class srdevice(device):
             # Parse analog values
             n_analog_channels = self.params['n_channels'] - sum(self.params['sr_logic_channel'])
             self.lastValue = [[]]*n_analog_channels
+            self.params['raw_units'] = []       
             n = 0
             if len(''.join(self.data_buffer)) < 1: raise IOError
             
             for aVal in self.data_buffer[0].split('\n'):
                 if len(aVal) >0:
-                    s=aVal.split(' ')
+                    s=aVal.strip(':').split(' ')
                     
                     self.lastValue[n].append(float(s[1]))
                     n = (n+1)%n_analog_channels
                     
-                    # Update raw_units (usually first time only)
-                    if len(self.params['raw_units']) < n_analog_channels:
-                        self.params['raw_units'].append(s[-1].strip())
+                    # Update raw_units
+                    #if len(self.params['raw_units']) < n_analog_channels:
+                    #    self.params['raw_units'].append(s[-1].strip())
+                    self.params['raw_units'].append(s[-1].strip())
 
                     # Check existence of eng_units
                     if not 'eng_units' in self.config:
@@ -240,6 +247,7 @@ class srdevice(device):
             
                 # Assume digital channels always come first in mixed mode devices?
                 self.lastValue = digital_data + self.lastValue
+                self.params['raw_units'] = ['']*len(digital_data) + self.params['raw_units']
             
             # Convert analog values to scaled values
             for t in range(self.config['n_samples']):

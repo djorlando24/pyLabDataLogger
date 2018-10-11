@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 11/10/2018
+    @date 12/10/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -34,7 +34,7 @@ class serialDevice(device):
         in the params dict.
     """
 
-    def __init__(self,params={},tty_prefix='/dev/'):
+    def __init__(self,params={},tty_prefix='/dev/',quiet=False):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
@@ -43,12 +43,12 @@ class serialDevice(device):
         self.lastValueTimestamp = None # Time when last value was obtained
         self.Serial = None
         self.tty_prefix = tty_prefix
-        if params is not {}: self.scan()
+        if params is not {}: self.scan(quiet=quiet)
         
         return
 
     # Detect if device is present
-    def scan(self,override_params=None):
+    def scan(self,override_params=None,quiet=False):
         self.port = None
         if override_params is not None: self.params = override_params
         
@@ -62,16 +62,16 @@ class serialDevice(device):
             from serial.tools import list_ports
             for serialport in list_ports.comports():
                 if serialport.vid==self.params['vid'] and serialport.pid==self.params['pid']:
-                    print '\t',serialport.hwid, serialport.name
+                    if not quiet: print '\t',serialport.hwid, serialport.name
                     self.port = self.tty_prefix + serialport.name
                     self.params['tty']=self.port
                     
         if self.port is None: print "Unable to connect to serial port - port unknown."
-        else: self.activate()
+        else: self.activate(quiet=quiet)
         return
 
     # Establish connection to device (ie open serial port)
-    def activate(self):
+    def activate(self,quiet=False):
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
         if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.EIGHTBITS
         if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_NONE
@@ -84,13 +84,9 @@ class serialDevice(device):
                                     rtscts=self.params['rtscts'])
                                     
         # Make first query to get units, description, etc.
-        print self.query(reset=True)
-        
-        import time
-        for n in range(10):
-            time.sleep(1)
-            print self.query()
-        
+        self.query(reset=True)
+
+        if not quiet: self.pprint()
         return
 
     # Deactivate connection to device (close serial port)
@@ -98,9 +94,29 @@ class serialDevice(device):
         self.Serial.close()
         return
 
-    # Apply configuration changes to the driver
+    # Apply configuration changes to the driver (subdriver-specific)
     def apply_config(self):
-        self.reset()
+        subdriver = self.params['driver'].split('/')[1:]
+        try:
+            assert(self.Serial)
+            if self.Serial is None: raise IOError
+
+            # Apply subdriver-specific variable writes
+            if subdriver=='omega-ir-usb':
+                e=self.config['set_emissivity']
+                if (e is not None) and (e>0) and (e<=1.): self.Serial.write("E%0.2f\n" % float(e))
+                else: raise ValueError
+
+            else:
+                raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
+
+        except IOError:
+            print "%s communication error" % self.name
+        except ValueError:
+            print "%s - Invalid set point requested" % self.name
+            print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
+        
+        return
 
     # Update configuration (ie change sample rate or number of samples)
     def update_config(self,config_keys={}):
@@ -120,7 +136,10 @@ class serialDevice(device):
         else: print "Error resetting %s: device is not detected" % self.name
 
     # Configure device based on what sub-driver is being used.
-    def configure_device(self, subdriver):
+    # This is done when self.query(reset=True) is called, as at
+    # this point we might need to poll the device to check a setting.
+    def configure_device(self):
+        subdriver = self.subdriver
         if subdriver=='omega-ir-usb':
             self.config['channel_names']=['tempC','tempF','ambientC','ambientF','emissivity']
             self.params['raw_units']=['C','F','C','F','']
@@ -128,28 +147,48 @@ class serialDevice(device):
             self.config['scale']=[1.,1.,1.,1.,1.]
             self.config['offset']=[0.,0.,0.,0.,0.]
             self.params['n_channels']=5
-            self.serialQuery=['',]
+            self.serialQuery=['C','F','A','E']
+            self.queryTerminator='\r\n'
+            self.responseTerminator='\r'
+            self.config['set_emissivity']=None
         else:
-            raise ValueError("I don't know what to do with a device driver %s" % self.params['driver'])
+            raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         return
 
-    # Read latest values
-    def get_values(self, subdriver):
+    # Convert string responses from serial port into usable numbers/values
+    def convert_raw_string_to_values(self, rawData):
+        subdriver = self.subdriver
         try:
-            self.lastValue=[]
-            for n in range(self.params['n_channels']):
+            if subdriver=='omega-ir-usb':
+                vals= [float(rawData[0].strip('>')), float(rawData[1].strip('>'))]
+                vals.extend([float(v) for v in rawData[2].split('=')[1].split(',')])
+                vals.append(float(rawData[3].split('=')[1]))
+                return vals    
+            else:
+                raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
+        except ValueError:
+            print "Failure to unpack raw string from device:", rawData
+        return [None]*self.params['n_channels']
+    
+    # Read latest values
+    def get_values(self):
+        try:
+            rawData=[]
+            for n in range(len(self.serialQuery)):
 
                 # This method block is for devices that use a standard 
                 # method; call<CR/LF> -short delay- response<CR/LF>.
                 s=''
-                self.Serial.write(self.serialQuery[n])
+                self.Serial.write(self.serialQuery[n]+self.queryTerminator)
                 time.sleep(0.01)
                 while len(s)<1024:
                     s+=self.Serial.read(1)
-                    if s[-1] == '\n':
-                        self.lastValue.append(float(s.strip()))
+                    if s[-1] == self.responseTerminator:
+                        rawData.append(s.strip())
                         break
     
+            self.lastValue = self.convert_raw_string_to_values(rawData)
+
         except IOError:
             print "%s communication error" % self.name
             return None
@@ -170,9 +209,10 @@ class serialDevice(device):
         # If first time or reset, get configuration
         if not 'raw_units' in self.params.keys() or reset:
             driver = self.params['driver'].split('/')[1:]
-            self.configure_device(driver[0].lower())
+            self.subdriver = driver[0].lower()
+            self.configure_device()
         
-        self.get_values(driver[0].lower())
+        self.get_values()
         self.lastScaled = np.array(self.lastValue) * self.config['scale'] + self.config['offset']
         self.updateTimestamp()
         return self.lastValue

@@ -131,14 +131,14 @@ class tenmaPowerSupplySerialDevice(serialDevice):
         try:
             assert(self.Serial)
             if self.Serial is None: raise IOError
-            self.Serial.write("VSET1:%0f\n" % float(self.params['set_voltage']))
-            self.Serial.write("ISET1:%0f\n" % float(self.params['set_current']))
+            self.Serial.write("VSET1:%0f\n" % float(self.config['set_voltage']))
+            self.Serial.write("ISET1:%0f\n" % float(self.config['set_current']))
             self.query(reset=True)
         except IOError:
             print "%s communication error" % self.name
         except ValueError:
             print "%s - Invalid set point requested" % self.name
-            print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
+            print "\t(V=",self.config['set_voltage'],"I=", self.config['set_current'],")"
         
         return
 
