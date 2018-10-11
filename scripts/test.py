@@ -18,10 +18,10 @@
     Monash University, Australia
 """
 
-from pyLabDataLogger.device import usb_device
+from pyLabDataLogger.device import usbDevice
 
 if __name__ == '__main__':
-    usbDevicesFound = usb_device.search_for_usb_devices(debugMode=True)
+    usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=True)
     print len(usbDevicesFound),'recognised devices found'
     
     '''
