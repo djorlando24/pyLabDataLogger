@@ -17,13 +17,24 @@ Laboratory datalogging for USB and Serial devices
 
     This software searches for sensors and data acquisition devices
     over a range of communication protocols and logs them to a local file.
-    Supported interfaces include:
-	- USB via sigrok - i.e. many multimeters, logic analyzers and oscilloscopes
-        - USB serial ports (i.e. Arduino via FTDI, RS-232 and RS-485 to serial adapters)
-        - USB via other proprietary drivers
-        - SPI bus devices
-        - I2C bus devices
-        - GPIO ports
+    
+    Supported hardware confirmed working includes:
+	- Sigrok devices - i.e. Tenma multimeters, thermometers,
+           generic USBee logic analyzers and Rigol oscilloscopes
+        - Tenma 72-2710 USB programmable bench power supply
+        - Omega IR-USB thermometer 
+	- OHAUS digital lab scales via RS232
 
-
-    Currently supported hardware:
+    Soon to be supported hardware:
+        - pyAPT devices (ie Thorlabs translation stages)
+        - SPI bus devices (i.e. raspberry pi)
+        - I2C bus devices (i.e. raspberry pi)
+        - GPIO ports (i.e. raspberry pi)
+        - Picolog TC-08 thermocouple logger
+        - PicoScope headless oscilloscopes
+        - Measurement Computing devices via mcc-libusb
+	- USB serial port devices that write strings with format "VARNAME=VALUE, ..."
+          (i.e. Arduino via FTDI, RS-232 and RS-485 to serial adapters)
+	- Thorlabs PM120 power meter
+	- CENTER humidity meters
+	- USB audio capture devices (via alsa-record)
