@@ -3,6 +3,7 @@ INSTALLATION INSTRUCTIONS
 pyLabDataLogger depends on the following python packages:
 - pyUSB
 - numpy 
+- pyAPT for Linux, see hhttps://gitlab.com/weinshec/pyAPT.git
 
 pyLabDataLogger also requires the following external software:
 - sigrok dependencies: libftdi, libusb, doxygen, swig, glibmm, python-gobject, python-gi-dev
