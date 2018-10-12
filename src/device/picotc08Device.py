@@ -291,6 +291,53 @@ class usbtc08_logger():
             if self.debugMode:
                 print '\tCalibration date: %s' % self.info_calibration
 
+    def export_unit_info2(self):
+        dict={}
+        result = usbtc08.usb_tc08_get_unit_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_VERSION_CHARS, usbtc08.USBTC08LINE_DRIVER_VERSION)
+        if result == 0:
+            raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading driver version.')
+        else:
+            length = result
+            self.info_driver = ''.join(chr(self.charbuffer[i]) for i in range(0, length) if self.charbuffer[i] in range(32, 127))
+            dict['Driver_version']=self.info_driver
+        result = usbtc08.usb_tc08_get_unit_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_VERSION_CHARS, usbtc08.USBTC08LINE_KERNEL_DRIVER_VERSION)
+        if result == 0:
+            raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading kernel driver version.')
+        else:
+            length = result
+            self.info_kernel = ''.join(chr(self.charbuffer[i]) for i in range(0, length) if self.charbuffer[i] in range(32, 127))
+            dict['Kernel_driver_version']=self.info_kernel
+        result = usbtc08.usb_tc08_get_unit_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_VERSION_CHARS, usbtc08.USBTC08LINE_HARDWARE_VERSION)
+        if result == 0:
+            raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading hardware version.')
+        else:
+            length = result
+            self.info_hardware = ''.join(chr(self.charbuffer[i]) for i in range(0, length) if self.charbuffer[i] in range(32, 127))
+            dict['Hardware_version']=self.info_hardware
+        result = usbtc08.usb_tc08_get_unit_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_INFO_CHARS, usbtc08.USBTC08LINE_VARIANT_INFO)
+        if result == 0:
+            raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading variant info.')
+        else:
+            length = result
+            self.info_variant = ''.join(chr(self.charbuffer[i]) for i in range(0, length) if self.charbuffer[i] in range(32, 127))
+            dict['Variant']=self.info_variant
+        result = usbtc08.usb_tc08_get_unit_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_SERIAL_CHARS, usbtc08.USBTC08LINE_BATCH_AND_SERIAL)
+        if result == 0:
+            raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading batch and serial.')
+        else:
+            length = result
+            self.info_serial = ''.join(chr(self.charbuffer[i]) for i in range(0, length) if self.charbuffer[i] in range(32, 127))
+            dict['Serial']=self.info_serial
+        result = usbtc08.usb_tc08_get_unit_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_DATE_CHARS, usbtc08.USBTC08LINE_CAL_DATE)
+        if result == 0:
+            raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading calibration date.')
+        else:
+            length = result
+            self.info_calibration = ''.join(chr(self.charbuffer[i]) for i in range(0, length) if self.charbuffer[i] in range(32, 127))
+            dict['Calibration_date']=self.info_calibration
+
+        return dict
+
     def get_formatted_info(self):
         result = usbtc08.usb_tc08_get_formatted_info(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_INFO_CHARS)
         if result == 0:
@@ -580,8 +627,14 @@ class usbtc08Device(device):
         if not 'raw_units' in self.params.keys() or reset:
             for key, val in self.dev.export_unit_info2().iteritems():
                  self.params[key]=val
+            self.params['channel_names']=self.dev.channel_name.values()
+            self.params['n_channels']=len(self.dev.channel_name)
+            self.params['raw_units']=[self.dev.unit_text]*self.params['n_channels']
+            self.config['eng_units']=[self.dev.unit_text]*self.params['n_channels']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
             print self.params
-            raise IOError
+            exit()
 
         # Read values        
         self.get_values()
