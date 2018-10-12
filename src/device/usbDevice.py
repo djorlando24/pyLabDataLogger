@@ -108,8 +108,13 @@ def search_for_usb_devices(debugMode=False):
         table_entry = match_device(dev)
         if table_entry is not None:
             table_entry['manufacturer']=manufacturer
-            table_entry['serial_number']=serial_number
+            table_entry['serial_number']=dev._serial_number
             print '- found %s, driver=%s' % (table_entry['name'],table_entry['driver'])
+            '''
+            if debugMode: 
+                for k in dir(dev):
+                     if not '__' in k: print '--- ',k, get_property(dev,k)
+            '''
             found_entries.append(table_entry)
 
     print 'Detected %i devices.\n' % len(found_entries)
@@ -140,6 +145,7 @@ def load_usb_devices(devs=None):
                 from pyLabDataLogger.device import sigrokUsbDevice
                 device_list.append(sigrokUsbDevice.srdevice(params=d))
             elif driverClass == 'pyapt':
+                
                 from pyLabDataLogger.device import pyAPTDevice
                 device_list.append(pyAPTDevice.pyAPTDevice(params=d))
             else:
