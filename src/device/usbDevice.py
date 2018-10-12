@@ -151,7 +151,9 @@ def load_usb_devices(devs=None):
             else:
                 print "\tI don't know what to do with this device"
         except KeyError as e: # driver couldn't handle the subdriver settings
-            print '\tKeyError:',e
+            print '\t',e
+            continue
+        except IOError as e: # the device couldn't be accessed
             continue
 
     return device_list
