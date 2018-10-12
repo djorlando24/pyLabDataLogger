@@ -39,4 +39,3 @@ Laboratory datalogging for USB and Serial devices
 	    - Thorlabs PM120 power meter
     	- CENTER humidity meters
 	    - USB audio capture devices (via alsa-record)
-        - Agilent 33220A waveform generator
