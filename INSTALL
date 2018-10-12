@@ -20,6 +20,8 @@ pyLabDataLogger also requires the following external software:
 - For Pico devices, the open source Pico libraries need to be installed.
   see https://www.picotech.com
 - For Pico USB TC-08, the usbtc08 python module is required. See thirdParty/usbtc08
+- For Measurement Computing devices, mcclibusb
+  see https://github.com/chrismerck/mcc-libusb.git
 
 System configuration
 - You need to be able to write and read hardware serial ports. On linux, run:
