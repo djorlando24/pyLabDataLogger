@@ -627,10 +627,17 @@ class usbtc08Device(device):
         if not 'raw_units' in self.params.keys() or reset:
             for key, val in self.dev.export_unit_info2().iteritems():
                  self.params[key]=val
+            if self.params['serial_number'] is None: self.params['serial_number']=self.params['Serial']
             self.params['channel_names']=self.dev.channel_name.values()
             self.params['n_channels']=len(self.dev.channel_name)
-            self.params['raw_units']=[self.dev.unit_text]*self.params['n_channels']
-            self.config['eng_units']=[self.dev.unit_text]*self.params['n_channels']
+            self.params['channel_config']=self.dev.channel_name.values()
+            units_list = []
+            for conf in self.params['channel_config']:
+                if 'X' in conf: units_list.append('mA')
+                elif conf.strip() == '': units_list.append('')
+                else: units_list.append(self.dev.unit_text)
+            self.params['raw_units']=units_list[:]
+            self.config['eng_units']=units_list[:]
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
             print self.params
