@@ -77,10 +77,10 @@ class usbtc08_logger():
         self.self.channel_name=self.channel_name
         self.unit = unit
         self.self.units = {
-            usbtc08.USBTC08_selfS_CENTIGRADE : self.self.unit_celsius,
-            usbtc08.USBTC08_selfS_FAHRENHEIT : self.self.unit_fahrenheit,
-            usbtc08.USBTC08_selfS_KELVIN : self.self.unit_kelvin,
-            usbtc08.USBTC08_selfS_RANKINE : self.self.unit_rankine}
+            usbtc08.USBTC08_UNITS_CENTIGRADE : self.self.unit_celsius,
+            usbtc08.USBTC08_UNITS_FAHRENHEIT : self.self.unit_fahrenheit,
+            usbtc08.USBTC08_UNITS_KELVIN : self.self.unit_kelvin,
+            usbtc08.USBTC08_UNITS_RANKINE : self.self.unit_rankine}
         atexit.register(self.close_self)
         self.info = usbtc08.USBTC08_INFO()
         self.info.size = usbtc08.sizeof_USBTC08_INFO
@@ -361,25 +361,25 @@ class usbtc08_logger():
             print 'Flags: %s' % "{0:b}".format(self.flags[0]).zfill(9)
 
     def unit_celsius(self):
-        self.self.unit = usbtc08.USBTC08_selfS_CENTIGRADE
+        self.self.unit = usbtc08.USBTC08_UNITS_CENTIGRADE
         self.self.unit_text = u'°C'
         if self.debugMode:
             print 'self.unit set to %s.' % self.self.unit_text
 
     def unit_fahrenheit(self):
-        self.self.unit = usbtc08.USBTC08_selfS_FAHRENHEIT
+        self.self.unit = usbtc08.USBTC08_UNITS_FAHRENHEIT
         self.self.unit_text = u'°F'
         if self.debugMode:
             print 'self.unit set to %s.' % self.self.unit_text
 
     def unit_kelvin(self):
-        self.self.unit = usbtc08.USBTC08_selfS_KELVIN
+        self.self.unit = usbtc08.USBTC08_UNITS_KELVIN
         self.self.unit_text = 'K'
         if self.debugMode:
             print 'self.unit set to %s.' % self.self.unit_text
 
     def unit_rankine(self):
-        self.self.unit = usbtc08.USBTC08_selfS_RANKINE
+        self.self.unit = usbtc08.USBTC08_UNITS_RANKINE
         self.self.unit_text = u'°R'
         if self.debugMode:
             print 'self.unit set to %s.' % self.self.unit_text
@@ -445,10 +445,10 @@ class usbtc08Device(device):
             usbtc08.USBTC08_CHANNEL_7: '420mA_PT1',
             usbtc08.USBTC08_CHANNEL_8: '420mA_PT2'}
         # Set the preferred self.unit of temperature. Options are degC, degF, K and degR.
-        unit = usbtc08.USBTC08_selfS_CENTIGRADE
-        # usbtc08.USBTC08_selfS_FAHRENHEIT
-        # usbtc08.USBTC08_selfS_KELVIN
-        # usbtc08.USBTC08_selfS_RANKINE
+        unit = usbtc08.USBTC08_UNITS_CENTIGRADE
+        # usbtc08.USBTC08_UNITS_FAHRENHEIT
+        # usbtc08.USBTC08_UNITS_KELVIN
+        # usbtc08.USBTC08_UNITS_RANKINE
         
         self.dev = usbtc08_logger(channel_config,channel_name,unit,debugMode=True)
                                     
