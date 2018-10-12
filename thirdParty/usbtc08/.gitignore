@@ -1,0 +1,5 @@
+source/usbtc08.py
+source/usbtc08_wrap.c
+source/_usbtc08.so
+source/build/
+source/logs/*
