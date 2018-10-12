@@ -7,13 +7,16 @@ pyLabDataLogger depends on the following python packages:
   or use the python2 modified version in thirdParty directory
 
 pyLabDataLogger also requires the following external software:
-- sigrok dependencies: libftdi, libusb, doxygen, swig, glibmm, python-gobject, python-gi-dev
+- python2 and python3 development headers
+- sigrok dependencies: 
+    libftdi, libusb, doxygen, swig, glibmm, python-gobject, python-gi-dev
 - sigrok, see https://sigrok.org/wiki/Downloads
   You will need to build from source code to get support for the latest devices.
   I found the versions shipped with Ubuntu didn't support all my hardware.
-- sigrok-firmware-fx2lafw for USBee ADCs, with udev rules installed to avoid need for root
-  (see https://sigrok.org/wiki/Fx2lafw)
-- python2 and python3 development headers
+- sigrok-firmware-fx2lafw for USBee ADCs, with udev rules installed to avoid
+  need for root (see https://sigrok.org/wiki/Fx2lafw)
+- For Pico devices, the open source Pico libraries need to be installed.
+  see https://www.picotech.com
 
 System configuration
 - You need to be able to write and read hardware serial ports. On linux, run:
