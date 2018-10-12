@@ -630,7 +630,7 @@ class usbtc08Device(device):
             if self.params['serial_number'] is None: self.params['serial_number']=self.params['Serial']
             self.params['channel_names']=self.dev.channel_name.values()
             self.params['n_channels']=len(self.dev.channel_name)
-            self.params['channel_config']=self.dev.channel_name.values()
+            self.params['channel_config']=self.dev.channel_config.values()
             units_list = []
             for conf in self.params['channel_config']:
                 if 'X' in conf: units_list.append('mA')
@@ -640,11 +640,21 @@ class usbtc08Device(device):
             self.config['eng_units']=units_list[:]
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
-            print self.params
-            exit()
 
         # Read values        
-        self.get_values()
+        self.dev.get_single()
+        self.lastValue=[]
+        for i in self.dev.channel_config:
+            if self.dev.channel_config.get(i) == ' ':
+                self.lastValue.append(np.nan)
+            elif self.dev.channel_config.get(i) == 'X':
+                self.lastValue.append(self.dev.get_temp(i))
+            else:
+                if self.dev.deskew:
+                    self.lastValue.append(self.get_temp_deskew(i))
+                else:
+                    self.lastValue.append(self.get_temp(i))
+        
 
         # Generate scaled values. Convert non-numerics to NaN
         lastValueSanitized = []
