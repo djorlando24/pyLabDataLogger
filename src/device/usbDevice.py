@@ -152,7 +152,7 @@ def load_usb_devices(devs=None):
                 device_list.append(pyAPTDevice.pyAPTDevice(params=d))
             elif driverClass == 'picotc08':
                 from pyLabDataLogger.device import picotc08Device
-                device_list.append(picotc08Device.picotc08Device(params=d))
+                device_list.append(picotc08Device.usbtc08Device(params=d))
             else:
                 print "\tI don't know what to do with this device"
         except KeyError as e: # driver couldn't handle the subdriver settings
