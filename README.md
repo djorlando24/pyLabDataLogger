@@ -5,7 +5,7 @@ Laboratory datalogging for USB and Serial devices
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 11/10/2018
+    @date 12/10/2018
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -27,15 +27,15 @@ Laboratory datalogging for USB and Serial devices
 	- Microcontrollers using FTDI or CP2102 serial over USB chips
            that push strings with format "VARNAME=VALUE, VARNAME=..."
            (i.e. Arduinos, RS-232 and RS-485 to serial adapters)
+    - pyAPT devices (ie Thorlabs translation stages)
 
     Soon to be supported hardware:
-        - pyAPT devices (ie Thorlabs translation stages)
         - SPI bus devices (i.e. raspberry pi)
         - I2C bus devices (i.e. raspberry pi)
         - GPIO ports (i.e. raspberry pi)
         - Picolog TC-08 thermocouple logger
         - PicoScope headless oscilloscopes
         - Measurement Computing devices via mcc-libusb
-	- Thorlabs PM120 power meter
-	- CENTER humidity meters
-	- USB audio capture devices (via alsa-record)
+	    - Thorlabs PM120 power meter
+    	- CENTER humidity meters
+	    - USB audio capture devices (via alsa-record)

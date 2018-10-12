@@ -3,6 +3,8 @@
 Usage: python get_info.py [<serial>]
 
 Gets the controller information of all APT controllers, or the one specified
+
+DD - print firmware as hex, note that S/N from info() method is not right
 """
 
 import pyAPT
@@ -18,9 +20,11 @@ def info(serial):
             'Mod State', 'Channels']
 
     for idx,ainfo in enumerate(info):
-      if type(ainfo) == bytes:
-        ainfo = ainfo.decode('latin-1')
-      print('\t%12s: %s'%(labels[idx], ainfo))
+      if ('Firmware' in labels[idx]):
+          print('\t%12s: %s'%(labels[idx], ainfo.encode('hex')))
+      else:
+          if type(ainfo) == bytes: ainfo = ainfo.decode('latin-1')
+          print('\t%12s: %s'%(labels[idx], ainfo))
 
 if __name__ == '__main__':
   import sys

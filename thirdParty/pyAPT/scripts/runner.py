@@ -26,7 +26,7 @@ def runner_serial(func):
       if controllers:
         for con in controllers:
           print('Found %s %s S/N: %s'%con)
-          func(con[2].decode('latin-1'))
+          func(con[2])#.decode('latin-1'))
           print('')
 
         return 0

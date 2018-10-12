@@ -95,6 +95,8 @@ class pyAPTDevice(device):
         self.params['n_channels']=3
         self.config['Home']=False
         self.config['MoveRel']=0.
+        self.params['raw_units']=['mm','mm','mm/s']
+        self.config['eng_units']=['mm','mm','mm/s']
         
         # Open socket to the pyAPT device.
         self.dev = pyAPT.MTS50(serial_number=self.serial_number)
@@ -102,7 +104,9 @@ class pyAPTDevice(device):
         # Make first query to get units, description, etc.
         self.query(reset=True)
 
-        if not quiet: self.pprint()
+        if not quiet: 
+            print '\t',self.params['name']
+            self.pprint()
         return
 
     # Deactivate connection to device (close socket)
@@ -156,23 +160,18 @@ class pyAPTDevice(device):
         # If first time or reset, get configuration
         if (not 'raw_units' in self.params) or reset:           
             min_vel, acc, max_vel = self.dev.velocity_parameters()
-            homingParams = con.request_home_params()
+            homingParams = self.dev.request_home_params()
             raw_min_vel, raw_acc, raw_max_vel = self.dev.velocity_parameters(raw=True)
-
+            
             self.config['acc']=acc
             self.config['max_vel']=max_vel
-            self.config['HomingVelocity']=homingParams['velocity']
+            self.config['HomingVelocity']=homingParams[1]
             self.params['min_vel']=min_vel
             self.params['raw_min_vel']=raw_min_vel
             self.params['raw_acc']=raw_acc
             self.params['raw_max_vel']=raw_max_vel
             
-            print self.dev.info()
-            print self.dev.status()
-            unit=self.dev.fget_units_of_motor()
-            self.params['raw_units']=[unit]
-            self.config['eng_units']=[unit]
-            self.params['name']='%s %s' % (self.dev.fget_device_descriptor(),self.dev.fget_device_serial_number())
+            self.params['name']='%s %s' % (self.dev.info()[4].decode('latin-1'), self.dev.serial_number)
             
         # Get values
         self.lastValue = [self.dev.position(),self.dev.position(raw=True),self.dev.status().velocity]

@@ -245,9 +245,9 @@ class Message(_Message):
         """
 
         if type(self.data) == str:
-            return bytes(self.data).encode('latin-1')
+            return bytes(self.data)#.encode('latin-1')
         else:
-            return bytes(''.join(chr(x) for x in self.data)).encode('latin-1')
+            return bytes(''.join(chr(x) for x in self.data))#.encode('latin-1')
 
 
     @property

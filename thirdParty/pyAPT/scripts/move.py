@@ -9,6 +9,7 @@ distance in mm
 import time
 import pylibftdi
 import pyAPT
+import sys
 
 def main(args):
   if len(args)<3:
@@ -21,7 +22,8 @@ def main(args):
   try:
     with pyAPT.MTS50(serial_number=serial) as con:
       print('Found APT controller S/N',serial)
-      print('\tMoving stage by %.2fmm...'%(dist), end=' ')
+      sys.stdout.write('\tMoving stage by %.2fmm...'%(dist))
+      sys.stdout.flush()
       con.move(dist)
       print('moved')
       print('\tNew position: %.2fmm'%(con.position()))

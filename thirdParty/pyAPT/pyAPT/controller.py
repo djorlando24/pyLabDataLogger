@@ -650,7 +650,7 @@ class Controller(object):
         info = st.unpack('<I8sH4s48s12sHHH', getmsg.datastring)
    
         sn,model,hwtype,fwver,notes,_,hwver,modstate,numchan = info
-        fwver = '%d.%d.%d' % (fwver[2],fwver[1],fwver[0])
+        fwver = '%s.%s.%s' % (fwver[2],fwver[1],fwver[0])
    
         return (sn,model,hwtype,fwver,notes,hwver,modstate,numchan)
    
