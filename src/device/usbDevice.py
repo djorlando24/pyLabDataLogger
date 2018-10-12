@@ -34,7 +34,7 @@ usb_device_table = [
     {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'name':'Thorlabs APT motor driver'},
     {'vid':0x09db, 'pid':0x0112, 'driver':'mcc-libusb/usb-1608g', 'name':'MCC USB-1608GX-2AO ADC'},
     {'vid':0x1313, 'pid':0x807b, 'driver':'thorlabs/pm120', 'name':'Thorlabs PM120'},
-    {'vid':0x0000, 'pid':0x9999, 'driver':'picotc08/usbtc08', 'name':'Picolog USB TC-08 thermocouple datalogger'},
+    {'vid':0x0ce9, 'pid':0x1000, 'driver':'picotc08/usbtc08', 'name':'Picolog USB TC-08 thermocouple datalogger'},
     {'vid':0x0957, 'pid':0x0407, 'driver':'agilent/33220a', 'name':'Agilent 33220A Waveform Generator'},
     {'vid':0x0ce9, 'pid':0x1016, 'driver':'picoscope/picoscope2k', 'name':'Picoscope 2000 Series'},
         
