@@ -38,7 +38,7 @@ class serialDevice(device):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
-        self.name = "untitled Serial device"
+        self.name = "uninitialized"
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
         self.Serial = None
@@ -113,8 +113,9 @@ class serialDevice(device):
             else:
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
 
-        except IOError:
-            print "%s communication error" % self.name
+        except IOError as e:
+            print "\t%s communication error" % self.name
+            print "\t",e
         except ValueError:
             print "%s - Invalid set point requested" % self.name
             print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
@@ -144,6 +145,7 @@ class serialDevice(device):
     def configure_device(self):
         subdriver = self.subdriver
         if subdriver=='omega-ir-usb':
+            self.name = "Omega IR-USB"
             self.config['channel_names']=['tempC','tempF','ambientC','ambientF','emissivity']
             self.params['raw_units']=['C','F','C','F','']
             self.config['eng_units']=['C','F','C','F','']
@@ -156,16 +158,21 @@ class serialDevice(device):
             self.config['set_emissivity']=None
         elif subdriver=='ohaus7k':
             #Get the units currently set on the display
-            s=''
-            unit='?'
-            self.Serial.write('PU\r\n')
-            time.sleep(0.01)
-            while len(s)<1024:
-                s+=self.Serial.read(1)
-                if s[-1] == '\r':
-                    unit=s.strip()
-                    break
+            try:
+                s=''
+                unit='?'
+                self.Serial.write('PU\r\n')
+                time.sleep(0.01)
+                while len(s)<1024:
+                    s+=self.Serial.read(1)
+                    if s[-1] == '\r':
+                        unit=s.strip()
+                        break
+            except IOError:
+                # It's ok, we can get this on the query() later
+                pass
             # Fixed settings.
+            self.name = "OHAUS Valor 7000 Scale"
             self.config['channel_names']=['weight']
             self.params['raw_units']=[unit]
             self.config['eng_units']=[unit]
@@ -199,7 +206,7 @@ class serialDevice(device):
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         except ValueError:
             print "Failure to unpack raw string from device:", rawData
-        return [None]*self.params['n_channels']
+        return [np.nan]*self.params['n_channels']
     
     # Read latest values
     def get_values(self):
@@ -220,11 +227,11 @@ class serialDevice(device):
     
             self.lastValue = self.convert_raw_string_to_values(rawData)
 
-        except IOError:
-            print "%s communication error" % self.name
-            return None
+        except IOError as e:
+            print "\t%s communication error" % self.name
+            print "\t",e
 
-        return
+        return [np.nan]*self.params['n_channels']
 
 
     # Handle query for values
@@ -242,9 +249,16 @@ class serialDevice(device):
             driver = self.params['driver'].split('/')[1:]
             self.subdriver = driver[0].lower()
             self.configure_device()
-        
+
+        # Read values        
         self.get_values()
-        self.lastScaled = np.array(self.lastValue) * self.config['scale'] + self.config['offset']
+
+        # Generate scaled values. Convert non-numerics to NaN
+        lastValueSanitized = []
+        for v in self.lastValue: 
+            if v is None: lastValueSanitized.append(np.nan)
+            else: lastValueSanitized.append(v)
+        self.lastScaled = np.array(lastValueSanitized) * self.config['scale'] + self.config['offset']
         self.updateTimestamp()
         return self.lastValue
 
