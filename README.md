@@ -19,10 +19,11 @@ Laboratory datalogging for USB and Serial devices
     over a range of communication protocols and logs them to a local file.
     
     Supported hardware confirmed working includes:
-	- Sigrok devices - i.e. Tenma multimeters, thermometers,
-           generic USBee logic analyzers and Rigol oscilloscopes
-        - Tenma 72-2710 USB programmable bench power supply
-        - Omega IR-USB thermometer 
+	- Sigrok devices
+           confirmed working: Tenma 72-7730A multimeter, 72-7712 Thermometer,
+           USBee/LHT00SU1 ADC & logic analyser via fx2lafw driver
+    - Tenma 72-2710 USB programmable bench power supply
+    - Omega IR-USB thermometer 
 	- OHAUS digital lab scales via RS232
 	- Microcontrollers using FTDI or CP2102 serial over USB chips
            that push strings with format "VARNAME=VALUE, VARNAME=..."
@@ -36,7 +37,7 @@ Laboratory datalogging for USB and Serial devices
         - Picolog TC-08 thermocouple logger
         - PicoScope headless oscilloscopes
         - Measurement Computing devices via mcc-libusb
-	    - Thorlabs PM120 power meter
+	- Thorlabs PM16-120 power meter
     	- CENTER humidity meters
 	    - USB audio capture devices (via alsa-record)
         - Agilent 33220A waveform generator via USB or GPIB

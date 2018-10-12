@@ -34,8 +34,9 @@ usb_device_table = [
     {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'name':'Thorlabs APT motor driver'},
     {'vid':0x09db, 'pid':0x0112, 'driver':'mcc-libusb/usb-1608g', 'name':'MCC USB-1608GX-2AO ADC'},
     {'vid':0x1313, 'pid':0x807b, 'driver':'thorlabs/pm120', 'name':'Thorlabs PM120'},
-    {'vid':0x0000, 'pid':0x9999, 'driver':'usbtc08', 'name':'Picolog USB TC-08 thermocouple datalogger'},
+    {'vid':0x0000, 'pid':0x9999, 'driver':'pico/usbtc08', 'name':'Picolog USB TC-08 thermocouple datalogger'},
     {'vid':0x0957, 'pid':0x0407, 'driver':'agilent/33220a', 'name':'Agilent 33220A Waveform Generator'},
+    {'vid':0x0ce9, 'pid':0x1016, 'driver':'pico/picoscope2k', 'name':'Picoscope 2000 Series'},
         
     # Serial-over-USB devices with fixed VID and PID
     {'vid':0x0416, 'pid':0x5011, 'driver':'tenmaserial/722710', 'name':'Tenma 72-2710 Power Supply'},
@@ -50,7 +51,8 @@ usb_device_table = [
     # Devices using Serial-to-USB adapters whose VID and PID may change depending on the dongle
     {'vid':0x0557, 'pid':0x2008, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},
     {'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/gpib', 'name':'GPIB-USB adapter'},
-
+    {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-iseries', 'name':'Omega iSeries via RS-485'},
+    
     # Known but unsupported or generic
     #{'vid':0x067b, 'pid':0x2303, 'driver':'arduino', 'name':'Generic USB to serial cable'},
     #{'vid':0x1a86, 'pid':0x7523, 'driver':'arduino', 'name':'Generic USB to serial cable'},
@@ -64,7 +66,6 @@ usb_device_table = [
     #{'vid':0x10c4, 'pid':0xea60, 'driver':'shell', 'serial_number':'0001', 'name':'Onion Omega2+'},
     #{'vid':0x1d6b, 'pid':0x0104, 'driver':'shell', 'name':'Beaglebone Black'},
     #{'vid':0x0403, 'pid':0x6001, 'driver':'shell', 'bcdDevice':0x600, 'name':'Intel Edison A502OTFN'},
-    #{'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-process-controller', 'name':'FTDI USB to RS485 adapter'},
 ]
 
 
