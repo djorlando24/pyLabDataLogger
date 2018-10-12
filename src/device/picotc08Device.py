@@ -71,13 +71,17 @@ class usbtc08_error(Exception):
 
 
 class usbtc08_logger():
-    def __init__(self,CHANNEL_CONFIG,CHANNEL_NAME,UNIT,DEBUG=True):
-        self.units = {
-            usbtc08.USBTC08_UNITS_CENTIGRADE : self.unit_celsius,
-            usbtc08.USBTC08_UNITS_FAHRENHEIT : self.unit_fahrenheit,
-            usbtc08.USBTC08_UNITS_KELVIN : self.unit_kelvin,
-            usbtc08.USBTC08_UNITS_RANKINE : self.unit_rankine}
-        atexit.register(self.close_unit)
+    def __init__(self,channel_config,channel_name,unit,debug=True):
+        self.debugMode=debug
+        self.channel_config=channel_config
+        self.self.channel_name=self.channel_name
+        self.unit = unit
+        self.self.units = {
+            usbtc08.USBTC08_selfS_CENTIGRADE : self.self.unit_celsius,
+            usbtc08.USBTC08_selfS_FAHRENHEIT : self.self.unit_fahrenheit,
+            usbtc08.USBTC08_selfS_KELVIN : self.self.unit_kelvin,
+            usbtc08.USBTC08_selfS_RANKINE : self.self.unit_rankine}
+        atexit.register(self.close_self)
         self.info = usbtc08.USBTC08_INFO()
         self.info.size = usbtc08.sizeof_USBTC08_INFO
         self.charbuffer = usbtc08.charArray(usbtc08.USBTC08_MAX_INFO_CHARS)
@@ -86,12 +90,12 @@ class usbtc08_logger():
         self.timebuffer = usbtc08.intArray(usbtc08.USBTC08_MAX_SAMPLE_BUFFER)
         self.flags = usbtc08.shortArray(1)
         # Print header to console
-        if DEBUG:
+        if self.debugMode:
             print '-------------------------------------------'
             print 'Pico Technology USB-TC08 logger'
             print '-------------------------------------------'
         # Settings
-        self.units[UNIT]()
+        self.self.units[self.unit]()
         # Start communication with device
         self.open_unit_async()
         self.open_unit_progress()
@@ -99,14 +103,14 @@ class usbtc08_logger():
         self.config()
 
     def config(self):
-        for i in CHANNEL_CONFIG:
-            self.set_channel(i, CHANNEL_CONFIG.get(i))
+        for i in self.channel_config:
+            self.set_channel(i, self.channel_config.get(i))
         self.set_mains(MAINS)
 
     def test(self):
         print 'Entered test function.'
-        #self.get_unit_info()
-        #self.get_unit_info2()
+        #self.get_self_info()
+        #self.get_self_info2()
         self.get_formatted_info()
         self.get_single()
 
@@ -117,7 +121,7 @@ class usbtc08_logger():
             map(line.clear, self.lines)
 
     def process_data(self, channel, samples):
-        if DEBUG:
+        if self.debugMode:
             print 'Processing %i samples of channel %i.' % (samples, channel)
         if samples > 0:
             time_data = []
@@ -150,13 +154,13 @@ class usbtc08_logger():
         return f
 
     def open_unit_async(self):
-        result = usbtc08.usb_tc08_open_unit_async()
+        result = usbtc08.usb_tc08_open_self_async()
         if result == 1:
-            if DEBUG:
-                print 'Started enumerating USB TC-08 units.'
+            if self.debugMode:
+                print 'Started enumerating USB TC-08 self.units.'
         elif result == 0:
-            if DEBUG:
-                print 'ERROR: No more USB TC-08 units found.'
+            if self.debugMode:
+                print 'ERROR: No more USB TC-08 self.units found.'
             sys.exit(1)
         elif result == -1:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(0), 'Failed to start enumerating.')
@@ -169,21 +173,21 @@ class usbtc08_logger():
         if result == usbtc08.USBTC08_PROGRESS_FAIL:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(0), 'Waiting completion of enumeration.')
         elif self.handle <= 0:
-            if DEBUG:
-                print 'ERROR: No TC-08 units detected.'
+            if self.debugMode:
+                print 'ERROR: No TC-08 self.units detected.'
             sys.exit(1)
         elif result == usbtc08.USBTC08_PROGRESS_COMPLETE:
-            if DEBUG:
+            if self.debugMode:
                 print 'Completed enumeration.'
 
-    def get_unit_info(self):
-        result = usbtc08.usb_tc08_get_unit_info(self.handle, self.info)
+    def get_self_info(self):
+        result = usbtc08.usb_tc08_get_self_info(self.handle, self.info)
         if result == 0:
-            raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading unit info.')
+            raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading self.unit info.')
         else:
-            if DEBUG:
-                print 'Received information about the USB TC-08 unit.'
-        if DEBUG:
+            if self.debugMode:
+                print 'Received information about the USB TC-08 self.unit.'
+        if self.debugMode:
             print 'Driver version: %s' % ''.join(chr(i) for i in self.info.DriverVersion if i in range(32, 127))
             print 'Picopp version: %i' % self.info.PicoppVersion
             print 'Hardware version: %i' % self.info.HardwareVersion
@@ -191,71 +195,71 @@ class usbtc08_logger():
             print 'Serial number: %s' % ''.join(chr(i) for i in self.info.szSerial if i in range(32, 127))
             print 'Calibration date: %s' % ''.join(chr(i) for i in self.info.szCalDate if i in range(32, 127))
 
-    def get_unit_info2(self):
-        result = usbtc08.usb_tc08_get_unit_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_VERSION_CHARS, usbtc08.USBTC08LINE_DRIVER_VERSION)
+    def get_self_info2(self):
+        result = usbtc08.usb_tc08_get_self_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_VERSION_CHARS, usbtc08.USBTC08LINE_DRIVER_VERSION)
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading driver version.')
         else:
             length = result
             self.info_driver = ''.join(chr(self.charbuffer[i]) for i in range(0, length) if self.charbuffer[i] in range(32, 127))
-            if DEBUG:
+            if self.debugMode:
                 print 'Driver version: %s' % self.info_driver
-        result = usbtc08.usb_tc08_get_unit_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_VERSION_CHARS, usbtc08.USBTC08LINE_KERNEL_DRIVER_VERSION)
+        result = usbtc08.usb_tc08_get_self_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_VERSION_CHARS, usbtc08.USBTC08LINE_KERNEL_DRIVER_VERSION)
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading kernel driver version.')
         else:
             length = result
             self.info_kernel = ''.join(chr(self.charbuffer[i]) for i in range(0, length) if self.charbuffer[i] in range(32, 127))
-            if DEBUG:
+            if self.debugMode:
                 print 'Kernel driver version: %s' % self.info_kernel
-        result = usbtc08.usb_tc08_get_unit_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_VERSION_CHARS, usbtc08.USBTC08LINE_HARDWARE_VERSION)
+        result = usbtc08.usb_tc08_get_self_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_VERSION_CHARS, usbtc08.USBTC08LINE_HARDWARE_VERSION)
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading hardware version.')
         else:
             length = result
             self.info_hardware = ''.join(chr(self.charbuffer[i]) for i in range(0, length) if self.charbuffer[i] in range(32, 127))
-            if DEBUG:
+            if self.debugMode:
                 print 'Hardware version: %s' % self.info_hardware
-        result = usbtc08.usb_tc08_get_unit_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_INFO_CHARS, usbtc08.USBTC08LINE_VARIANT_INFO)
+        result = usbtc08.usb_tc08_get_self_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_INFO_CHARS, usbtc08.USBTC08LINE_VARIANT_INFO)
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading variant info.')
         else:
             length = result
             self.info_variant = ''.join(chr(self.charbuffer[i]) for i in range(0, length) if self.charbuffer[i] in range(32, 127))
-            if DEBUG:
+            if self.debugMode:
                 print 'Variant info: %s' % self.info_variant
-        result = usbtc08.usb_tc08_get_unit_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_SERIAL_CHARS, usbtc08.USBTC08LINE_BATCH_AND_SERIAL)
+        result = usbtc08.usb_tc08_get_self_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_SERIAL_CHARS, usbtc08.USBTC08LINE_BATCH_AND_SERIAL)
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading batch and serial.')
         else:
             length = result
             self.info_serial = ''.join(chr(self.charbuffer[i]) for i in range(0, length) if self.charbuffer[i] in range(32, 127))
-            if DEBUG:
+            if self.debugMode:
                 print 'Batch and serial: %s' % self.info_serial
-        result = usbtc08.usb_tc08_get_unit_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_DATE_CHARS, usbtc08.USBTC08LINE_CAL_DATE)
+        result = usbtc08.usb_tc08_get_self_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_DATE_CHARS, usbtc08.USBTC08LINE_CAL_DATE)
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading calibration date.')
         else:
             length = result
             self.info_calibration = ''.join(chr(self.charbuffer[i]) for i in range(0, length) if self.charbuffer[i] in range(32, 127))
-            if DEBUG:
+            if self.debugMode:
                 print 'Calibration date: %s' % self.info_calibration
 
     def get_formatted_info(self):
         result = usbtc08.usb_tc08_get_formatted_info(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_INFO_CHARS)
         if result == 0:
-            if DEBUG:
+            if self.debugMode:
                 print 'ERROR: Too many bytes to copy.'
         else:
-            if DEBUG:
-                print 'Formatted unit info: \n%s' % ''.join(chr(self.charbuffer[i]) for i in range(0, usbtc08.USBTC08_MAX_INFO_CHARS))
+            if self.debugMode:
+                print 'Formatted self.unit info: \n%s' % ''.join(chr(self.charbuffer[i]) for i in range(0, usbtc08.USBTC08_MAX_INFO_CHARS))
 
     def set_channel(self, channel, tc):
         result = usbtc08.usb_tc08_set_channel(self.handle, channel, ord(tc))
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Setting channel.')
         else:
-            if DEBUG:
+            if self.debugMode:
                 print 'Set channel %i to %s-type thermocouple.' % (channel, tc)
 
     def disable_channel(self, channel):
@@ -263,7 +267,7 @@ class usbtc08_logger():
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Disabling channel.')
         else:
-            if DEBUG:
+            if self.debugMode:
                 print 'Disabled channel %i.' % (channel)
 
     def set_mains(self, freq):
@@ -272,14 +276,14 @@ class usbtc08_logger():
         elif freq == 50:
             result = usbtc08.usb_tc08_set_mains(self.handle, 0)
         else:
-            if DEBUG:
+            if self.debugMode:
                 print 'ERROR: Incorrect mains frequency. Default to filter 50 Hz.'
             result = usbtc08.usb_tc08_set_mains(self.handle, 0)
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Setting mains filter.')
         else:
-            if DEBUG:
-                print 'Set USB TC-08 unit to reject %i Hz.' % freq
+            if self.debugMode:
+                print 'Set USB TC-08 self.unit to reject %i Hz.' % freq
 
     def get_minimum_interval_ms(self):
         result = usbtc08.usb_tc08_get_minimum_interval_ms(self.handle)
@@ -287,7 +291,7 @@ class usbtc08_logger():
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Read the minimum sample interval.')
         else:
             interval = result
-            if DEBUG:
+            if self.debugMode:
                 print 'Minimum sampling interval is %i ms.' % interval
         return interval
 
@@ -296,41 +300,41 @@ class usbtc08_logger():
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Issue run command.')
         else:
-            if DEBUG:
+            if self.debugMode:
                 print 'Started sampling with %i ms interval.' % interval
 
     def get_temp(self, channel):
-        result = usbtc08.usb_tc08_get_temp(self.handle, self.tempbuffer, self.timebuffer, usbtc08.USBTC08_MAX_SAMPLE_BUFFER, self.flags, channel, self.unit, 0)
+        result = usbtc08.usb_tc08_get_temp(self.handle, self.tempbuffer, self.timebuffer, usbtc08.USBTC08_MAX_SAMPLE_BUFFER, self.flags, channel, self.self.unit, 0)
         print 'Received result: %i' % result
         samples = 0
         if result == -1:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading data of channel.')
         elif result == 0:
-            if DEBUG:
+            if self.debugMode:
                 print 'No samples available.'
         else:
             samples = result
-            if DEBUG:
+            if self.debugMode:
                 print 'Read %i samples to the buffer.' % samples
-        if DEBUG:
+        if self.debugMode:
             for i in range(0, samples):
                 print '%i %4.2f' % (self.timebuffer[i], self.tempbuffer[i])
             print 'Flags: %s' % "{0:b}".format(self.flags[0]).zfill(9)
         return samples
 
     def get_temp_deskew(self, channel):
-        result = usbtc08.usb_tc08_get_temp_deskew(self.handle, self.tempbuffer, self.timebuffer, usbtc08.USBTC08_MAX_SAMPLE_BUFFER, self.flags, channel, self.unit, 0)
+        result = usbtc08.usb_tc08_get_temp_deskew(self.handle, self.tempbuffer, self.timebuffer, usbtc08.USBTC08_MAX_SAMPLE_BUFFER, self.flags, channel, self.self.unit, 0)
         samples = 0
         if result == -1:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading deskewed data of channel.')
         elif result == 0:
-            if DEBUG:
+            if self.debugMode:
                 print 'No samples available.'
         else:
             samples = result
-            if DEBUG:
+            if self.debugMode:
                 print 'Read %i samples to the buffer.' % samples
-        if DEBUG:
+        if self.debugMode:
             for i in range(0, samples):
                 print '%i %4.2f' % (self.timebuffer[i], self.tempbuffer[i])
             print 'Flags: %s' % "{0:b}".format(self.flags[0]).zfill(9)
@@ -341,52 +345,52 @@ class usbtc08_logger():
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Stop sampling.')
         else:
-            if DEBUG:
+            if self.debugMode:
                 print 'Stopped sampling.'
 
     def get_single(self):
-        result = usbtc08.usb_tc08_get_single(self.handle, self.channelbuffer, self.flags, self.unit)
+        result = usbtc08.usb_tc08_get_single(self.handle, self.channelbuffer, self.flags, self.self.unit)
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Take single measurement of all channels.')
         else:
-            if DEBUG:
+            if self.debugMode:
                 print 'Take a single measurement of all channels.'
                 for i in range(0, 9):
-                    print 'Channel %i: %4.2f %s' % (i, self.channelbuffer[i], self.unit_text)
-        if DEBUG:
+                    print 'Channel %i: %4.2f %s' % (i, self.channelbuffer[i], self.self.unit_text)
+        if self.debugMode:
             print 'Flags: %s' % "{0:b}".format(self.flags[0]).zfill(9)
 
     def unit_celsius(self):
-        self.unit = usbtc08.USBTC08_UNITS_CENTIGRADE
-        self.unit_text = u'°C'
-        if DEBUG:
-            print 'Unit set to %s.' % self.unit_text
+        self.self.unit = usbtc08.USBTC08_selfS_CENTIGRADE
+        self.self.unit_text = u'°C'
+        if self.debugMode:
+            print 'self.unit set to %s.' % self.self.unit_text
 
     def unit_fahrenheit(self):
-        self.unit = usbtc08.USBTC08_UNITS_FAHRENHEIT
-        self.unit_text = u'°F'
-        if DEBUG:
-            print 'Unit set to %s.' % self.unit_text
+        self.self.unit = usbtc08.USBTC08_selfS_FAHRENHEIT
+        self.self.unit_text = u'°F'
+        if self.debugMode:
+            print 'self.unit set to %s.' % self.self.unit_text
 
     def unit_kelvin(self):
-        self.unit = usbtc08.USBTC08_UNITS_KELVIN
-        self.unit_text = 'K'
-        if DEBUG:
-            print 'Unit set to %s.' % self.unit_text
+        self.self.unit = usbtc08.USBTC08_selfS_KELVIN
+        self.self.unit_text = 'K'
+        if self.debugMode:
+            print 'self.unit set to %s.' % self.self.unit_text
 
     def unit_rankine(self):
-        self.unit = usbtc08.USBTC08_UNITS_RANKINE
-        self.unit_text = u'°R'
-        if DEBUG:
-            print 'Unit set to %s.' % self.unit_text
+        self.self.unit = usbtc08.USBTC08_selfS_RANKINE
+        self.self.unit_text = u'°R'
+        if self.debugMode:
+            print 'self.unit set to %s.' % self.self.unit_text
 
-    def close_unit(self):
-        result = usbtc08.usb_tc08_close_unit(self.handle)
+    def close_self(self):
+        result = usbtc08.usb_tc08_close_self(self.handle)
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Closing communication.')
         else:
-            if DEBUG:
-                print 'Unit closed successfully.'
+            if self.debugMode:
+                print 'self.unit closed successfully.'
 
 ########################################################################################################################
 class usbtc08Device(device):
@@ -395,8 +399,8 @@ class usbtc08Device(device):
     """
 
     def __init__(self,params={},quiet=False):
-        self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
-        self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
+        self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. self.units)
+        self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device self.units)
         self.driverConnected = False # Goes to True when scan method succeeds
         self.name = "Pico TC-08 Thermocouple Logger"
         self.lastValue = None # Last known value (for logging)
@@ -419,7 +423,7 @@ class usbtc08Device(device):
     def activate(self,quiet=False):
         
         # Channel configurations (Dan's preferred defaults)
-        CHANNEL_CONFIG = {
+        channel_config = {
             usbtc08.USBTC08_CHANNEL_CJC: 'C', # Needs to be 'C'.
             usbtc08.USBTC08_CHANNEL_1: 'K',
             usbtc08.USBTC08_CHANNEL_2: 'K',
@@ -430,7 +434,7 @@ class usbtc08Device(device):
             usbtc08.USBTC08_CHANNEL_7: 'X',
             usbtc08.USBTC08_CHANNEL_8: 'X'}
         # Set the name of each channel.
-        CHANNEL_NAME = {
+        channel_name = {
             usbtc08.USBTC08_CHANNEL_CJC: 'Cold-junction',
             usbtc08.USBTC08_CHANNEL_1: 'T_K1',
             usbtc08.USBTC08_CHANNEL_2: 'T_K2',
@@ -440,15 +444,15 @@ class usbtc08Device(device):
             usbtc08.USBTC08_CHANNEL_6: 'T_T6',
             usbtc08.USBTC08_CHANNEL_7: '420mA_PT1',
             usbtc08.USBTC08_CHANNEL_8: '420mA_PT2'}
-        # Set the preferred unit of temperature. Options are degC, degF, K and degR.
-        UNIT = usbtc08.USBTC08_UNITS_CENTIGRADE
-        # usbtc08.USBTC08_UNITS_FAHRENHEIT
-        # usbtc08.USBTC08_UNITS_KELVIN
-        # usbtc08.USBTC08_UNITS_RANKINE
+        # Set the preferred self.unit of temperature. Options are degC, degF, K and degR.
+        unit = usbtc08.USBTC08_selfS_CENTIGRADE
+        # usbtc08.USBTC08_selfS_FAHRENHEIT
+        # usbtc08.USBTC08_selfS_KELVIN
+        # usbtc08.USBTC08_selfS_RANKINE
         
-        self.dev = usbtc08_logger(CHANNEL_CONFIG,CHANNEL_NAME,UNIT,DEBUG=True)
+        self.dev = usbtc08_logger(channel_config,channel_name,unit,debugMode=True)
                                     
-        # Make first query to get units, description, etc.
+        # Make first query to get self.units, description, etc.
         self.query(reset=True)
 
         if not quiet: self.pprint()
@@ -511,8 +515,8 @@ class usbtc08Device(device):
         except:
             print "Connection to the device is not open."
 
-        # If first time or reset, get configuration (ie units)
-        if not 'raw_units' in self.params.keys() or reset:
+        # If first time or reset, get configuration (ie self.units)
+        if not 'raw_selfs' in self.params.keys() or reset:
             driver = self.params['driver'].split('/')[1:]
             self.subdriver = driver[0].lower()
             # set self.params, self.config...
