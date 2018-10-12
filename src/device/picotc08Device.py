@@ -643,7 +643,8 @@ class usbtc08Device(device):
 
         # Read values        
         self.dev.get_single()
-        self.lastValue=[]
+        self.lastValue=self.dev.channelbuffer
+        '''
         for i in self.dev.channel_config:
             if self.dev.channel_config.get(i) == ' ':
                 self.lastValue.append(np.nan)
@@ -654,7 +655,7 @@ class usbtc08Device(device):
                     self.lastValue.append(self.dev.get_temp_deskew(i))
                 else:
                     self.lastValue.append(self.dev.get_temp(i))
-        
+        '''
 
         # Generate scaled values. Convert non-numerics to NaN
         lastValueSanitized = []
