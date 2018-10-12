@@ -34,7 +34,8 @@ usb_device_table = [
     {'vid':0x09db, 'pid':0x0112, 'driver':'mcc-libusb/usb-1608g', 'name':'MCC USB-1608GX-2AO ADC'},
     {'vid':0x1313, 'pid':0x807b, 'driver':'thorlabs/pm120', 'name':'Thorlabs PM120'},
     {'vid':0x0000, 'pid':0x9999, 'driver':'usbtc08', 'name':'Picolog USB TC-08 thermocouple datalogger'},
-    
+    {'vid':0x0957, 'pid':0x0407, 'driver':'agilent/33220a', 'name':'Agilent 33220A Waveform Generator'},
+
     # Serial-over-USB devices with fixed VID and PID
     {'vid':0x0416, 'pid':0x5011, 'driver':'tenmaserial/722710', 'name':'Tenma 72-2710 Power Supply'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-ir-usb', 'name':'Omega IR-USB', 'manufacturer':'Omega Engineering'},
