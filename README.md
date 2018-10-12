@@ -27,7 +27,7 @@ Laboratory datalogging for USB and Serial devices
 	- Microcontrollers using FTDI or CP2102 serial over USB chips
            that push strings with format "VARNAME=VALUE, VARNAME=..."
            (i.e. Arduinos, RS-232 and RS-485 to serial adapters)
-    - pyAPT devices (ie Thorlabs translation stages)
+        - pyAPT devices (ie Thorlabs translation stages)
 
     Soon to be supported hardware:
         - SPI bus devices (i.e. raspberry pi)
@@ -39,3 +39,4 @@ Laboratory datalogging for USB and Serial devices
 	    - Thorlabs PM120 power meter
     	- CENTER humidity meters
 	    - USB audio capture devices (via alsa-record)
+        - Agilent 33220A waveform generator via USB or GPIB
