@@ -39,7 +39,7 @@ class pyAPTDevice(device):
         Class providing interface to pyAPT. Presently reads the position but does not move the motor.
     """
 
-    def __init__(self,params={},quiet=False):
+    def __init__(self,params={},quiet=False,**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds

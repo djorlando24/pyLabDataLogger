@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 11/10/2018
+    @date 12/10/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -16,7 +16,7 @@
     Monash University, Australia
 """
 
-from device import device
+from serialDevice import serialDevice
 import numpy as np
 import datetime, time
 

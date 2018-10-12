@@ -29,12 +29,13 @@ Laboratory datalogging for USB and Serial devices
            that push strings with format "VARNAME=VALUE, VARNAME=..."
            (i.e. Arduinos, RS-232 and RS-485 to serial adapters)
         - pyAPT devices (ie Thorlabs translation stages)
+    - Picolog USB-TC-08 thermocouple logger
 
     Soon to be supported hardware:
         - SPI bus devices (i.e. raspberry pi)
         - I2C bus devices (i.e. raspberry pi)
         - GPIO ports (i.e. raspberry pi)
-        - Picolog TC-08 thermocouple logger
+        - Pico RS-232 TC-08 thermocouple logger
         - PicoScope headless oscilloscopes
         - Measurement Computing devices via mcc-libusb
 	- Thorlabs PM16-120 power meter

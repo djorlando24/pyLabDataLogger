@@ -31,7 +31,7 @@ class srdevice(device):
         (which must be seperately installed).
     """
 
-    def __init__(self,params={}):
+    def __init__(self,params={},**kwargs):
         
         # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.config = {}

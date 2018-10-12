@@ -493,7 +493,7 @@ class usbtc08Device(device):
     """
 
     def __init__(self,params={}, quiet=False, debugMode=False, init_tc_config=['K','K','K','T','T','T','X','X'],
-                 init_ch_names =['Cold Junction','1','2','3','4','5','6','7','8'], init_unit='C' ):
+                 init_ch_names =['Cold Junction','1','2','3','4','5','6','7','8'], init_unit='C',**kwargs ):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. self.units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device self.units)
         self.driverConnected = False # Goes to True when scan method succeeds

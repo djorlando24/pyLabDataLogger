@@ -35,7 +35,7 @@ class tenmaPowerSupplySerialDevice(serialDevice):
         However this can be overridden by passing 'port' or 'tty' directly
         in the params dict."""
 
-    def __init__(self,params={},tty_prefix='/dev/'):
+    def __init__(self,params={},tty_prefix='/dev/',**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds

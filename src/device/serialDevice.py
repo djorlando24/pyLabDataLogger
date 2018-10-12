@@ -34,7 +34,7 @@ class serialDevice(device):
         in the params dict.
     """
 
-    def __init__(self,params={},tty_prefix='/dev/',quiet=False):
+    def __init__(self,params={},tty_prefix='/dev/',quiet=False,**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
@@ -61,10 +61,15 @@ class serialDevice(device):
             
             from serial.tools import list_ports
             for serialport in list_ports.comports():
-                if serialport.vid==self.params['vid'] and serialport.pid==self.params['pid']:
-                    if not quiet: print '\t',serialport.hwid, serialport.name
-                    self.port = self.tty_prefix + serialport.name
-                    self.params['tty']=self.port
+                if not 'vid' in dir(serialport):
+                    if len(serialport)>0:
+                        self.port = self.tty_prefix + serialport[0]
+                        self.params['tty']=self.port
+                else:
+                    if serialport.vid==self.params['vid'] and serialport.pid==self.params['pid']:
+                        if not quiet: print '\t',serialport.hwid, serialport.name
+                        self.port = self.tty_prefix + serialport.name
+                        self.params['tty']=self.port
                     
         if self.port is None: print "Unable to connect to serial port - port unknown."
         else: self.activate(quiet=quiet)
@@ -82,10 +87,10 @@ class serialDevice(device):
                                     bytesize=self.params['bytesize'], parity=self.params['parity'],\
                                     stopbits=self.params['stopbits'], xonxoff=self.params['xonxoff'],\
                                     rtscts=self.params['rtscts'])
-                                    
+        print '*'
         # Make first query to get units, description, etc.
         self.query(reset=True)
-
+        print '*'
         if not quiet: self.pprint()
         return
 
