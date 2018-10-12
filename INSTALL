@@ -14,3 +14,7 @@ pyLabDataLogger also requires the following external software:
 - sigrok-firmware-fx2lafw for USBee ADCs, with udev rules installed to avoid need for root
   (see https://sigrok.org/wiki/Fx2lafw)
 - python2 and python3 development headers
+
+System configuration
+- You need to be able to write and read hardware serial ports. On linux, run:
+    sudo usermod -a -G dialout $USER

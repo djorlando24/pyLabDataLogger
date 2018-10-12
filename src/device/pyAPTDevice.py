@@ -30,7 +30,7 @@ class pyAPTDevice(device):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
-        self.name = "pyAPT device %i" % params['serial_number']
+        self.name = "pyAPT device %i" % int(params['serial_number'])
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
         self.Serial = params['serial_number']
@@ -44,8 +44,10 @@ class pyAPTDevice(device):
         if override_params is not None: self.params = override_params
         
         # Find the matching pyAPT device seen on the USB tree, ensure it exists
-        ffind_pyapt_device(self.params['serial_number'])
+        success = ffind_pyapt_device(self.params['serial_number'])
         
+        if not success: 
+            print "Could not open port to device."
         else: self.activate(quiet=quiet)
         return
 

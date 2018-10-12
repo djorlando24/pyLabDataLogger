@@ -99,14 +99,16 @@ def search_for_usb_devices(debugMode=False):
 
     print "Scanning for USB devices..."
     found_entries = []
-    for dev in usb.core.find(find_all=True):
-        if debugMode: 
-            manufacturer = get_property(dev,'manufacturer')
-            serial_number = get_property(dev,'serial_number')
+    for dev in usb.core.find(find_all=True): 
+        manufacturer = get_property(dev,'manufacturer')
+        serial_number = get_property(dev,'serial_number')
+        if debugMode:
             print 'bus=%03i address=%03i : vid=0x%04x pid=0x%04x : class=0x%02x device=0x%04x manufacturer=%s serial=%s' %\
              (dev.bus, dev.address, dev.idVendor, dev.idProduct,dev.bDeviceClass,dev.bcdDevice,manufacturer,serial_number)
         table_entry = match_device(dev)
         if table_entry is not None:
+            table_entry['manufacturer']=manufacturer
+            table_entry['serial_number']=serial_number
             print '- found %s, driver=%s' % (table_entry['name'],table_entry['driver'])
             found_entries.append(table_entry)
 
