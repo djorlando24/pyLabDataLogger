@@ -35,7 +35,7 @@ Laboratory datalogging for USB and Serial devices
     Soon to be supported hardware:
         - SPI bus devices (i.e. barometer)
         - I2C bus devices (ie time of flight sensors)
-        - GPIO ports (i.e. raspberry pi)
+        - GPIO ports (i.e. raspberry pi gpio as TTL inputs)
         - Pico RS-232 TC-08 thermocouple logger
         - PicoScope headless oscilloscopes
         - Measurement Computing devices via mcc-libusb
