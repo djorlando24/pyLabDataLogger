@@ -26,7 +26,7 @@ class i2cDevice(device):
     """ Class providing support for I2C devices. This class should not be used directly, it provides
         common functions for specific i2c devices. """
 
-    def __init__(self,params={}):
+    def __init__(self,params={},**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
