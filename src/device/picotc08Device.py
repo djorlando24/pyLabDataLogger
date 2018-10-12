@@ -19,6 +19,7 @@
 from device import device
 import numpy as np
 import datetime, time
+import atexit
 
 try:
     import usbtc08
