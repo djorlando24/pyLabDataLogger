@@ -651,9 +651,9 @@ class usbtc08Device(device):
                 self.lastValue.append(self.dev.get_temp(i))
             else:
                 if self.dev.deskew:
-                    self.lastValue.append(self.get_temp_deskew(i))
+                    self.lastValue.append(self.dev.get_temp_deskew(i))
                 else:
-                    self.lastValue.append(self.get_temp(i))
+                    self.lastValue.append(self.dev.get_temp(i))
         
 
         # Generate scaled values. Convert non-numerics to NaN
