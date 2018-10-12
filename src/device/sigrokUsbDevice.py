@@ -48,8 +48,11 @@ class srdevice(device):
         self.lastValueTimestamp = None # Time when last value was obtained
         
         if params is not {}:
-            self.scan()
-            self.activate()
+            try:
+                self.scan()
+                self.activate()
+            except IOError:
+                return
             
         return
 
@@ -95,23 +98,26 @@ class srdevice(device):
             raise ValueError("Cannot use driver %s with sigrokUsbDevice" % self.driver)
             
         # Make new Sigrok context, attempt to load driver requested.
-        print "connecting to %s - sigrok driver" % self.name
-        import sigrok.core.classes as sr
-        self.srcontext = sr.Context.create()
-        srdriver = self.srcontext.drivers[self.params['driver'].lower().split('/')[1]]
-        srdevs = srdriver.scan(conn='%i.%i' % (self.bus, self.adds))
-        if len(srdevs) == 0: raise IOError("Sigrok unable to communicate with device %s." % self.name)
-        
-        # Set up sigrok device
-        self.srdev = srdevs[0]
-        self.params['model']=self.srdev.model
-        self.params['vendor']=self.srdev.vendor
-        self.params['version']=self.srdev.version
-        self.params['raw_units'] = []
-        self.srdev.open()
-        self.driverConnected = True
-        self.has_digital_input = False
-        
+        print "\tconnecting to %s - sigrok driver" % self.name
+        try:
+            import sigrok.core.classes as sr
+            self.srcontext = sr.Context.create()
+            srdriver = self.srcontext.drivers[self.params['driver'].lower().split('/')[1]]
+            srdevs = srdriver.scan(conn='%i.%i' % (self.bus, self.adds))
+            if len(srdevs) == 0: raise IOError("\tsigrok unable to communicate with device %s." % self.name)
+            
+            # Set up sigrok device
+            self.srdev = srdevs[0]
+            self.params['model']=self.srdev.model
+            self.params['vendor']=self.srdev.vendor
+            self.params['version']=self.srdev.version
+            self.params['raw_units'] = []
+            self.srdev.open()
+            self.driverConnected = True
+            self.has_digital_input = False
+        except IOError:
+            return
+                
         print "\t%s - %s with %d channels: %s" % (self.srdev.driver.name, str.join(' ',\
                 [s for s in (self.srdev.vendor, self.srdev.model, self.srdev.version) if s]),\
                 len(self.srdev.channels), str.join(' ', [c.name for c in self.srdev.channels]))

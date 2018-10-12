@@ -22,9 +22,9 @@ from pyLabDataLogger.device import usbDevice
 
 if __name__ == '__main__':
     
-    usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=True)
+    usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=False)
     
-    devices = usbDevice.load_usb_devices(usbDevicesFound[::-1])
+    devices = usbDevice.load_usb_devices(usbDevicesFound)
     
     '''
     from sigrokUsbDevice import srdevice

@@ -27,6 +27,11 @@ except ImportError:
     print "Please install pyAPT and pylibftdi"
     exit()
 
+try:
+    import usb.core
+except ImportError:
+    print "Please install pyUSB"
+    raise
 
 ########################################################################################################################
 class pyAPTDevice(device):
@@ -42,7 +47,8 @@ class pyAPTDevice(device):
         self.lastValueTimestamp = None # Time when last value was obtained
         self.serial_number = params['serial_number']
         self.name = "pyAPT device" # %s" % self.serial_number
-        if params is not {}: self.scan(quiet=quiet)
+        if params is not {}:
+            self.scan(quiet=quiet)
         
         return
 
@@ -50,6 +56,20 @@ class pyAPTDevice(device):
     def scan(self,override_params=None,quiet=False):
         self.port = None
         if override_params is not None: self.params = override_params
+        
+        # Check device is present on the bus.
+        if 'bcdDevice' in self.params.keys():
+            usbCoreDev = usb.core.find(idVendor=self.params['vid'],idProduct=self.params['pid'],\
+                             bcdDevice=self.params['bcdDevice'])
+        else:
+            usbCoreDev = usb.core.find(idVendor=self.params['vid'],idProduct=self.params['pid'])
+            
+        if usbCoreDev is None:
+            raise IOError("USB Device %s not found" % self.params['name'])
+
+        # Parse driver parameters
+        self.bus = usbCoreDev.bus
+        self.adds = usbCoreDev.address
         
         # Find the matching pyAPT device seen on the USB tree, ensure it exists
         print '\tLooking for APT controllers'
@@ -60,7 +80,7 @@ class pyAPTDevice(device):
                 print controller
                 con = pyAPT.Controller(serial_number=controller[2])
                 print '\t',con.info()
-                if fmatch(con): self.serial_number = controller[2]
+                if fmatch(con,self.bus,self.adds): self.serial_number = controller[2]
             
         if self.serial_number is None:
             print "Could not open port to device."
