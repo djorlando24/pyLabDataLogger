@@ -20,13 +20,42 @@ from device import device
 import datetime, time
 import numpy as np
 
+""" Scan for available and unused i2c bus addresses that may contain
+    devices we can talk to. """
+def scan_for_devices(bus=1):
+    import smbus
+    bus = smbus.SMBus(bus) # 1 indicates /dev/i2c-1
+    devices=[]
+    for device in range(128):
+       try:
+          bus.read_byte(device)
+          devices.append(hex(device))
+       except:
+          continue
+    return devices
+
+""" Load devices based on a-priori knowledge of what addresses on the bus
+    correspond to what supported hardware. This won't work for devices that
+    share addresses. """
+def load_i2c_devices(devices=None,bus=1,**kwargs):
+    if devices is None: devices=scan_for_devices(bus)
+    device_list=[]
+    for address in devices:
+        if address=='0x48' or address=='0x49':
+            from pyLabDataLogger.device import ads1x15Device
+            device_list.append(ads1x15Device.ads1x15Device(params={'address':address, 'bus':bus},**kwargs))
+        else:
+            print "I don't know what to do with I2C device at address",address
+    return device_list
+
+
 
 ########################################################################################################################
 class i2cDevice(device):
     """ Class providing support for I2C devices. This class should not be used directly, it provides
         common functions for specific i2c devices. """
 
-    def __init__(self,params={},**kwargs):
+    def __init__(self,params={},quiet=False,**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
@@ -38,11 +67,11 @@ class i2cDevice(device):
         if not 'bus' in params.keys(): params['bus']=1
         
         if params is {}: return
-        self.scan()
+        self.scan(quiet=quiet)
         return
 
     # Detect if a device is present on bus
-    def scan(self,override_params=None):
+    def scan(self,override_params=None,quiet=False):
         if override_params is not None: self.params = override_params
         
         if not 'address' in self.params.keys():
@@ -51,24 +80,18 @@ class i2cDevice(device):
         
         try:
             import smbus
-            device_addresses=[]
             bus = smbus.SMBus(self.params['bus'])
-            for a in range(128):
-                try:
-                    bus.write_byte(a)
-                    device_addresses.append(hex(a))
-                except IOError: # exception if read_byte fails
-                    pass
-            if len(device_addresses) ==0 :
-                print "Error, no I2C devices found on bus %i" % self.params['bus']
+            try:
+                bus.read_byte(int(self.params['address'],16))
+            except:
+                print "Error, no I2C devices found on bus %i address %s" % (self.params['bus'],self.params['address'])
+                raise
                 return
-            elif not self.params['address'] in device_addresses:
-                print "Error, address",self.params['address'],"not found (found",device_addresses,")"
-                return
+
             self.activate()
+            self.query()
+            if not quiet: self.pprint()
             
         except ImportError:
             print "Error, smbus module could not be loaded"
             return
-
-

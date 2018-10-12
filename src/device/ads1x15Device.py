@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 11/10/2018
+    @date 13/10/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -39,9 +39,9 @@ class ads1x15Device(i2cDevice):
         if not 'driver' in self.params.keys(): self.params['driver']='ADS1115'
 
         if self.params['driver']=='ADS1115':
-            self.ADC =  Adafruit_ADS1x15.ADS1115(address=self.params['address'], busnum=self.params['bus'])
+            self.ADC =  Adafruit_ADS1x15.ADS1115(address=int(self.params['address'],16), busnum=self.params['bus'])
         elif self.params['driver']=='ADS1015':
-            self.ADC =  Adafruit_ADS1x15.ADS1015(address=self.params['address'], busnum=self.params['bus'])
+            self.ADC =  Adafruit_ADS1x15.ADS1015(address=int(self.params['address'],16), busnum=self.params['bus'])
         else:
             print "Error: unknown driver. Choices are ADS1015 or ADS1115"
             return
@@ -49,31 +49,32 @@ class ads1x15Device(i2cDevice):
         if not 'differential' in self.params.keys(): self.diff=True
 
         if self.diff:
-            self.config['n_channels']=2
+            self.params['n_channels']=2
             self.config['channel_names']=['ChA','ChB']
         else:
-            self.config['n_channels']=4
+            self.params['n_channels']=4
             self.config['channel_names']=['Ch1','Ch2','Ch3','Ch4']
 
-        self.params['raw_units']=['V']*self.config['n_channels']
-        self.config['eng_units']=['V']*self.config['n_channels']
-        self.config['scale']=np.ones(self.config['n_channels'],)
-        self.config['offset']=np.zeros(self.config['n_channels'],)
+        self.params['raw_units']=['V']*self.params['n_channels']
+        self.config['eng_units']=['V']*self.params['n_channels']
+        self.config['scale']=np.ones(self.params['n_channels'],)
+        self.config['offset']=np.zeros(self.params['n_channels'],)
 
+        print "Activating %s on i2c bus at %i:%s with %i channels" % (self.params['driver'],self.params['bus'],self.params['address'],self.params['n_channels'])
         self.apply_config()
         self.driverConnected=True
-        print self.query()
+        
         return
 
     # Apply configuration (i.e. gain parameter)
     def apply_config(self):
         assert self.diff
         valid_gain_values=[2/3, 1,2,4,8,16]
-        if not 'gain' in self.config.keys(): self.config['gain']=[2/3]*self.config['n_channels']
+        if not 'gain' in self.config.keys(): self.config['gain']=[2/3]*self.params['n_channels']
         for chg in self.config['gain']:
             if not chg in valid_gain_values:
                 print "Error, gain values are invalid. Resetting"
-                self.config['gain']=[2/3]*self.config['n_channels']
+                self.config['gain']=[2/3]*self.params['n_channels']
         return
 
     # Update device with new value, update lastValue and lastValueTimestamp
@@ -83,7 +84,9 @@ class ads1x15Device(i2cDevice):
             # Read all the ADC channel values in a list.
             values = [0]*4
             for i in range(4):
-                values[i] = adc.read_adc(i, gain=GAIN)*4.096/32768.
+                if self.diff: j=i/2
+                else: j=i
+                values[i] = self.ADC.read_adc(i, gain=self.config['gain'][j])*4.096/32768.
             self.updateTimestamp()
             
             if self.diff:
@@ -100,11 +103,4 @@ class ads1x15Device(i2cDevice):
     # End connection to device.
     def deactivate(self):
         del self.ADC
-
-if __name__ == '__main__':
-    D=ads1x15Device({'address':0x49})
-    while True:
-        time.sleep(1)
-        print D.query()
-
 

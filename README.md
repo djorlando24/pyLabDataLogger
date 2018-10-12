@@ -30,10 +30,11 @@ Laboratory datalogging for USB and Serial devices
            (i.e. Arduinos, RS-232 and RS-485 to serial adapters)
         - pyAPT devices (ie Thorlabs translation stages)
     - Picolog USB-TC-08 thermocouple logger
+    - Adafruit ADS1x15 i2c-bus 12-bit ADCs (on raspberry pi, beaglebone, etc)
 
     Soon to be supported hardware:
-        - SPI bus devices (i.e. raspberry pi)
-        - I2C bus devices (i.e. raspberry pi)
+        - SPI bus devices (i.e. barometer)
+        - I2C bus devices (ie time of flight sensors)
         - GPIO ports (i.e. raspberry pi)
         - Pico RS-232 TC-08 thermocouple logger
         - PicoScope headless oscilloscopes
