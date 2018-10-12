@@ -485,21 +485,30 @@ class usbtc08_logger():
             if self.debugMode:
                 print '\tself.unit closed successfully.'
 
-########################################################################################################################
+##############################################################################################################################
+##############################################################################################################################
 class usbtc08Device(device):
     """ Class providing support for Pico TC-08 thermocouple dataloggers.
         There are RS-232 & USB versions, so far only the USB version is tested.
     """
 
-    def __init__(self,params={},quiet=False):
+    def __init__(self,params={}, quiet=False, debugMode=False, init_tc_config=['K','K','K','T','T','T','X','X'],
+                 init_ch_names =['Cold Junction','1','2','3','4','5','6','7','8'], init_unit='C' ):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. self.units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device self.units)
         self.driverConnected = False # Goes to True when scan method succeeds
+        self.debugMode = debugMode
         self.name = "Pico TC-08 Thermocouple Logger"
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
-        if params is not {}: self.scan(quiet=quiet)
-        
+        if not 'deskew' in params.keys(): self.config['deskew']=True
+        else: self.config['deskew']=self.params['deskew']
+        if not 'mains' in params.keys(): self.config['mains']=50 #Hz
+        else: self.config['mains']=self.params['mains']
+        self.config['tc_config']=init_tc_config # initial types, from defaults or specified
+        self.config['channel_names']=init_ch_names # initial names, from defaults or specified
+        self.config['internal_units']=init_unit # C,F,K,R
+        if params is not {}: self.scan(quiet=quiet)        
         return
 
     # Detect if device is present
@@ -528,36 +537,43 @@ class usbtc08Device(device):
     # Establish connection to device
     def activate(self,quiet=False):
         
-        mains=50
-        deskew=True        
+        if len(self.config['tc_config'])<8: raise IndexError("Wrong number of parameters passed to tc_config")
         channel_config = {
             usbtc08.USBTC08_CHANNEL_CJC: 'C', # Needs to be 'C'.
-            usbtc08.USBTC08_CHANNEL_1: 'K',
-            usbtc08.USBTC08_CHANNEL_2: 'K',
-            usbtc08.USBTC08_CHANNEL_3: 'K',
-            usbtc08.USBTC08_CHANNEL_4: 'T',
-            usbtc08.USBTC08_CHANNEL_5: 'T',
-            usbtc08.USBTC08_CHANNEL_6: 'T',
-            usbtc08.USBTC08_CHANNEL_7: 'X',
-            usbtc08.USBTC08_CHANNEL_8: 'X'}
+            usbtc08.USBTC08_CHANNEL_1: self.config['tc_config'][0],
+            usbtc08.USBTC08_CHANNEL_2: self.config['tc_config'][1],
+            usbtc08.USBTC08_CHANNEL_3: self.config['tc_config'][2],
+            usbtc08.USBTC08_CHANNEL_4: self.config['tc_config'][3],
+            usbtc08.USBTC08_CHANNEL_5: self.config['tc_config'][4],
+            usbtc08.USBTC08_CHANNEL_6: self.config['tc_config'][5],
+            usbtc08.USBTC08_CHANNEL_7: self.config['tc_config'][6],
+            usbtc08.USBTC08_CHANNEL_8: self.config['tc_config'][7]}
         # Set the name of each channel.
+        if len(self.config['channel_names'])<9: raise IndexError("Wrong number of channel names")
         channel_name = {
-            usbtc08.USBTC08_CHANNEL_CJC: 'Cold-junction',
-            usbtc08.USBTC08_CHANNEL_1: 'T_K1',
-            usbtc08.USBTC08_CHANNEL_2: 'T_K2',
-            usbtc08.USBTC08_CHANNEL_3: 'T_K3',
-            usbtc08.USBTC08_CHANNEL_4: 'T_T4',
-            usbtc08.USBTC08_CHANNEL_5: 'T_T5',
-            usbtc08.USBTC08_CHANNEL_6: 'T_T6',
-            usbtc08.USBTC08_CHANNEL_7: '420mA_PT1',
-            usbtc08.USBTC08_CHANNEL_8: '420mA_PT2'}
+            usbtc08.USBTC08_CHANNEL_CJC: self.config['channel_names'][0],
+            usbtc08.USBTC08_CHANNEL_1: self.config['channel_names'][1],
+            usbtc08.USBTC08_CHANNEL_2: self.config['channel_names'][2],
+            usbtc08.USBTC08_CHANNEL_3: self.config['channel_names'][3],
+            usbtc08.USBTC08_CHANNEL_4: self.config['channel_names'][4],
+            usbtc08.USBTC08_CHANNEL_5: self.config['channel_names'][5],
+            usbtc08.USBTC08_CHANNEL_6: self.config['channel_names'][6],
+            usbtc08.USBTC08_CHANNEL_7: self.config['channel_names'][7],
+            usbtc08.USBTC08_CHANNEL_8: self.config['channel_names'][8]}
         # Set the preferred self.unit of temperature. Options are degC, degF, K and degR.
-        unit = usbtc08.USBTC08_UNITS_CENTIGRADE
-        # usbtc08.USBTC08_UNITS_FAHRENHEIT
-        # usbtc08.USBTC08_UNITS_KELVIN
-        # usbtc08.USBTC08_UNITS_RANKINE
-        
-        self.dev = usbtc08_logger(channel_config,channel_name,unit,mains,deskew,debugMode=True)
+        if self.config['internal_units'].upper() == 'C':
+            unit = usbtc08.USBTC08_UNITS_CENTIGRADE
+        elif self.config['internal_units'].upper() == 'F':
+            unit = usbtc08.USBTC08_UNITS_FAHRENHEIT
+        elif self.config['internal_units'].upper() == 'K':
+            unit = usbtc08.USBTC08_UNITS_KELVIN
+        elif self.config['internal_units'].upper() == 'R':
+            unit = usbtc08.USBTC08_UNITS_RANKINE
+        else:
+            raise ValueError("Invalid internal_units")
+       
+        # Open device
+        self.dev = usbtc08_logger(channel_config,channel_name,unit,self.config['mains'],self.config['deskew'],self.debugMode)
                                     
         # Make first query to get self.units, description, etc.
         self.query(reset=True)
@@ -571,20 +587,14 @@ class usbtc08Device(device):
 	del self.dev
         return
 
-    # Apply configuration changes to the driver (subdriver-specific)
+    # Apply configuration changes to the driver
     def apply_config(self):
-        subdriver = self.params['driver'].split('/')[1:]
+        #subdriver = self.params['driver'].split('/')[1:]
         try:
-            assert(self.deviceClass)
-            if self.deviceClass is None: raise IOError
+            assert(self.dev)
+            if self.dev is None: raise IOError
+            self.reset() # Reload driver, taking new values from self.config for internal_units, channel_names, and tc_config (TC type).
             
-            # Apply subdriver-specific variable writes
-            if subdriver=='?':
-                #...
-                pass
-            else:
-                raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
-
         except IOError as e:
             print "\t%s communication error" % self.name
             print "\t",e
@@ -628,7 +638,7 @@ class usbtc08Device(device):
             for key, val in self.dev.export_unit_info2().iteritems():
                  self.params[key]=val
             if self.params['serial_number'] is None: self.params['serial_number']=self.params['Serial']
-            self.params['channel_names']=self.dev.channel_name.values()
+            #self.params['channel_names']=self.dev.channel_name.values()
             self.params['n_channels']=len(self.dev.channel_name)
             self.params['channel_config']=self.dev.channel_config.values()
             units_list = []
@@ -643,7 +653,7 @@ class usbtc08Device(device):
 
         # Read values        
         self.dev.get_single()
-        self.lastValue=self.dev.channelbuffer
+     	self.lastValue=[ self.dev.channelbuffer[i] for i in range(0, self.params['n_channels']) ]
         '''
         for i in self.dev.channel_config:
             if self.dev.channel_config.get(i) == ' ':

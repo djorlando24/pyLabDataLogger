@@ -123,8 +123,11 @@ def search_for_usb_devices(debugMode=False):
     print 'Detected %i devices.\n' % len(found_entries)
     return found_entries
 
-# Load up USB devices detected.
-def load_usb_devices(devs=None):
+"""
+	Load up USB devices detected.
+	Any driver needing special options can pass them via kwargs.
+"""
+def load_usb_devices(devs=None,**kwargs):
     device_list=[]
     if devs is None: devs=search_for_usb_devices()
 
@@ -137,22 +140,22 @@ def load_usb_devices(devs=None):
         try:
             if driverClass == 'tenmaserial':
                 from pyLabDataLogger.device import tenmaSerialDevice
-                device_list.append(tenmaSerialDevice.tenmaPowerSupplySerialDevice(params=d))
+                device_list.append(tenmaSerialDevice.tenmaPowerSupplySerialDevice(params=d,**kwargs))
             elif driverClass == 'serial':
                 from pyLabDataLogger.device import serialDevice
-                device_list.append(serialDevice.serialDevice(params=d))
+                device_list.append(serialDevice.serialDevice(params=d,**kwargs))
             elif driverClass == 'arduino':
                 from pyLabDataLogger.device import arduinoDevice
-                device_list.append(arduinoDevice.arduinoSerialDevice(params=d))
+                device_list.append(arduinoDevice.arduinoSerialDevice(params=d,**kwargs))
             elif driverClass == 'sigrok':
                 from pyLabDataLogger.device import sigrokUsbDevice
-                device_list.append(sigrokUsbDevice.srdevice(params=d))
+                device_list.append(sigrokUsbDevice.srdevice(params=d,**kwargs))
             elif driverClass == 'pyapt':
                 from pyLabDataLogger.device import pyAPTDevice
-                device_list.append(pyAPTDevice.pyAPTDevice(params=d))
+                device_list.append(pyAPTDevice.pyAPTDevice(params=d,**kwargs))
             elif driverClass == 'picotc08':
                 from pyLabDataLogger.device import picotc08Device
-                device_list.append(picotc08Device.usbtc08Device(params=d))
+                device_list.append(picotc08Device.usbtc08Device(params=d,**kwargs))
             else:
                 print "\tI don't know what to do with this device"
         except KeyError as e: # driver couldn't handle the subdriver settings

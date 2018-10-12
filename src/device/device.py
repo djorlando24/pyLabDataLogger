@@ -18,6 +18,7 @@
 
 import datetime
 import numpy as np
+import sys
 
 class device:
     """ Main class defining a device in pyPiDataLogger.
@@ -77,21 +78,24 @@ class device:
         # Scalars.
         if isinstance( self.lastValue[0], float ) or isinstance( self.lastValue[0], int ):
             if 'raw_units' in self.params:
-                print lead+'Raw values:',\
-                ['%f %s' % (self.lastValue[n],self.params['raw_units'][n]) for n in range(self.params['n_channels'])]
+                sys.stdout.write(lead+'Raw values: ')
+                for n in range(self.params['n_channels']):
+                    sys.stdout.write(u'%g %s, ' % (self.lastValue[n],self.params['raw_units'][n]))
+                sys.stdout.write('\n')
             else:
                 print lead+'Raw values:',self.lastValue
             # Only show the scaled units if they exist.
             if show_scaled:
-                print lead+'Scaled values:',\
-                     ['%f %s' % (self.lastScaled[n],self.config['eng_units'][n]) for n in range(self.params['n_channels'])]
+                for n in range(self.params['n_channels']):
+                    sys.stdout.write(u'%f %s, ' % (self.lastScaled[n],self.params['eng_units'][n])) 
+                sys.stdout.write('\n')
     
         # Vectors
         elif isinstance( self.lastValue[0], list) or isinstance(self.lastValue[0], np.ndarray):
             for n in range(self.params['n_channels']):
-                if ~show_scaled: print lead+'%i: %s = %s %s' % (n,self.config['channel_names'][n],\
+                if ~show_scaled: print lead+u'%i: %s = %s %s' % (n,self.config['channel_names'][n],\
                                     self.lastValue[n],self.params['raw_units'][n])
-                else: print lead+'%i: %s = %s %s \t %s %s' % (n,self.config['channel_names'][n],self.lastValue[n],\
+                else: print lead+u'%i: %s = %s %s \t %s %s' % (n,self.config['channel_names'][n],self.lastValue[n],\
                         self.params['raw_units'][n],self.lastScaled[n],self.config['eng_units'][n])
                     
         return

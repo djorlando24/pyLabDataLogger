@@ -24,20 +24,10 @@ if __name__ == '__main__':
     
     usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=True)
     
-    devices = usbDevice.load_usb_devices(usbDevicesFound)
+    # kwargs to customise setup of usbtc08
+    special_args={'debugMode':True, 'init_tc_config':['K','K','K','T','T','T','X','X'], 'quiet':False,
+                  'init_ch_names':['Cold Junction','K1','K2','K3','T4','T5','T6','420mA_P1','420mA_P2']}
+
+    devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
     
-    '''
-    from sigrokUsbDevice import srdevice
-    from serialDevice import *
-    from tenmaSerialDevice import *
-    for usbDeviceEntry in usbDevicesFound:
-        if usbDeviceEntry['driver'].split('/')[0] == 'sigrok':
-            dev = srdevice(usbDeviceEntry)
-        elif usbDeviceEntry['driver'] == 'serial/arduino':
-            #usbDeviceEntry['port']='/dev/tty.usbmodem331571'  # TESTING
-            dev = arduinoSerialDevice(usbDeviceEntry)
-        elif usbDeviceEntry['driver'] == 'serial/tenma722710':
-            #usbDeviceEntry['port']='/dev/tty.usbmodem1411'    # TESTING
-            dev = tenmaPowerSupplySerialDevice(usbDeviceEntry)
-    '''
 
