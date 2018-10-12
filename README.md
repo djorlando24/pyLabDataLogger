@@ -18,7 +18,7 @@ Laboratory datalogging for USB and Serial devices
     This software searches for sensors and data acquisition devices
     over a range of communication protocols and logs them to a local file.
     
-Supported hardware confirmed working includes:
+    Supported hardware confirmed working includes:
 	- Sigrok devices - i.e. Tenma multimeters, thermometers,
            generic USBee logic analyzers and Rigol oscilloscopes
         - Tenma 72-2710 USB programmable bench power supply
@@ -29,7 +29,7 @@ Supported hardware confirmed working includes:
            (i.e. Arduinos, RS-232 and RS-485 to serial adapters)
         - pyAPT devices (ie Thorlabs translation stages)
 
-Soon to be supported hardware:
+    Soon to be supported hardware:
         - SPI bus devices (i.e. raspberry pi)
         - I2C bus devices (i.e. raspberry pi)
         - GPIO ports (i.e. raspberry pi)
@@ -41,8 +41,8 @@ Soon to be supported hardware:
 	    - USB audio capture devices (via alsa-record)
         - Agilent 33220A waveform generator via USB or GPIB
 
-Notes:
-	- Support for Tenma thermometers and multimeters via sigrok's UNI-T drivers
+    Notes:
+	    - Support for Tenma thermometers and multimeters via sigrok's UNI-T drivers
           using the UNI-T D04 USB to serial cables with the WCH.CN ships can require
           a bus reset on Linux before they'll work. To get around this
           you can run scripts/reset-WCH.CN.sh. These devices also have generic USB-to
