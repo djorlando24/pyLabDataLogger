@@ -63,12 +63,14 @@ class serialDevice(device):
             for serialport in list_ports.comports():
                 if not 'vid' in dir(serialport):
                     if len(serialport)>0:
-                        self.port = self.tty_prefix + serialport[0]
+                        self.port = serialport[0]
+                        if not self.tty_prefix in self.port: self.port = self.tty_prefix + self.port
                         self.params['tty']=self.port
                 else:
                     if serialport.vid==self.params['vid'] and serialport.pid==self.params['pid']:
                         if not quiet: print '\t',serialport.hwid, serialport.name
-                        self.port = self.tty_prefix + serialport.name
+                        self.port = serialport.name
+                        if not self.tty_prefix in self.port: self.port = self.tty_prefix + self.port
                         self.params['tty']=self.port
                     
         if self.port is None: print "Unable to connect to serial port - port unknown."
@@ -87,10 +89,8 @@ class serialDevice(device):
                                     bytesize=self.params['bytesize'], parity=self.params['parity'],\
                                     stopbits=self.params['stopbits'], xonxoff=self.params['xonxoff'],\
                                     rtscts=self.params['rtscts'])
-        print '*'
         # Make first query to get units, description, etc.
         self.query(reset=True)
-        print '*'
         if not quiet: self.pprint()
         return
 
