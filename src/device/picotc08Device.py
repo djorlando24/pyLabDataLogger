@@ -417,28 +417,28 @@ class usbtc08Device(device):
     # Establish connection to device (ie open serial port)
     def activate(self,quiet=False):
         
-        # Channel configurations (default)
+        # Channel configurations (Dan's preferred defaults)
         CHANNEL_CONFIG = {
             usbtc08.USBTC08_CHANNEL_CJC: 'C', # Needs to be 'C'.
             usbtc08.USBTC08_CHANNEL_1: 'K',
             usbtc08.USBTC08_CHANNEL_2: 'K',
             usbtc08.USBTC08_CHANNEL_3: 'K',
             usbtc08.USBTC08_CHANNEL_4: 'T',
-            usbtc08.USBTC08_CHANNEL_5: ' ',
-            usbtc08.USBTC08_CHANNEL_6: ' ',
+            usbtc08.USBTC08_CHANNEL_5: 'T',
+            usbtc08.USBTC08_CHANNEL_6: 'T',
             usbtc08.USBTC08_CHANNEL_7: 'X',
             usbtc08.USBTC08_CHANNEL_8: 'X'}
         # Set the name of each channel.
         CHANNEL_NAME = {
             usbtc08.USBTC08_CHANNEL_CJC: 'Cold-junction',
-            usbtc08.USBTC08_CHANNEL_1: 'Pump (K1)',
-            usbtc08.USBTC08_CHANNEL_2: 'H2O-bypass (K2)',
-            usbtc08.USBTC08_CHANNEL_3: 'PC-Nozzle (K3)',
-            usbtc08.USBTC08_CHANNEL_4: 'Al-Nozzle (T4)',
-            usbtc08.USBTC08_CHANNEL_5: 'NC (T5)',
-            usbtc08.USBTC08_CHANNEL_6: 'NC (T6)',
-            usbtc08.USBTC08_CHANNEL_7: 'Overpressure P (PT1)',
-            usbtc08.USBTC08_CHANNEL_8: 'Tank P (PT2)'}
+            usbtc08.USBTC08_CHANNEL_1: 'T_K1',
+            usbtc08.USBTC08_CHANNEL_2: 'T_K2',
+            usbtc08.USBTC08_CHANNEL_3: 'T_K3',
+            usbtc08.USBTC08_CHANNEL_4: 'T_T4',
+            usbtc08.USBTC08_CHANNEL_5: 'T_T5',
+            usbtc08.USBTC08_CHANNEL_6: 'T_T6',
+            usbtc08.USBTC08_CHANNEL_7: '420mA_PT1',
+            usbtc08.USBTC08_CHANNEL_8: '420mA_PT2'}
         # Set the preferred unit of temperature. Options are degC, degF, K and degR.
         UNIT = usbtc08.USBTC08_UNITS_CENTIGRADE
         # usbtc08.USBTC08_UNITS_FAHRENHEIT
