@@ -23,6 +23,12 @@ import datetime, time
 import atexit
 
 try:
+    import usb.core
+except ImportError:
+    print "Please install pyUSB"
+    raise
+
+try:
     import usbtc08
 except ImportError:
     print "Please install usbtc08"
@@ -81,32 +87,32 @@ class usbtc08_error(Exception):
   Set to ' ' to disable a channel. Less active channels allow faster logging rates.
   Set to X for voltage readings.
   Do not change the configuration of the cold-junction channel.
-	CHANNEL_CONFIG = {
-	    usbtc08.USBTC08_CHANNEL_CJC: 'C', # Needs to be 'C'.
-	    usbtc08.USBTC08_CHANNEL_1: 'K',
-	    usbtc08.USBTC08_CHANNEL_2: 'K',
-	    usbtc08.USBTC08_CHANNEL_3: 'K',
-	    usbtc08.USBTC08_CHANNEL_4: 'T',
-	    usbtc08.USBTC08_CHANNEL_5: ' ',
-	    usbtc08.USBTC08_CHANNEL_6: ' ',
-	    usbtc08.USBTC08_CHANNEL_7: 'X',
-	    usbtc08.USBTC08_CHANNEL_8: 'X'}
+    CHANNEL_CONFIG = {
+        usbtc08.USBTC08_CHANNEL_CJC: 'C', # Needs to be 'C'.
+        usbtc08.USBTC08_CHANNEL_1: 'K',
+        usbtc08.USBTC08_CHANNEL_2: 'K',
+        usbtc08.USBTC08_CHANNEL_3: 'K',
+        usbtc08.USBTC08_CHANNEL_4: 'T',
+        usbtc08.USBTC08_CHANNEL_5: ' ',
+        usbtc08.USBTC08_CHANNEL_6: ' ',
+        usbtc08.USBTC08_CHANNEL_7: 'X',
+        usbtc08.USBTC08_CHANNEL_8: 'X'}
    Set the name of each channel.
-	CHANNEL_NAME = {
-	    usbtc08.USBTC08_CHANNEL_CJC: 'Cold-junction',
-	    usbtc08.USBTC08_CHANNEL_1: 'Pump (K1)',
-	    usbtc08.USBTC08_CHANNEL_2: 'H2O-bypass (K2)',
-	    usbtc08.USBTC08_CHANNEL_3: 'PC-Nozzle (K3)',
-	    usbtc08.USBTC08_CHANNEL_4: 'Al-Nozzle (T4)',
-	    usbtc08.USBTC08_CHANNEL_5: 'NC (T5)',
-	    usbtc08.USBTC08_CHANNEL_6: 'NC (T6)',
-	    usbtc08.USBTC08_CHANNEL_7: 'Overpressure P (PT1)',
-	    usbtc08.USBTC08_CHANNEL_8: 'Tank P (PT2)'}
+    CHANNEL_NAME = {
+        usbtc08.USBTC08_CHANNEL_CJC: 'Cold-junction',
+        usbtc08.USBTC08_CHANNEL_1: 'Pump (K1)',
+        usbtc08.USBTC08_CHANNEL_2: 'H2O-bypass (K2)',
+        usbtc08.USBTC08_CHANNEL_3: 'PC-Nozzle (K3)',
+        usbtc08.USBTC08_CHANNEL_4: 'Al-Nozzle (T4)',
+        usbtc08.USBTC08_CHANNEL_5: 'NC (T5)',
+        usbtc08.USBTC08_CHANNEL_6: 'NC (T6)',
+        usbtc08.USBTC08_CHANNEL_7: 'Overpressure P (PT1)',
+        usbtc08.USBTC08_CHANNEL_8: 'Tank P (PT2)'}
   Set the preferred unit of temperature. Options are degC, degF, K and degR.
-	UNIT = usbtc08.USBTC08_UNITS_CENTIGRADE
-    	     # usbtc08.USBTC08_UNITS_FAHRENHEIT
-	     # usbtc08.USBTC08_UNITS_KELVIN
-	     # usbtc08.USBTC08_UNITS_RANKINE
+    UNIT = usbtc08.USBTC08_UNITS_CENTIGRADE
+           usbtc08.USBTC08_UNITS_FAHRENHEIT
+           usbtc08.USBTC08_UNITS_KELVIN
+           usbtc08.USBTC08_UNITS_RANKINE
 """
 class usbtc08_logger():
     def __init__(self,channel_config,channel_name,unit,mains=50,deskew=True,debugMode=True):
@@ -139,18 +145,18 @@ class usbtc08_logger():
         # Start communication with device
         self.open_unit_async()
         self.open_unit_progress()
-        self.get_self_info2()
+        self.get_unit_info2()
         self.config()
 
     def config(self):
         for i in self.channel_config:
             self.set_channel(i, self.channel_config.get(i))
-        self.set_mains(MAINS)
+        self.set_mains(self.mains)
 
     def test(self):
         print '\tEntered test function.'
-        #self.get_self_info()
-        #self.get_self_info2()
+        #self.get_unit_info()
+        #self.get_unit_info2()
         self.get_formatted_info()
         self.get_single()
 
@@ -220,8 +226,8 @@ class usbtc08_logger():
             if self.debugMode:
                 print '\tCompleted enumeration.'
 
-    def get_self_info(self):
-        result = usbtc08.usb_tc08_get_self_info(self.handle, self.info)
+    def get_unit_info(self):
+        result = usbtc08.usb_tc08_get_unit_info(self.handle, self.info)
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading self.unit info.')
         else:
@@ -235,7 +241,7 @@ class usbtc08_logger():
             print '\tSerial number: %s' % ''.join(chr(i) for i in self.info.szSerial if i in range(32, 127))
             print '\tCalibration date: %s' % ''.join(chr(i) for i in self.info.szCalDate if i in range(32, 127))
 
-    def get_self_info2(self):
+    def get_unit_info2(self):
         result = usbtc08.usb_tc08_get_unit_info2(self.handle, self.charbuffer, usbtc08.USBTC08_MAX_VERSION_CHARS, usbtc08.USBTC08LINE_DRIVER_VERSION)
         if result == 0:
             raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Reading driver version.')
@@ -454,9 +460,22 @@ class usbtc08Device(device):
         
         if override_params is not None: self.params = override_params
         
-        # ...
+	# Parse driver parameters
+        self.driver = self.params['driver'].lower().split('/')[0]
+
+	if self.driver == 'usbtc08':
+	    # USB: Check device is present on the bus.
+            if 'bcdDevice' in self.params.keys():
+                usbCoreDev = usb.core.find(idVendor=self.params['vid'],idProduct=self.params['pid'],\
+                                 bcdDevice=self.params['bcdDevice'])
+            else:
+                usbCoreDev = usb.core.find(idVendor=self.params['vid'],idProduct=self.params['pid'])
+            if usbCoreDev is None:
+                raise IOError("USB Device %s not found" % self.params['name'])
+            self.bus = usbCoreDev.bus
+            self.adds = usbCoreDev.address
         
-        else: self.activate(quiet=quiet)
+        self.activate(quiet=quiet)
         return
 
     # Establish connection to device
@@ -499,9 +518,10 @@ class usbtc08Device(device):
         if not quiet: self.pprint()
         return
 
-    # Deactivate connection to device (close serial port)
+    # Deactivate connection to device
     def deactivate(self):
-        # ...
+        self.dev.close_unit()
+	del self.dev
         return
 
     # Apply configuration changes to the driver (subdriver-specific)
@@ -551,16 +571,17 @@ class usbtc08Device(device):
 
         # Check
         try:
-            assert(self.deviceClass)
-            if self.deviceClass is None: raise IOError
+            assert(self.dev)
+            if self.dev is None: raise IOError
         except:
             print "Connection to the device is not open."
 
         # If first time or reset, get configuration (ie self.units)
-        if not 'raw_selfs' in self.params.keys() or reset:
-            driver = self.params['driver'].split('/')[1:]
-            self.subdriver = driver[0].lower()
-            # set self.params, self.config...
+        if not 'raw_units' in self.params.keys() or reset:
+            for key, val in self.dev.export_unit_info2().iteritems():
+                 self.params[key]=val
+            print self.params
+            raise IOError
 
         # Read values        
         self.get_values()
