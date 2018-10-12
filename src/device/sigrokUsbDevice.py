@@ -80,12 +80,14 @@ class srdevice(device):
 
     # Define default and possible sample rates on activation
     def default_samplerate(self):
-        # LHT00SU1
-        if self.params['model'] == 'USBee AX':
+        if self.params['model'] == 'USBee AX':        # LHT00SU1
             self.config['valid_samplerates']=(20000,25000,50000,100000,200000,250000,500000,\
                                             1000000,2000000,3000000,4000000,6000000,8000000,\
                                             12000000,16000000,24000000)
+        elif (self.params['model'] == 'UT32x') or (self.params['model'] == '72-7730'):
+            self.config['valid_samplerates']=(None,)
         else:
+            print '\tDefault samplerates not known for',self.params['model']
             self.config['valid_samplerates']=(1,)
         
         self.config['samplerate']=self.config['valid_samplerates'][0]
@@ -175,13 +177,15 @@ class srdevice(device):
             else:
                 self.params['sr_channels'][i].enable = self.config['enabled'][i]
     
-        try:
-            if not self.config['samplerate'] in self.config['valid_samplerates']:
-                print "Samplerate",self.config['samplerate'],"not accepted"
-                print "Valid sample rates =",self.config['valid_samplerates']
-            self.srdev.config_set(sr.ConfigKey.SAMPLERATE, self.config['samplerate'])
-        except ValueError as err:
-            pass
+        # Set samplerate if reqiured
+        if self.config['valid_samplerates'][0] is not None:
+            try:
+                if not self.config['samplerate'] in self.config['valid_samplerates']:
+                    print "Samplerate",self.config['samplerate'],"not accepted"
+                    print "Valid sample rates =",self.config['valid_samplerates']
+                self.srdev.config_set(sr.ConfigKey.SAMPLERATE, self.config['samplerate'])
+            except ValueError as err:
+                pass
     
         return
 
@@ -195,7 +199,7 @@ class srdevice(device):
 
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self):
-    
+        
         try:
             assert self.sraoutput, self.srsession
             if self.has_digital_input: assert self.srdoutput
@@ -222,7 +226,6 @@ class srdevice(device):
             self.params['raw_units'] = []       
             n = 0
             if len(''.join(self.data_buffer)) < 1: raise IOError
-            
             for aVal in self.data_buffer[0].split('\n'):
                 if len(aVal) >0:
                     s=aVal.strip(':').split(' ')
@@ -261,9 +264,8 @@ class srdevice(device):
 
         except IOError:
             print "Unable to communicate with %s"  % self.name
-            return None
+            self.lastValue=[np.nan]*self.params['n_channels']
 
-
-        
+                
         return self.lastValue
 

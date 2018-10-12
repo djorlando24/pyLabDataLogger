@@ -40,3 +40,11 @@ Laboratory datalogging for USB and Serial devices
     	- CENTER humidity meters
 	    - USB audio capture devices (via alsa-record)
         - Agilent 33220A waveform generator via USB or GPIB
+
+Notes:
+	- Support for Tenma thermometers and multimeters via sigrok's UNI-T drivers
+          using the UNI-T D04 USB to serial cables with the WCH.CN ships can require
+          a bus reset on Linux before they'll work. To get around this
+          you can run scripts/reset-WCH.CN.sh. These devices also have generic USB-to
+          -serial adapters than can easily be confused. It may be necessary to specify
+          the driver manually when the device is detected.

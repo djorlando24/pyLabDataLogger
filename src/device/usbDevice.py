@@ -23,8 +23,9 @@
 usb_device_table = [
 
     # Sigrok devices with fixed VID and PID
+    {'vid':0x1a86, 'pid':0xe008, 'bcdDevice':0x1300, 'driver':'sigrok/tenma-72-7730', 'name':'Tenma 72-7730A Multimeter'},
     {'vid':0x1a86, 'pid':0xe008, 'bcdDevice':0x1300, 'driver':'sigrok/uni-t-ut32x', 'name':'Tenma 72-7712 Thermometer'},
-    {'vid':0x1a86, 'pid':0xe008, 'bcdDevice':0x1400, 'driver':'sigrok/tenma-72-7730', 'name':'Tenma 72-7730A Multimeter'},
+    # Multimeter has bcdDevice 0x1400 on some machines and 0x1300 on others!?
     {'vid':0x1ab1, 'pid':0x04ce, 'driver':'sigrok/rigol-ds', 'name':'Rigol DS Oscilloscope'},
     {'vid':0x08a9, 'pid':0x0014, 'driver':'sigrok/fx2lafw', 'name':'LHT00SU1 logic analyzer'},
                  
