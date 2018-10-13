@@ -7,6 +7,11 @@ pyLabDataLogger depends on the following python packages:
   or use the python2 modified version in thirdParty directory
 - For I2C devices, you will need smbus module 
   and driver specific modules i.e. Adafruit_ADS1x15
+- for Picoscope devices, install pico-python
+  https://github.com/colinoflynn/pico-python
+- For Pico USB TC-08, the usbtc08 python module is required. See thirdParty/usbtc08
+- For Agilent 33220A, usbtmc driver is required:
+  https://github.com/python-ivi/python-usbtmc
 
 pyLabDataLogger also requires the following external software:
 - python2 and python3 development headers
@@ -19,7 +24,6 @@ pyLabDataLogger also requires the following external software:
   need for root (see https://sigrok.org/wiki/Fx2lafw)
 - For Pico devices, the open source Pico libraries need to be installed.
   see https://www.picotech.com
-- For Pico USB TC-08, the usbtc08 python module is required. See thirdParty/usbtc08
 - For Measurement Computing devices, mcclibusb
   see https://github.com/chrismerck/mcc-libusb.git
 
