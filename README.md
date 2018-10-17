@@ -39,7 +39,9 @@ Laboratory datalogging for USB and Serial devices
         - Pico RS-232 TC-08 thermocouple logger
         - PicoScope headless oscilloscopes
         - Measurement Computing devices via mcc-libusb
-	- Thorlabs PM16-120 power meter
+        - NI-VISA type devices, including
+		- Thorlabs PM16-120 power meter
+		- NI USB DAQ boards ie 6212-series
     	- CENTER humidity meters
 	    - USB audio capture devices (via alsa-record)
         - Agilent 33220A waveform generator via USB or GPIB
