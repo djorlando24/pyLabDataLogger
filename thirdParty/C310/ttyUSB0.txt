@@ -1,0 +1,19 @@
+# This covers what happened while interceptty was watching /dev/USB0 while Windows PC talked to the device.
+
+First I turned on the meter
+Then I opened the software
+The reading was abou 46% and 25C
+After a while I blew on it to make the humidity change for a moment -went up to 65%
+Then I turned off the meter
+Then I restarted the software
+Then I started the meter
+Then I started the timer
+Then I stopped the timer at 62s 
+Then I switched from C to F for a while
+Then switched to MAX mode
+Then to MIN mode
+Then MAX MIN
+Then back to normal
+Then HOLD
+Then reset the timer
+Then turned off meter
