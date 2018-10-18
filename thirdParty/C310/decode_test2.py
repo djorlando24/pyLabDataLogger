@@ -8,14 +8,11 @@ with open('ttyUSB0.log','rb') as f:
         b=f.read(1)
         if not b: break
         if b=='(': 
-            mode=f.read(3).strip()
+            mode=f.read(6).strip()
             data=''
 
             if mode[0]=='P':
-
-                f.read(2) # dump bytes from interceptty
                 b=f.read(1)
-
                 while b!='(':
                     data+=b
                     b=f.read(1)
@@ -25,7 +22,10 @@ with open('ttyUSB0.log','rb') as f:
                 data=data.strip()
                 decoded=bytearray.fromhex(data.replace('0x',''))
                 
-                print "MODE=",mode,"DATA=",data
-                print "\t\t", struct.unpack('f', decoded[:5])
+                
+                if len(decoded)>=6:
+                    print "MODE=",mode[0],"DATA=",data,"\t", struct.unpack('>2H', decoded[1:5]),\
+                                                         struct.unpack('>H', decoded[5:7])
+
 
 print "\nDone."
