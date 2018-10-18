@@ -17,3 +17,11 @@ Then back to normal
 Then HOLD
 Then reset the timer
 Then turned off meter
+
+Decoded results:
+Mode 'P' is a normal report of humidity, temperature in C, and time in free run mode.
+Mode 'H' is normal free run in Farenheit.
+Mode 'Q' is MAX
+Mode 'R' is MIN
+Mode 'S' is MAX MIN
+Mode 'T' is HOLD
