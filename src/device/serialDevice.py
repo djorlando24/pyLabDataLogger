@@ -260,8 +260,6 @@ class serialDevice(device):
                     Mode 'S' is MAX MIN
                     Mode 'T' is HOLD
                 '''
-            
-                #decoded=bytearray.fromhex(rawData)
                 if rawData[0][0] != '\x02': raise ValueError
                 mode = rawData[0][1].strip()
                 if mode=='P': self.params['raw_units'][1]='C'
@@ -273,7 +271,8 @@ class serialDevice(device):
                 humidity = np.nan; temperature = np.nan
                 time_min = 0; time_sec = 0
                 flags = None
-                if len(decoded)>=4:
+                print len(decoded), decoded.encode('hex')
+                if len(decoded)>4:
                     humidity, temperature = np.array(struct.unpack('>2H', decoded[1:5]))/10.
                 if len(decoded)>=7:
                     time_min, time_sec = np.array(struct.unpack('>bb', decoded[5:7]))
