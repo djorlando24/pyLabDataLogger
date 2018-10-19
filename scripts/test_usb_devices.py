@@ -30,6 +30,8 @@ if __name__ == '__main__':
 
     devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
 
+    if len(devices) == 0: exit()
+   
     try:
         while True:
             for d in devices:
