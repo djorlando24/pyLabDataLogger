@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 12/10/2018
+    @date 19/10/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -18,7 +18,7 @@
 
 from device import device
 import numpy as np
-import datetime, time
+import datetime, time, struct
 
 try:
     import serial
@@ -149,7 +149,8 @@ class serialDevice(device):
     # this point we might need to poll the device to check a setting.
     def configure_device(self):
         subdriver = self.subdriver
-        if subdriver=='omega-ir-usb':
+
+        if subdriver=='omega-ir-usb': # Statup config for IR-USB
             self.name = "Omega IR-USB"
             self.config['channel_names']=['tempC','tempF','ambientC','ambientF','emissivity']
             self.params['raw_units']=['C','F','C','F','']
@@ -161,7 +162,10 @@ class serialDevice(device):
             self.queryTerminator='\r\n'
             self.responseTerminator='\r'
             self.config['set_emissivity']=None
-        elif subdriver=='ohaus7k':
+
+
+
+        elif subdriver=='ohaus7k': # Startup config for OHAUS Valor 7000
             #Get the units currently set on the display
             try:
                 s=''
@@ -187,6 +191,38 @@ class serialDevice(device):
             self.serialQuery=['IP']
             self.queryTerminator='\r\n'
             self.responseTerminator='\r'
+
+
+
+        elif subdriver=='center310': # Startup config for CENTER 310
+            # Confirm model number. Send 'K' and response will be \r\n terminated.
+            try:
+                s=''
+                self.Serial.write('K\r\n')
+                time.sleep(0.01)
+                while len(s)<1024:
+                    s+=self.Serial.read(1)
+                    if s[-1] == '\r':
+                        print "\tReturned Model ID =",s.strip()
+                        self.params['ID']=s.strip()
+                        break
+            except IOError as e:
+                print "\t%s communication error" % self.name
+                print "\t",e
+            
+            self.name = "Center 310 Humidity/Temperature meter"
+            self.config['channel_names']=['humidity','temperature','timer']
+            self.params['raw_units']=['%','','s'] # temp units will be determined when query runs
+            self.config['eng_units']=['%','','s']
+            self.config['scale']=[1.,1.,1.]
+            self.config['offset']=[0.,0.,0.]
+            self.params['n_channels']=3
+            self.serialQuery=['A'] # This will return everything except the model number
+            self.queryTerminator='\r\n'
+            self.responseTerminator='\x03' # The "K" query terminates in \r\n but the "A" terminates in 0x03
+
+
+
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         return
@@ -195,6 +231,7 @@ class serialDevice(device):
     def convert_raw_string_to_values(self, rawData):
         subdriver = self.subdriver
         try:
+
             if subdriver=='omega-ir-usb':
                 if len(rawData)<2: return [None]*self.params['n_channels']
                 vals= [float(rawData[0].strip('>')), float(rawData[1].strip('>'))]
@@ -203,10 +240,49 @@ class serialDevice(device):
                 if len(rawData)<4: vals.append(np.nan)
                 else: vals.append(float(rawData[3].split('=')[1]))
                 return vals
+
             elif subdriver=='ohaus7k':
                 vals=rawData[0].split(' ')
                 self.params['raw_units']=[vals[-1].strip()]
                 return [float(vals[0])]
+
+            elif subdriver=='center310':
+                '''
+                    Software transmits 0x41 / A to request a normal report. or 0x4b / K for the model number.
+                    The meter responds with 0x02 ModeChar and then a sequence of strings containing
+                    hex data in ASCII format seperated by \n each.
+                    There are 4 to 9 bytes returned depending on the meter's operating mode.                    
+                    ModeChar represents the mode of the meter, as follows:
+                    Mode 'P' is a normal report of humidity, temperature in C, and time in free run mode.
+                    Mode 'H' is normal free run in Farenheit.
+                    Mode 'Q' is MAX
+                    Mode 'R' is MIN
+                    Mode 'S' is MAX MIN
+                    Mode 'T' is HOLD
+                '''
+            
+                #decoded=bytearray.fromhex(rawData)
+                if rawData[0][0] != '\x02': raise ValueError
+                mode = rawData[0][1].strip()
+                if mode=='P': self.params['raw_units'][1]='C'
+                elif mode=='H': self.params['raw_units'][1]='F'
+                else: 
+                    print mode
+                    exit()
+                decoded=rawData[0][2:]
+                humidity = np.nan; temperature = np.nan
+                time_min = 0; time_sec = 0
+                flags = None
+                if len(decoded)>=4:
+                    humidity, temperature = np.array(struct.unpack('>2H', decoded[1:5]))/10.
+                if len(decoded)>=7:
+                    time_min, time_sec = np.array(struct.unpack('>bb', decoded[5:7]))
+                if len(decoded)>=8:
+                    flags = decoded[7:] # Flag tells us if a mode change is going to happen
+                self.params['mode']=mode.strip()
+                self.params['flags']=flags.strip()
+                return [humidity, temperature, time_min*60 + time_sec]
+
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         except ValueError:
