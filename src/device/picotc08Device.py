@@ -492,8 +492,8 @@ class usbtc08Device(device):
         There are RS-232 & USB versions, so far only the USB version is tested.
     """
 
-    def __init__(self,params={}, quiet=False, debugMode=False, init_tc_config=['K','K','K','T','T','T','X','X'],
-                 init_ch_names =['Cold Junction','1','2','3','4','5','6','7','8'], init_unit='C',**kwargs ):
+    def __init__(self,params={}, quiet=False, debugMode=False, init_tc08_config=['K','K','K','T','T','T','X','X'],
+                 init_tc08_chnames =['Cold Junction','1','2','3','4','5','6','7','8'], init_unit='C',**kwargs ):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. self.units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device self.units)
         self.driverConnected = False # Goes to True when scan method succeeds
@@ -505,8 +505,8 @@ class usbtc08Device(device):
         else: self.config['deskew']=self.params['deskew']
         if not 'mains' in params.keys(): self.config['mains']=50 #Hz
         else: self.config['mains']=self.params['mains']
-        self.config['tc_config']=init_tc_config # initial types, from defaults or specified
-        self.config['channel_names']=init_ch_names # initial names, from defaults or specified
+        self.config['tc_config']=init_tc08_config # initial types, from defaults or specified
+        self.config['channel_names']=init_tc08_chnames # initial names, from defaults or specified
         self.config['internal_units']=init_unit # C,F,K,R
         if params is not {}: self.scan(quiet=quiet)        
         return
