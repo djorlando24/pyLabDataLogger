@@ -5,7 +5,7 @@ Laboratory datalogging for USB and Serial devices
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 13/10/2018
+    @date 20/10/2018
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -31,9 +31,10 @@ Laboratory datalogging for USB and Serial devices
         - pyAPT devices (ie Thorlabs translation stages)
     - Picolog USB-TC-08 thermocouple logger
     - Adafruit ADS1x15 i2c-bus 12-bit ADCs (on raspberry pi, beaglebone, etc)
-
+    - CENTER humidity meters
+    
     Soon to be supported hardware:
-        - SPI bus devices (i.e. barometer)
+        - SPI bus devices (i.e. MPL11A1 barometer)
         - I2C bus devices (ie time of flight sensors)
         - GPIO ports (i.e. raspberry pi gpio as TTL inputs)
         - Pico RS-232 TC-08 thermocouple logger
@@ -42,8 +43,7 @@ Laboratory datalogging for USB and Serial devices
         - NI-VISA type devices, including
 		- Thorlabs PM16-120 power meter
 		- NI USB DAQ boards ie 6212-series
-    	- CENTER humidity meters
-	    - USB audio capture devices (via alsa-record)
+	- USB audio capture devices (via alsa-record)
         - Agilent 33220A waveform generator via USB or GPIB
 
     Notes:

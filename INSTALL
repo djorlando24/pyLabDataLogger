@@ -15,6 +15,7 @@ pyLabDataLogger depends on the following python packages:
 
 pyLabDataLogger also requires the following external software:
 - python2 and python3 development headers
+- Any generic USB serial port drivers that your system does not have. By default Linux has most standard serial to USB device drivers in the kernel. MacOS and Windows may require FTDI, CP2102, etc. driver packages. These should come with the hardware and are also available online.
 - sigrok dependencies: 
     libftdi, libusb, doxygen, swig, glibmm, python-gobject, python-gi-dev
 - sigrok, see https://sigrok.org/wiki/Downloads
