@@ -66,7 +66,7 @@ class alsaDevice(device):
         if usbCoreDev is None:
             raise IOError("USB Device %s not found" % self.params['name'])
 
-        print usbCoreDev.bus, usbCoreDev.address
+        #print usbCoreDev.bus, usbCoreDev.address
 
         if self.alsacard is not None:
             if not self.alsacard in alsaaudio.card_indexes():
@@ -75,18 +75,70 @@ class alsaDevice(device):
             # Scan ALSA devices and find one that matches the USB device found.
             cards = [ (n, ' '.join(alsaaudio.card_name(n))) for n in alsaaudio.card_indexes() ]
             cards = [ c for c in cards if 'USB' in c[1] ]
-            print alsaaudio.pcms()
-            exit()
-            self.alsacard = c_selected        
-    
-        if self.dev: self.activate(quiet=quiet)
+            if len(cards)==0:
+                print "\tUnable to find a USB ALSA device."; return
+            elif len(cards)==1:
+                print "\tFound 1 USB ALSA card:",cards[0]
+                self.alsacard = cards[0][0]
+                self.name = cards[0][1]
+            elif len(cards)>1:
+                print "\tFound multiple ALSA cards:",cards
+                print "\tBy default the first one will be used. Specify kwargs 'card' to choose a different one."
+                j=0
+                self.alsacard = cards[j][0]
+                self.name = cards[j][1]
+        
+        
+        if self.alsacard: self.activate(quiet=quiet)
         return
 
     # Establish connection to device (ie open serial port)
     def activate(self,quiet=False):
+
+        # Attempt to open the device in non-blocking capture mode        
+        self.pcm = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NONBLOCK, cardindex=self.alsacard)
+
+       
+        # Set attributes. Default is Mono, 44100 Hz, 16 bit little endian samples
+        if not 'channels' in self.params: self.params['channels']=1
+        if not 'samplerate' in self.params: self.params['samplerate']=44100
+        if not 'bitdepth' in self.params: self.params['bitdepth']=16
+        self.pcm.setchannels(self.params['channels'])
+        self.pcm.setrate(self.params['samplerate'])
+        if self.params['bitdepth']==16: self.pcm.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+        elif self.params['bitdepth']==8: self.pcm.setformat(alsaaudio.PCM_FORMAT_S8_LE)
+        elif self.params['bitdepth']==24: self.pcm.setformat(alsaaudio.PCM_FORMAT_S24_LE)
+        else: raise ValueError( "\tError - unsupported bitdepth %i " % self.params['bitdepth'] )
         
-        # ...
-                                    
+        # The period size controls the internal number of frames per period.
+        # The significance of this parameter is documented in the ALSA api.
+        # For our purposes, it is suficcient to know that reads from the device
+        # will return this many frames. Each frame being 2 bytes long.
+        # This means that the reads below will return either 320 bytes of data
+        # or 0 bytes of data. The latter is possible because we are in nonblocking
+        # mode.
+        self.pcm.setperiodsize(160)
+        
+        # Required config and params for pyLabDataLogger...
+        self.config['channel_names']=['Ch%02i' % i for i in range(self.params['channels'])]
+        self.params['raw_units']=['']*self.params['channels']
+        self.config['eng_units']=['']*self.params['channels']
+        self.config['scale']=[1.]*self.params['channels']
+        self.config['offset']=[0.]*self.params['channels']
+        self.params['n_channels']=self.params['channels']
+        
+        """        
+        loops = 1000000
+        while loops > 0:
+            loops -= 1
+            # Read data from device
+            l, data = self.pcm.read()
+          
+            if l:
+                f.write(data)
+                time.sleep(.001)
+        """
+        
         # Make first query to get units, description, etc.
         self.query(reset=True)
 
@@ -95,7 +147,7 @@ class alsaDevice(device):
 
     # Deactivate connection to device (close serial port)
     def deactivate(self):
-        # ...
+        self.pcm.close()
         return
 
     # Apply configuration changes to the driver (subdriver-specific)
