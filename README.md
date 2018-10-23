@@ -32,6 +32,7 @@ Laboratory datalogging for USB and Serial devices
     - Picolog USB-TC-08 thermocouple logger
     - Adafruit ADS1x15 i2c-bus 12-bit ADCs (on raspberry pi, beaglebone, etc)
     - CENTER humidity meters
+    - USB audio capture devices via ALSA (on Linux)
     
     Soon to be supported hardware:
         - SPI bus devices (i.e. MPL11A1 barometer)
@@ -43,7 +44,6 @@ Laboratory datalogging for USB and Serial devices
         - NI-VISA type devices, including
 		- Thorlabs PM16-120 power meter
 		- NI USB DAQ boards ie 6212-series
-	- USB audio capture devices (via alsa-record)
         - Agilent 33220A waveform generator via USB or GPIB
 
     Notes:
