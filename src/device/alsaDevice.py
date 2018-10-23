@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 20/10/2018
+    @date 23/10/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -14,6 +14,9 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+
+    TODO: need to test with known function to ensure stereo encoding and bit depth unpacking is correct.
+
 """
 
 from device import device
@@ -78,11 +81,12 @@ class alsaDevice(device):
             if len(cards)==0:
                 print "\tUnable to find a USB ALSA device."; return
             elif len(cards)==1:
-                print "\tFound 1 USB ALSA card:",cards[0]
+                print "\tFound 1 USB ALSA card: [card %02i] %s" % cards[0]
                 self.alsacard = cards[0][0]
                 self.name = cards[0][1]
             elif len(cards)>1:
-                print "\tFound multiple ALSA cards:",cards
+                print "\tFound multiple ALSA cards:"
+                for c in cards: print "\t\t[card %02i] %s" % c
                 print "\tBy default the first one will be used. Specify kwargs 'card' to choose a different one."
                 j=0
                 self.alsacard = cards[j][0]
@@ -97,18 +101,32 @@ class alsaDevice(device):
 
         # Attempt to open the device in non-blocking capture mode        
         self.pcm = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NONBLOCK, cardindex=self.alsacard)
-
        
-        # Set attributes. Default is Mono, 44100 Hz, 16 bit little endian samples
+        # Set attributes. Default is Mono, 44100 Hz
         if not 'channels' in self.params: self.params['channels']=1
         if not 'samplerate' in self.params: self.params['samplerate']=44100
-        if not 'bitdepth' in self.params: self.params['bitdepth']=16
         self.pcm.setchannels(self.params['channels'])
         self.pcm.setrate(self.params['samplerate'])
-        if self.params['bitdepth']==16: self.pcm.setformat(alsaaudio.PCM_FORMAT_S16_LE)
-        elif self.params['bitdepth']==8: self.pcm.setformat(alsaaudio.PCM_FORMAT_S8_LE)
-        elif self.params['bitdepth']==24: self.pcm.setformat(alsaaudio.PCM_FORMAT_S24_LE)
+
+        # Set encoding of samples. default is 16 bit little endian samples.
+        # depends on what PCM device can support.
+        if not 'bitdepth' in self.params: self.params['bitdepth']=16
+        if self.params['bitdepth']==8: 
+            self.pcm.setformat(alsaaudio.PCM_FORMAT_S8_LE)
+            self.params['dtype']='<i1' # '<b'
+        elif self.params['bitdepth']==16: 
+            self.pcm.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+            self.params['dtype']='<i2'# '<h'
+        elif self.params['bitdepth']==24: 
+            self.pcm.setformat(alsaaudio.PCM_FORMAT_S24_LE)
+            self.params['dtype']='<i3'
         else: raise ValueError( "\tError - unsupported bitdepth %i " % self.params['bitdepth'] )
+        self.pcm.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+
+        if not 'sampleperiod' in self.params: self.params['sampleperiod']=0.1
+
+        print "\tSettings: %i channels @ %.0f Hz / %i bits, sampling for %f sec" %\
+              (self.params['channels'],self.params['samplerate'],self.params['bitdepth'],self.params['sampleperiod'])
         
         # The period size controls the internal number of frames per period.
         # The significance of this parameter is documented in the ALSA api.
@@ -117,29 +135,18 @@ class alsaDevice(device):
         # This means that the reads below will return either 320 bytes of data
         # or 0 bytes of data. The latter is possible because we are in nonblocking
         # mode.
-        self.pcm.setperiodsize(160)
+        self.params['pcm_periodsize']=160
+        self.pcm.setperiodsize(self.params['pcm_periodsize'])
         
         # Required config and params for pyLabDataLogger...
         self.config['channel_names']=['Ch%02i' % i for i in range(self.params['channels'])]
         self.params['raw_units']=['']*self.params['channels']
         self.config['eng_units']=['']*self.params['channels']
-        self.config['scale']=[1.]*self.params['channels']
-        self.config['offset']=[0.]*self.params['channels']
+        self.config['scale']=np.array([1.]*self.params['channels'])
+        self.config['offset']=np.array([0.]*self.params['channels'])
         self.params['n_channels']=self.params['channels']
         
-        """        
-        loops = 1000000
-        while loops > 0:
-            loops -= 1
-            # Read data from device
-            l, data = self.pcm.read()
-          
-            if l:
-                f.write(data)
-                time.sleep(.001)
-        """
-        
-        # Make first query to get units, description, etc.
+        # Make first query
         self.query(reset=True)
 
         if not quiet: self.pprint()
@@ -197,26 +204,50 @@ class alsaDevice(device):
 
         # Check
         try:
-            assert(self.deviceClass)
-            if self.deviceClass is None: raise IOError
+            assert(self.pcm)
+            if self.pcm is None: raise IOError
         except:
-            print "Connection to the device is not open."
+            print "Connection to the ALSA PCM device is not open."
 
-        # If first time or reset, get configuration (ie units)
-        if not 'raw_units' in self.params.keys() or reset:
-            driver = self.params['driver'].split('/')[1:]
-            self.subdriver = driver[0].lower()
-            # set self.params, self.config...
+        # Make empty output
+        self.lastValue = [None]*self.params['n_channels']
 
-        # Read values        
-        self.get_values()
+        # Read values
+        # Determine num frames to read:
+        loops = int(self.params['sampleperiod']*self.params['samplerate']*self.params['n_channels'])/self.params['pcm_periodsize']
+        while loops > 0:
+            l, data = self.pcm.read() # read from device
+            if l: 
+                loops -= 1 #; time.sleep(.001)
+                values = np.fromstring(data, dtype=self.params['dtype']) # unpack
+                for chi in range(self.params['n_channels']): # loop ch's
+                    # assume stereo encoding is interleaved; [ L R L R ] etc.
+                    if self.lastValue[chi] is None: self.lastValue[chi]=values[chi::self.params['n_channels']].copy()
+                    else: self.lastValue[chi] = np.hstack(( self.lastValue[chi], values[chi::self.params['n_channels']] ))
 
-        # Generate scaled values. Convert non-numerics to NaN
-        lastValueSanitized = []
-        for v in self.lastValue: 
-            if v is None: lastValueSanitized.append(np.nan)
-            else: lastValueSanitized.append(v)
-        self.lastScaled = np.array(lastValueSanitized) * self.config['scale'] + self.config['offset']
+        # Give some diagnostics on the first time after a reset.
+        if reset:
+            for chi in range(self.params['n_channels']):
+                if self.lastValue[chi] is None: print "\t%s - empty" % self.config['channel_names'][chi]
+                else: print "\t%s - %i samples captured (%g sec)" % \
+                    (self.config['channel_names'][chi],len(self.lastValue[chi]),\
+                     float(len(self.lastValue[chi])/float(self.params['samplerate'])))
+
+        
+        if np.all(self.config['scale']==1.) and np.all(self.config['offset']==0.):
+            # No scaling
+            self.lastScaled = self.lastValue
+        else:
+            # Generate scaled values. Convert non-numerics to NaN
+            lastValueSanitized = []
+            for v in self.lastValue: 
+                if v is None: lastValueSanitized.append(np.nan)
+                else: lastValueSanitized.append(v)
+
+            self.lastScaled = [None]*self.params['n_channels']
+            for chi in range(self.params['n_channels']):
+                self.lastScaled[chi] = np.array(lastValueSanitized[chi]) * self.config['scale'][chi] + self.config['offset'][chi]
+        
         self.updateTimestamp()
         return self.lastValue
 
