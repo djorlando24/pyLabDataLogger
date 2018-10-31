@@ -54,6 +54,12 @@ INSTALLATION INSTRUCTIONS
 - You need to be able to write and read hardware serial ports. On linux, run:
     sudo usermod -a -G dialout $USER
 
+- On Linux, you may need to be root to access USB hardware. You can overcome this by adding udev rules.
+  To do this, as root create a file in /etc/udev/rules.d/ and add a line like:
+  SUBSYSTEMS=="usb", ACTION=="add", ATTRS{idVendor}=="0957", ATTRS{idProduct}=="1755", GROUP="usbtmc", MODE="0660"
+  Then save the file, and as root run: udevadm control --reload-rules && udevadm trigger
+  You will also need to add yourself to the group usbtmc: sudo groupadd usbtmc && sudo usermod -a -G usbtmc userName
+
 ** Install procedure
 
 - Go to the pyLabDataLogger directory and run
