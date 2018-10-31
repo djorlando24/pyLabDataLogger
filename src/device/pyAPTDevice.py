@@ -100,6 +100,7 @@ class pyAPTDevice(device):
         
         # Open socket to the pyAPT device.
         self.dev = pyAPT.MTS50(serial_number=self.serial_number)
+        self.driverConnected=True
         
         # Make first query to get units, description, etc.
         self.query(reset=True)
@@ -112,6 +113,7 @@ class pyAPTDevice(device):
     # Deactivate connection to device (close socket)
     def deactivate(self):
         del self.dev
+        self.driverConnected=False
         return
 
     # Apply configuration changes

@@ -146,6 +146,8 @@ class alsaDevice(device):
         self.config['offset']=np.array([0.]*self.params['channels'])
         self.params['n_channels']=self.params['channels']
         
+        self.driverConnected=True
+        
         # Make first query
         self.query(reset=True)
 
@@ -155,6 +157,7 @@ class alsaDevice(device):
     # Deactivate connection to device (close serial port)
     def deactivate(self):
         self.pcm.close()
+        self.driverConnected=False
         return
 
     # Apply configuration changes to the driver (subdriver-specific)

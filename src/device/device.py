@@ -39,10 +39,12 @@ class device:
 
     # Establish connection to device (ie open serial port)
     def activate(self):
+        # self.driverConnected=True
         print "activate method not yet implemented for",self.name
 
     # Deactivate connection to device (ie close serial port)
     def deactivate(self):
+        self.driverConnected=False
         print "deactivate method not yet implemented for",self.name
 
     # Apply configuration changes to the driver

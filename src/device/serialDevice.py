@@ -103,6 +103,9 @@ class serialDevice(device):
                                     bytesize=self.params['bytesize'], parity=self.params['parity'],\
                                     stopbits=self.params['stopbits'], xonxoff=self.params['xonxoff'],\
                                     rtscts=self.params['rtscts'], timeout=self.params['timeout'])
+                                    
+        self.driverConnected=True
+                                    
         # Make first query to get units, description, etc.
         self.query(reset=True)
         if not quiet: self.pprint()
@@ -111,6 +114,7 @@ class serialDevice(device):
     # Deactivate connection to device (close serial port)
     def deactivate(self):
         self.Serial.close()
+        self.driverConnected=False
         return
 
     # Apply configuration changes to the driver (subdriver-specific)

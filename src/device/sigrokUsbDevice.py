@@ -195,6 +195,7 @@ class srdevice(device):
         import sigrok.core.classes as sr
         self.close()
         del self.srdev, self.srcontext
+        self.driverConnected=False
         return
 
     # Update device with new value, update lastValue and lastValueTimestamp

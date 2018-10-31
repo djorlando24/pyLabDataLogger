@@ -1,8 +1,10 @@
 #/usr/bin/env python2.7
 # -*- coding: UTF-8 -*-
 """
-    USB device support for pyLabDataLogger.
+    USB device support functions for pyLabDataLogger.
     - Find USB supported devices on the bus.
+    - Load appropriate drivers for found devices.
+    - Handle VID/PID conflicts for devices that use generic serial ports i.e. FTDI chips.
     
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018 LTRAC

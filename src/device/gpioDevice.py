@@ -84,6 +84,7 @@ class gpioDevice(device):
     # Deactivate connection to device (close serial port)
     def deactivate(self):
         GPIO.cleanup()
+        self.driverConnected=False
         return
 
 if __name__ == '__main__':

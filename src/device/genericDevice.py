@@ -56,7 +56,9 @@ class genericDevice(device):
     def activate(self,quiet=False):
         
         # ...
-                                    
+        
+        self.driverConnected=True
+        
         # Make first query to get units, description, etc.
         self.query(reset=True)
 
@@ -66,6 +68,7 @@ class genericDevice(device):
     # Deactivate connection to device (close serial port)
     def deactivate(self):
         # ...
+        self.driverConnected=False
         return
 
     # Apply configuration changes to the driver (subdriver-specific)

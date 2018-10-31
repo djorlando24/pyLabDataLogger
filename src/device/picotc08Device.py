@@ -574,7 +574,9 @@ class usbtc08Device(device):
        
         # Open device
         self.dev = usbtc08_logger(channel_config,channel_name,unit,self.config['mains'],self.config['deskew'],self.debugMode)
-                                    
+        
+        self.driverConnected=True
+        
         # Make first query to get self.units, description, etc.
         self.query(reset=True)
 
@@ -584,7 +586,8 @@ class usbtc08Device(device):
     # Deactivate connection to device
     def deactivate(self):
         self.dev.close_unit()
-	del self.dev
+        self.driverConnected=False
+	    del self.dev
         return
 
     # Apply configuration changes to the driver

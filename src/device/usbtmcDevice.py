@@ -51,7 +51,21 @@ class usbtmcDevice(device):
         
         if override_params is not None: self.params = override_params
         
-        # ...
+        # Check device is present on the bus.
+        if 'bcdDevice' in self.params.keys():
+            usbCoreDev = usb.core.find(idVendor=self.params['vid'],idProduct=self.params['pid'],\
+                             bcdDevice=self.params['bcdDevice'])
+        else:
+            usbCoreDev = usb.core.find(idVendor=self.params['vid'],idProduct=self.params['pid'])
+        
+        if usbCoreDev is None:
+            raise IOError("USB Device %s not found" % self.params['name'])
+
+        # Parse driver parameters
+        self.driver = self.params['driver'].lower().split('/')[0]
+        self.bus = usbCoreDev.bus
+        self.adds = usbCoreDev.address
+        self.name = self.params['name']
         
         else: self.activate(quiet=quiet)
         return
@@ -59,8 +73,9 @@ class usbtmcDevice(device):
     # Establish connection to device (ie open serial port)
     def activate(self,quiet=False):
         
-        # ...
-                                    
+        self.instr =  usbtmc.Instrument(self.params['vid'],idProduct=self.params['pid'])
+        self.driverConnected = True
+        
         # Make first query to get units, description, etc.
         self.query(reset=True)
 
@@ -69,7 +84,7 @@ class usbtmcDevice(device):
 
     # Deactivate connection to device (close serial port)
     def deactivate(self):
-        # ...
+        if self.instr: del self.instr
         return
 
     # Apply configuration changes to the driver (subdriver-specific)
