@@ -8,7 +8,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 20/10/2018
+    @date 31/10/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -26,8 +26,12 @@ usb_device_table = [
     {'vid':0x1a86, 'pid':0xe008, 'bcdDevice':0x1300, 'driver':'sigrok/tenma-72-7730', 'name':'Tenma 72-7730A Multimeter'},
     {'vid':0x1a86, 'pid':0xe008, 'bcdDevice':0x1300, 'driver':'sigrok/uni-t-ut32x', 'name':'Tenma 72-7712 Thermometer'},
     # Multimeter has bcdDevice 0x1400 on some machines and 0x1300 on others!?
-    {'vid':0x1ab1, 'pid':0x04ce, 'driver':'sigrok/rigol-ds', 'name':'Rigol DS Oscilloscope'},
+    #{'vid':0x1ab1, 'pid':0x04ce, 'driver':'sigrok/rigol-ds', 'name':'Rigol DS Oscilloscope'},
     {'vid':0x08a9, 'pid':0x0014, 'driver':'sigrok/fx2lafw', 'name':'LHT00SU1 logic analyzer'},
+                 
+    # USBTMC devices with fixed VID and PID
+    {'vid':0x1ab1, 'pid':0x04ce, 'driver':'usbtmc/rigol-ds', 'name':'Rigol DS Oscilloscope'},
+    {'vid':0x0957, 'pid':0x0407, 'driver':'usbtmc/33220a', 'name':'Agilent 33220A Waveform Generator'},
                  
     # Specialty drivers with fixed VID and PID
     {'vid':0x1b3f, 'pid':0x2008, 'driver':'alsa', 'name':'USB sound card'},
@@ -35,7 +39,6 @@ usb_device_table = [
     {'vid':0x09db, 'pid':0x0112, 'driver':'mcc-libusb/usb-1608g', 'name':'MCC USB-1608GX-2AO ADC'},
     {'vid':0x1313, 'pid':0x807b, 'driver':'thorlabs/pm120', 'name':'Thorlabs PM120'},
     {'vid':0x0ce9, 'pid':0x1000, 'driver':'picotc08/usbtc08', 'name':'Picolog USB TC-08 thermocouple datalogger'},
-    {'vid':0x0957, 'pid':0x0407, 'driver':'agilent/33220a', 'name':'Agilent 33220A Waveform Generator'},
     {'vid':0x0ce9, 'pid':0x1016, 'driver':'picoscope/picoscope2k', 'name':'Picoscope 2000 Series'},
         
     # Serial-over-USB devices with fixed VID and PID
@@ -159,6 +162,9 @@ def load_usb_devices(devs=None,**kwargs):
             elif driverClass == 'alsa':
                 from pyLabDataLogger.device import alsaDevice
                 device_list.append(alsaDevice.alsaDevice(params=d,**kwargs))
+            elif driverClass == 'usbtmc':
+                from pyLabDataLogger.device import usbtmcDevice
+                device_list.append(usbtmcDevice.usbtmcDevice(params=d,**kwargs))
             else:
                 print "\tI don't know what to do with this device"
         except KeyError as e: # driver couldn't handle the subdriver settings
