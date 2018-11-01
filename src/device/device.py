@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 12/10/2018
+    @date 1/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -77,8 +77,10 @@ class device:
         show_scaled = ('eng_units' in self.config) and ('scale' in self.config) and\
                       ('offset' in self.config) and ('eng_units' in self.config) and\
                       not (np.all(np.array(self.config['scale'])==1.) and  np.all(np.array(self.config['offset'])==0.))
+                      
+                      
         # Scalars.
-        if isinstance( self.lastValue[0], float ) or isinstance( self.lastValue[0], int ):
+        if ~isinstance( self.lastValue[0], list) and ~isinstance(self.lastValue[0], np.ndarray):
             if 'raw_units' in self.params:
                 sys.stdout.write(lead+'Raw values: ')
                 for n in range(self.params['n_channels']):
@@ -93,7 +95,7 @@ class device:
                 sys.stdout.write('\n')
     
         # Vectors
-        elif isinstance( self.lastValue[0], list) or isinstance(self.lastValue[0], np.ndarray):
+        else:
             for n in range(self.params['n_channels']):
                 if ~show_scaled: print lead+u'%i: %s = %s %s' % (n,self.config['channel_names'][n],\
                                     self.lastValue[n],self.params['raw_units'][n])

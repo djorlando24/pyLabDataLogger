@@ -26,7 +26,7 @@ if __name__ == '__main__':
     usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=False)
     
     # kwargs to customise setup of devices
-    special_args={'debugMode':False, 'init_tc08_config':['K','K','K','T','T','T','X','X'], 'quiet':False, 'init_tc08_chnames':['Cold Junction','K1','K2','K3','T4','T5','T6','420mA_P1','420mA_P2']}
+    special_args={'debugMode':True, 'init_tc08_config':['K','K','K','T','T','T','X','X'], 'quiet':False, 'init_tc08_chnames':['Cold Junction','K1','K2','K3','T4','T5','T6','420mA_P1','420mA_P2']}
 
     devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
 
@@ -41,4 +41,5 @@ if __name__ == '__main__':
             time.sleep(1)
     except KeyboardInterrupt:
         print "Stopped."
-
+    except:
+        raise

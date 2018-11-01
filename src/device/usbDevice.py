@@ -173,6 +173,7 @@ def load_usb_devices(devs=None,**kwargs):
             print '\t',e
             continue
         except IOError as e: # the device couldn't be accessed
+            print '\t',e
             continue
 
     return device_list

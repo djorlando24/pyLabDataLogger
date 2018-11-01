@@ -21,12 +21,18 @@
 
 from device import device
 import numpy as np
-import datetime, time, struct
+import datetime, time, struct, sys
 
 try:
     import usbtmc
 except ImportError:
     print "Please install usbtmc"
+    raise
+    
+try:
+    import usb.core
+except ImportError:
+    print "Please install pyUSB"
     raise
 
 ########################################################################################################################
@@ -35,13 +41,21 @@ class usbtmcDevice(device):
         USBTMC device support.
     """
 
-    def __init__(self,params={},quiet=False):
+    def __init__(self,params={},quiet=False,**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
         self.name = "uninitialized"
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
+        
+        self.driver = self.params['driver'].lower().split('/')[0]
+        self.name = self.params['name']
+        self.subdriver = self.params['driver'].split('/')[1].lower()
+        
+        if 'debugMode' in kwargs: self.debugMode = kwargs['debugMode']
+        else: self.debugMode=False
+        
         if params is not {}: self.scan(quiet=quiet)
         
         return
@@ -60,31 +74,31 @@ class usbtmcDevice(device):
         
         if usbCoreDev is None:
             raise IOError("USB Device %s not found" % self.params['name'])
-
-        # Parse driver parameters
-        self.driver = self.params['driver'].lower().split('/')[0]
-        self.bus = usbCoreDev.bus
-        self.adds = usbCoreDev.address
-        self.name = self.params['name']
+        else:
+            self.bus = usbCoreDev.bus
+            self.adds = usbCoreDev.address
+            self.activate(quiet=quiet)
         
-        else: self.activate(quiet=quiet)
         return
 
     # Establish connection to device (ie open serial port)
     def activate(self,quiet=False):
-        
+    
         # Open channel to device
-        self.instr =  usbtmc.Instrument(self.params['vid'],idProduct=self.params['pid'])
+        self.instr =  usbtmc.Instrument(self.params['vid'],self.params['pid'])
+        self.instr.timeout = 2
         self.driverConnected = True
         
         # Try and get ID of device as a check for successful connection
         try:
-            self.params['IDN'] = self.instr.ask("*IDN?")
+            self.instr.clear()
+            self.params['IDN'] = self.ask("*IDN?")
             print "\tdetected %s" % self.params['IDN']
-            self.instr.ask("SYST:BEEP") # beep the interface
+            self.write("SYST:BEEP") # beep the interface
         except:
             self.params['IDN']='?'
-        
+            raise
+                    
         # Make first query to get units, description, etc.
         self.query(reset=True)
 
@@ -93,7 +107,9 @@ class usbtmcDevice(device):
 
     # Deactivate connection to device (close serial port)
     def deactivate(self):
-        if self.instr: del self.instr
+        if self.instr:
+            self.instr.close()
+            del self.instr
         return
 
     # Apply configuration changes to the driver (subdriver-specific)
@@ -136,10 +152,38 @@ class usbtmcDevice(device):
         if self.driverConnected: self.activate()
         else: print "Error resetting %s: device is not detected" % self.name
 
+    # Ask a command and get a response. Print debugging info if required
+    def ask(self,cmd):
+        if cmd=='' or cmd is None: return None
+        if self.debugMode: 
+            sys.stdout.write('\t%s\t' % cmd)
+            sys.stdout.flush()
+        assert(self.instr)
+        response=""
+        time.sleep(0.001)
+        response = self.instr.ask(cmd+'\n') #.strip()
+        if self.debugMode:
+            sys.stdout.write('%s\n' % response)
+            sys.stdout.flush()
+        return response
+        
+    # Write a command with no response. Print debugging info if required
+    def write(self,cmd):
+        if self.debugMode: 
+            sys.stdout.write('\t%s ' % cmd)
+            sys.stdout.flush()
+        assert(self.instr)
+        self.instr.write(cmd)
+        if self.debugMode:
+            sys.stdout.write('.\n')
+            sys.stdout.flush()
+        return
+        
+
     # For oscilloscopes, sweep the channels for a certain parameter stored under
     # SCPI command :CHAN<n.:CMD
     def scope_channel_params(self,cmd):
-        return np.array([self.instr.ask(":CHAN%1i:%s?" % (n,cmd)) for n in range(self.params['n_channels'])])
+        return np.array([self.ask(":CHAN%1i:%s?" % (n,cmd)) for n in range(self.params['n_channels'])])
 
     # Configure device based on what sub-driver is being used.
     # This is done when self.query(reset=True) is called, as at
@@ -148,34 +192,39 @@ class usbtmcDevice(device):
         if self.subdriver=='33220a':
             
             # Check the mode
-            self.params['mode'] = self.instr.ask('FUNC?')
-        
+            self.params['mode'] = self.ask('FUNC?')
+            
             self.name = "Agilent 33220A function generator - %s" % self.params['IDN']
-            self.config['channel_names']=['frequency','amplitude','phase','offset','duty cycle']
-            self.params['raw_units']=['Hz','V','deg','V','']
-            self.config['eng_units']=['Hz','V','deg','V','']
+            self.config['channel_names']=['frequency','amplitude','offset','duty cycle','pulse width']
+            self.params['raw_units']=['Hz','V','V','','s']
+            self.config['eng_units']=['Hz','V','V','','s']
             self.config['scale']=[1.,1.,1.,1.,1.]
             self.config['offset']=[0.,0.,0.,0.,0.]
             self.params['n_channels']=len(self.config['channel_names'])
-            self.tmcQuery=['FREQ?','VOLT?','DEV?','VOLT:OFFS?','FUNC:%s:DCYC?' % self.params['mode']]
-        
+            if 'PULS' in self.params['mode']:
+                self.tmcQuery=['FREQ?','VOLT?','VOLT:OFFS?','FUNC:PULS:DCYC?', 'FUNC:PULS:WIDT?']
+            elif 'SQU' in self.params['mode']:
+                self.tmcQuery=['FREQ?','VOLT?','VOLT:OFFS?','FUNC:SQU:DCYC?', None]
+            else:
+                self.tmcQuery=['FREQ?','VOLT?','VOLT:OFFS?',None, None]
+                
             # Now try to set the units more specifically
-            self.params['raw_units'][1] = self.instr.ask("VOLT:UNIT?")
+            self.params['raw_units'][1] = self.ask("VOLT:UNIT?")
             self.config['eng_units'][1] = self.params['raw_units'][1]
-            self.params['raw_units'][2] = self.instr.ask("UNIT:ANGL?")
-            self.config['eng_units'][2] = self.params['raw_units'][2]
+            #self.params['raw_units'][4] = self.ask("UNIT:ANGL?")
+            #self.config['eng_units'][4] = self.params['raw_units'][4]
             
             # Get some other parameters that won't change often.
-            self.params['Trigger source'] = self.instr.ask("TRIG:SOUR?")
+            self.params['Trigger source'] = self.ask("TRIG:SOUR?")
             
         elif self.subdriver=='rigol-ds':
         
             # First let's put the device in SINGLE SHOT mode
-            self.instr.write(":SING")
+            self.write(":SING")
             # Now tell the scope to write waveforms in a known format
-            self.instr.write(":WAV:MODE RAW") # return what's in memory
-            self.instr.write(":WAV:FORM BYTE") # one byte per 8bit sample
-            # self.instr.ask(":RUN")
+            self.write(":WAV:MODE RAW") # return what's in memory
+            self.write(":WAV:FORM BYTE") # one byte per 8bit sample
+            # self.ask(":RUN")
         
             self.name = "Rigol DS Oscilloscope - %s" % self.params['IDN']
             self.config['channel_names']=['Ch1','Ch2','Ch3','Ch4']
@@ -187,8 +236,8 @@ class usbtmcDevice(device):
             self.tmcQuery=[':WAV:SOUR 1,:WAV:DATA?',':WAV:SOUR 1,:WAV:DATA?',':WAV:SOUR 1,:WAV:DATA?',':WAV:SOUR 1,:WAV:DATA?']
         
             # Get some parameters that don't change often
-            self.params['Samples_per_sec'] = self.instr.ask(":ACQ:SRAT?")
-            self.params['Seconds_per_div'] = self.instr.ask(":TIM:SCAL?")
+            self.params['Samples_per_sec'] = self.ask(":ACQ:SRAT?")
+            self.params['Seconds_per_div'] = self.ask(":TIM:SCAL?")
             self.params['Bandwidth Limit'] = self.scope_channel_params("BWL")
             self.params['Coupling'] = self.scope_channel_params("COUP")
             self.params['Voltage Scale'] = self.scope_channel_params("SCAL")
@@ -199,9 +248,9 @@ class usbtmcDevice(device):
         
             # Get some waveform parameters
             for n in range(self.params['n_channels']):
-                self.instr.write(":WAV:SOUR %1i" % n)
+                self.write(":WAV:SOUR %1i" % n)
                 time.sleep(0.01)
-                self.params['Ch%i Waveform Parameters' % n] = self.instr.ask(":WAV:PRE?").split(',')
+                self.params['Ch%i Waveform Parameters' % n] = self.ask(":WAV:PRE?").split(',')
                 time.sleep(0.01)
         
         
@@ -212,7 +261,7 @@ class usbtmcDevice(device):
     # Convert incoming data stream to numpy array
     def convert_to_array(self,data):
         if self.subdriver=='33220a':
-            return np.array(data)
+            return np.array(data,dtype=np.float32)
         elif self.subdriver=='rigol-ds':
             return np.array( struct.unpack(data,'<b'), dtype=np.uint8 )
         else: raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -223,16 +272,16 @@ class usbtmcDevice(device):
     def get_values(self):
         try:
             rawData=[]
-            for n in range(len(self.tcmQuery)): # loop channels
+            for n in range(len(self.tmcQuery)): # loop channels
                 # Commands to setup acquisiton are delimited by commas.
-                if not ',' in self.tcmQuery[n]: q = self.tcmQuery[n] # no setup ocmmands
+                if not ',' in self.tmcQuery[n]: q = self.tmcQuery[n] # no setup ocmmands
                 else:
-                    qs = self.tcmQuery[n].split(',') # split commands up
+                    qs = self.tmcQuery[n].split(',') # split commands up
                     for q in qs[:-1]:
-                        self.instr.write(q) # send setup commands with 10ms delay
+                        self.write(q) # send setup commands with 10ms delay
                         time.sleep(0.01)
                     q = qs[-1]
-                rawData.append(self.instr.ask(q)) # request data
+                rawData.append(self.ask(q)) # request data
             self.lastValue = self.convert_to_array(rawData)
 
         except IOError as e:
@@ -251,21 +300,26 @@ class usbtmcDevice(device):
         except:
             print "Connection to the device is not open."
 
+        # For 33220a, if the mode has changed we will need to reset the configuration.
+        if self.subdriver=='33220a' and 'mode' in self.params:
+            if self.ask('FUNC?') != self.params['mode']:
+                reset=True
+                if self.debugMode: print "\tFunction mode switch detected"
+            
+
         # If first time or reset, get configuration (ie units)
         if not 'raw_units' in self.params.keys() or reset:
-            driver = self.params['driver'].split('/')[1:]
-            self.subdriver = driver[0].lower()
             self.configure_device()
 
         # Read values        
         self.get_values()
-
+        
         # Generate scaled values. Convert non-numerics to NaN
         lastValueSanitized = []
         for v in self.lastValue: 
             if v is None: lastValueSanitized.append(np.nan)
             else: lastValueSanitized.append(v)
-        self.lastScaled = np.array(lastValueSanitized) * self.config['scale'] + self.config['offset']
+        self.lastScaled = np.array(lastValueSanitized) * np.array(self.config['scale']) + np.array(self.config['offset'])
         self.updateTimestamp()
         return self.lastValue
 
