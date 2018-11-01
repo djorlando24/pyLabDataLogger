@@ -34,6 +34,10 @@ usb_device_table = [
     # USBTMC devices with fixed VID and PID
     {'vid':0x1ab1, 'pid':0x04ce, 'driver':'usbtmc/rigol-ds', 'name':'Rigol DS Oscilloscope'},
     {'vid':0x0957, 'pid':0x0407, 'driver':'usbtmc/33220a', 'name':'Agilent 33220A Waveform Generator'},
+    
+    # VISA devices with fixed VID and PID
+    {'vid':0x3923, 'pid':0x7269, 'driver':'visa/ni6212', 'name':'National Instruments USB-6212 BNC'},
+    {'vid':0x1313, 'pid':0x807b, 'driver':'visa/pm16', 'name':'Thorlabs PM16 USB power meter'},
                  
     # Specialty drivers with fixed VID and PID
     {'vid':0x1b3f, 'pid':0x2008, 'driver':'alsa', 'name':'USB sound card'},

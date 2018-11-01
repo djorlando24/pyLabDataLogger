@@ -1,0 +1,12 @@
+####################################################################################
+# USBTMC instruments
+
+# Rigol DS scopes
+SUBSYSTEMS=="usb", ACTION=="add", ATTRS{idVendor}=="1ab1", ATTRS{idProduct}=="04ce", GROUP="usbtmc", MODE="0660"
+
+# Agilent 33220A (0957:0407)
+SUBSYSTEMS=="usb", ACTION=="add", ATTRS{idVendor}=="0957", ATTRS{idProduct}=="0407", GROUP="usbtmc", MODE="0660"
+
+# Devices
+KERNEL=="usbtmc/*",       MODE="0660", GROUP="usbtmc"
+KERNEL=="usbtmc[0-9]*",   MODE="0660", GROUP="usbtmc"
