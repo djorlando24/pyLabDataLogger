@@ -61,6 +61,9 @@ usb_device_table = [
     {'vid':0x0557, 'pid':0x2008, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},
     {'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/gpib', 'name':'GPIB-USB adapter'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-iseries', 'name':'Omega iSeries via RS-485'},
+
+    # Single-board computers
+    {'vid':0x1d6b, 'pid':0x0104, 'driver':'beaglebone', 'name':'Beaglebone Black'},
     
     # Known but unsupported or generic
     #{'vid':0x067b, 'pid':0x2303, 'driver':'arduino', 'name':'Generic USB to serial cable'},
@@ -73,7 +76,6 @@ usb_device_table = [
     #{'vid':0x2b04, 'pid':0xc006, 'driver':'arduino', 'name':'Particle Photon'},
     #{'vid':0x0525, 'pid':0xa4aa, 'driver':'shell', 'name':'C.H.I.P. (CDC composite gadget)'},
     #{'vid':0x10c4, 'pid':0xea60, 'driver':'shell', 'serial_number':'0001', 'name':'Onion Omega2+'},
-    #{'vid':0x1d6b, 'pid':0x0104, 'driver':'shell', 'name':'Beaglebone Black'},
     #{'vid':0x0403, 'pid':0x6001, 'driver':'shell', 'bcdDevice':0x600, 'name':'Intel Edison A502OTFN'},
 ]
 
