@@ -1,0 +1,11 @@
+
+data.raw format:
+
+samp1 [ch0 msb] [ch0 lsb] [ch1 msb] .... [ch4 lsb]
+samp2 [ch0 msb] [ch0 lsb] [ch1 msb] .... [ch4 lsb]
+...
+
+
+timestamps.csv
+samp_num, epoch time in sec
+
