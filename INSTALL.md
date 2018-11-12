@@ -1,55 +1,67 @@
-INSTALLATION INSTRUCTIONS
+# INSTALLATION INSTRUCTIONS
 
-** pyLabDataLogger depends on the following non-core python packages:
+## Required python modules
 
-- numpy
+pyLabDataLogger depends on the following non-core python packages.
+Those which require legacy versions or are hard to find have been stored in the thirdParty directory.
 
-- pyusb  (for USB device support)
+### Python modules bundled in thirdParty
 
-- For Thorlabs translation stages, pyAPT for Linux:
-  Use the python2 modified version in thirdParty directory, or:
-  https://gitlab.com/weinshec/pyAPT.git
+- For *Pico USB TC-08*, the usbtc08 python module is required. See thirdParty/usbtc08
 
-- For I2C devices, you will need smbus module 
+- *Measurement Computing* devices require libmccusb, see thirdParty/mcc-libusb
+  (you will need to run "make libmccusb.so" in there to build the shared library)
+
+- For *Thorlabs translation stages*, pyAPT for Linux:
+  Use the python2 modified version in thirdParty directory, or download from https://gitlab.com/weinshec/pyAPT.git
+
+- *Center 310* hygrometer support is built-in, there are some test utilities in thirdParty/C310
+
+- *sigrok*
+  You will need to build from source code to get support for the latest devices.
+  see https://sigrok.org/wiki/Downloads
+
+    - I found the versions shipped with Ubuntu didn't support all my hardware. Sigrok depends on the following linux packages:
+        libftdi, libusb, doxygen, swig, glibmm, python-gobject, python-gi-dev
+
+    - sigrok-firmware-fx2lafw for USBee ADCs, with udev rules installed to avoid
+      need for root (see https://sigrok.org/wiki/Fx2lafw)
+
+### External python modules you must install yourself
+
+- numpy (usually comes bundled with Python)
+
+- pyusb (for USB device support. Access via pip or pypi/easy_install)
+
+- For I2C devices, you will need smbus module:
   and driver specific modules i.e. Adafruit_ADS1x15
 
 - for Picoscope devices, install pico-python
   https://github.com/colinoflynn/pico-python
 
-- For Pico USB TC-08, the usbtc08 python module is required. See thirdParty/usbtc08
-
-- For Agilent 33220A, usbtmc driver is required:
-  https://github.com/python-ivi/python-usbtmc
+- For Agilent 33220A, usbtmc driver is required.
+  See thirdParty/usbtmc or download yourself from https://github.com/python-ivi/python-usbtmc
 
 - For ALSA audio devices, pyalsaaudio
   https://github.com/larsimmisch/pyalsaaudio.git
 
+## Non-Python dependencies
 
-
-** pyLabDataLogger also requires the following external software:
+pyLabDataLogger also requires the following external software:
 
 - python2 and python3 development headers
 
 - Any generic USB serial port drivers that your system does not have. By default Linux has most standard serial to USB device drivers in the kernel. MacOS and Windows may require FTDI, CP2102, etc. driver packages. These should come with the hardware and are also available online.
 
 - for audio devices, ALSA and asound2lib (with asound2lib-dev sources)
-
     
-- sigrok, see https://sigrok.org/wiki/Downloads
-  You will need to build from source code to get support for the latest devices.
-  I found the versions shipped with Ubuntu didn't support all my hardware.
-  Sigrok depends on the following linux packages:
-    libftdi, libusb, doxygen, swig, glibmm, python-gobject, python-gi-dev
-- sigrok-firmware-fx2lafw for USBee ADCs, with udev rules installed to avoid
-  need for root (see https://sigrok.org/wiki/Fx2lafw)
-
 - For Pico devices, the open source Pico libraries need to be installed.
   see https://www.picotech.com
 
 - For Measurement Computing devices, mcclibusb
   see https://github.com/chrismerck/mcc-libusb.git
 
-** System configuration notes
+## System configuration notes
 
 - You need to be able to write and read hardware serial ports. On linux, run:
     sudo usermod -a -G dialout $USER
@@ -60,7 +72,7 @@ INSTALLATION INSTRUCTIONS
   Then save the file, and as root run: udevadm control --reload-rules && udevadm trigger
   You will also need to add yourself to the group usbtmc: sudo groupadd usbtmc && sudo usermod -a -G usbtmc userName
 
-** Install procedure
+## Install procedure
 
 - Go to the pyLabDataLogger directory and run
   python setup.py install --user
