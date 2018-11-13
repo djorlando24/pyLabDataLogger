@@ -19,6 +19,7 @@
 
 from device import device
 import numpy as np
+import site, itertools, glob
 import datetime, time, ctypes, ctypes.util
 from ctypes import c_int, c_char_p
 
@@ -30,17 +31,29 @@ class mcclibusbDevice(device):
 
     def __init__(self,params={},quiet=False,**kwargs):
 
-        # Try to find the required DLLs at runtime
+        # Try to find the mccusb DLL at runtime
         try:
             for lib in ['hidapi-libusb','mccusb']: # may also need 'c','m','usb-1.0','udev','pthread','rt'
                 libname = ctypes.util.find_library(lib)
                 if libname is None: raise OSError
-                self.L=ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
+                _lib=ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
         except OSError:
             print "Please install mcc-libusb"
             raise
+        self.libmccusb = _lib
+        if not quiet: print "\tLoaded %s" % _lib._name
 
-        if not quiet: print '\tLoaded',self.L._name
+        
+        # Find DLLs for specific devices generated at build time from mcc-libusb
+        self.libpaths=[]
+        sites = site.getsitepackages(); sites.append(site.USER_SITE)
+        for libname in ['libmccusb1608G']:
+            for libext in ['so','dylib','dll','a']:
+                path_to_lib = list(itertools.chain.from_iterable([ glob.glob(p+'/'+libname+'.'+libext)\
+                                        for p in sites ]))
+                if len(path_to_lib)>0: break
+            if len(path_to_lib)==0: print("\tWarning - can't find %s" % libname)
+            else: self.libpaths.extend(path_to_lib)
 
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
@@ -56,19 +69,24 @@ class mcclibusbDevice(device):
     def scan(self,override_params=None,quiet=False):
         
         if override_params is not None: self.params = override_params
-        
+
         if not quiet: print '\tScanning for devices'
 
+        # Load device libraries found in __init__
+        for libname in self.libpaths:
+            self.L = ctypes.cdll.LoadLibrary(libname)        
+            if not quiet: print '\tLoaded',self.L._name
+        
+        
         USB1608G_PID          =0x0134
         USB1608GX_PID         =0x0135
         USB1608GX_2AO_PID     =0x0136
 
         for productID in [USB1608GX_2AO_PID]:
-
-            #self.L.usb_device_find_USB_MCC.argtypes = [c_int, c_char_p]
-            udev =  self.L.usb_device_find_USB_MCC(c_int(productID),None)
-
+            udev =  self.libmccusb.usb_device_find_USB_MCC(c_int(productID),None)
+        
         raise ValueError("Breakpoint")
+        
         
         
         self.activate(quiet=quiet)

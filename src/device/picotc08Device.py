@@ -587,7 +587,7 @@ class usbtc08Device(device):
     def deactivate(self):
         self.dev.close_unit()
         self.driverConnected=False
-	    del self.dev
+        del self.dev
         return
 
     # Apply configuration changes to the driver
