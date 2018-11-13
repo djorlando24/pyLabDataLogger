@@ -29,7 +29,7 @@ HEADERS = pmd.h usb-500.h usb-1608G.h usb-20X.h usb-1208FS-Plus.h usb-1608FS-Plu
           bth-1208LS.h
 OBJS = $(SRCS:.c=.o)   # same list as SRCS with extension changed
 CC=gcc
-CFLAGS+= -g -Wall -fPIC -O -I/usr/local/include/libusb-1.0 -L/usr/local/lib -lusb-1.0
+CFLAGS+= -g -Wall -fPIC -O0 -I/usr/local/include/libusb-1.0 -L/usr/local/lib -lusb-1.0
 ifeq ($(shell uname), Darwin)
 	SONAME_FLAGS = -install_name
 	SHARED_EXT = dylib

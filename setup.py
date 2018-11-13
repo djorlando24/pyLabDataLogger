@@ -43,6 +43,21 @@ import numpy
 
 long_description = """Laboratory datalogging for USB and Serial devices"""
 
+
+# Build cython modules
+cython_modules = [
+#    Extension(
+#        "pySciCam.chronos14_raw",
+#        ["src/pySciCam/chronos14_raw.pyx"],
+#    )
+]
+
+# Build C libraries that interface to hardware
+c_libraries = [
+    Extension("libmccusb1608G", sources = ["thirdParty/mcc-libusb/usb-1608G.c"])
+]
+
+
 setup(name="pyLabDataLogger",
       version="0.0.1",
       description="Laboratory datalogging for USB and Serial devices.",
@@ -53,5 +68,6 @@ setup(name="pyLabDataLogger",
       packages=['pyLabDataLogger','pyLabDataLogger.device'],
       package_dir={'pyLabDataLogger': 'src'},
       url='daniel-duke.net',
+      ext_modules=cythonize(cython_modules) + c_libraries,
       include_dirs=[numpy.get_include()]
 )

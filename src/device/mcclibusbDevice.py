@@ -19,13 +19,8 @@
 
 from device import device
 import numpy as np
-import datetime, time
-
-try:
-    import libmccusb
-except ImportError:
-    print "Please install mcc-libusb"
-    raise
+import datetime, time, ctypes, ctypes.util
+from ctypes import c_int, c_char_p
 
 ########################################################################################################################
 class mcclibusbDevice(device):
@@ -34,6 +29,19 @@ class mcclibusbDevice(device):
     """
 
     def __init__(self,params={},quiet=False,**kwargs):
+
+        # Try to find the required DLLs at runtime
+        try:
+            for lib in ['hidapi-libusb','mccusb']: # may also need 'c','m','usb-1.0','udev','pthread','rt'
+                libname = ctypes.util.find_library(lib)
+                if libname is None: raise OSError
+                self.L=ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
+        except OSError:
+            print "Please install mcc-libusb"
+            raise
+
+        if not quiet: print '\tLoaded',self.L._name
+
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
@@ -49,9 +57,21 @@ class mcclibusbDevice(device):
         
         if override_params is not None: self.params = override_params
         
-        # ...
+        if not quiet: print '\tScanning for devices'
+
+        USB1608G_PID          =0x0134
+        USB1608GX_PID         =0x0135
+        USB1608GX_2AO_PID     =0x0136
+
+        for productID in [USB1608GX_2AO_PID]:
+
+            #self.L.usb_device_find_USB_MCC.argtypes = [c_int, c_char_p]
+            udev =  self.L.usb_device_find_USB_MCC(c_int(productID),None)
+
+        raise ValueError("Breakpoint")
         
-        else: self.activate(quiet=quiet)
+        
+        self.activate(quiet=quiet)
         return
 
     # Establish connection to device (ie open serial port)
