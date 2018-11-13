@@ -54,7 +54,7 @@ cython_modules = [
 
 # Build C libraries that interface to hardware
 c_libraries = [
-    Extension("libmccusb1608G", sources = ["thirdParty/mcc-libusb/usb-1608G.c"])
+    Extension("libmccusb1608G", sources = ["src/mcclibusb/usb-1608G.c"])
 ]
 
 
@@ -65,7 +65,7 @@ setup(name="pyLabDataLogger",
       author_email="daniel.duke@monash.edu",
       license="GPL-3.0+",
       long_description=long_description,
-      packages=['pyLabDataLogger','pyLabDataLogger.device'],
+      packages=['pyLabDataLogger','pyLabDataLogger.device','pyLabDataLogger.mcclibusb'],
       package_dir={'pyLabDataLogger': 'src'},
       url='daniel-duke.net',
       ext_modules=cythonize(cython_modules) + c_libraries,
