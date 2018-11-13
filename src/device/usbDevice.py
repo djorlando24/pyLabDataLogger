@@ -10,7 +10,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 31/10/2018
+    @date 13/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -173,6 +173,10 @@ def load_usb_devices(devs=None,**kwargs):
             elif driverClass == 'usbtmc':
                 from pyLabDataLogger.device import usbtmcDevice
                 device_list.append(usbtmcDevice.usbtmcDevice(params=d,**kwargs))
+            elif driverClass == 'mcc-libusb':
+                from pyLabDataLogger.device import mcclibusbDevice
+                device_list.append(mcclibusbDevice.mcclibusbDevice(params=d,**kwargs))
+            
             else:
                 print "\tI don't know what to do with this device"
         except KeyError as e: # driver couldn't handle the subdriver settings
