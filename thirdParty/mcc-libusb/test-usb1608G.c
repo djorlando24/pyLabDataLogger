@@ -188,7 +188,7 @@ start:
 	flag = fcntl(fileno(stdin), F_GETFL);
 	fcntl(0, F_SETFL, flag | O_NONBLOCK);
         do {
-	  usbDLatchW_USB1608G(udev, (uint16_t) 0x1);
+	  usbDLatchW_USB1608G(udev, (uint16_t) 0x1);frequency
           usleep((useconds_t) 1000000./frequency*duty_cycle);
 	  usbDLatchW_USB1608G(udev, (uint16_t) 0x0);
           usleep((useconds_t) 1000000./frequency*(1. - duty_cycle));

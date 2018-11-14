@@ -332,7 +332,7 @@ void usbAInScanStart_USB1608G(libusb_device_handle *udev, uint32_t count, uint32
     AInScan.packet_size = wMaxPacketSize/2 - 1;
   }
 
-  printf("packet size = %d  count = %d nchan = %d\n", AInScan.packet_size, AInScan.count, i);
+  printf("\tpacket size = %d  count = %d nchan = %d\n", AInScan.packet_size, AInScan.count, i);
 
   /* Pack the data into 14 bytes */
   if (libusb_control_transfer(udev, requesttype, AIN_SCAN_START, 0x0, 0x0, (unsigned char *) &AInScan, 14, HS_DELAY) < 0) {

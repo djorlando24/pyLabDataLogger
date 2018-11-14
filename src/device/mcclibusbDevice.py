@@ -23,7 +23,7 @@ import site, itertools, glob
 import datetime, time
 
 import ctypes, ctypes.util
-from ctypes import c_int, c_bool, py_object, c_long, c_uint, c_ulong, c_float, POINTER
+from ctypes import c_int, c_bool, py_object, c_long, c_uint, c_ulong, c_float, c_uint8, c_uint16, POINTER, cast, addressof, c_double
 #from threading import Lock
 
 # This is the pyudev_t struct defined by the interface C header file
@@ -32,7 +32,14 @@ from ctypes import c_int, c_bool, py_object, c_long, c_uint, c_ulong, c_float, P
 class pyudev_t(ctypes.Structure):
      _fields_ = [("udev_capsule", py_object),
                  ("usb1608GX_2AO", c_bool),
-                 ("model", c_int)]
+                 ("model", c_int),
+                 ("n_channels", c_int),
+                 ("n_samples", c_int),
+                 ("table_AIN", c_float*16),
+                 ("table_AO", c_float*16),
+                 ("buffer", POINTER(c_uint16))
+                ]
+
 
 ########################################################################################################################
 class mcclibusbDevice(device):
@@ -82,8 +89,9 @@ class mcclibusbDevice(device):
         self.name = "uninitialized"
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
-
-        if params is not {}: self.scan(quiet=quiet)
+        self.quiet = quiet
+        
+        if params is not {}: self.scan()
         
         return
 
@@ -91,22 +99,22 @@ class mcclibusbDevice(device):
 
 
     # Detect if device is present
-    def scan(self,override_params=None,quiet=False):
+    def scan(self,override_params=None):
         
         if override_params is not None: self.params = override_params
 
-        if not quiet: print '\tScanning for devices'
+        if not self.quiet: print '\tScanning for devices'
 
         # Load device-specific library found in __init__.
         self.L = ctypes.cdll.LoadLibrary(self.libpath)        
-        if not quiet: print '\tLoaded',self.L._name
+        if not self.quiet: print '\tLoaded',self.L._name
 
         # Scan for device
         self.L.detect_device.restype = pyudev_t
-        self.pyudev = self.L.detect_device(c_bool(quiet))
+        self.pyudev = self.L.detect_device(c_bool(self.quiet))
         if self.pyudev.udev_capsule is None: return
         
-        self.activate(quiet=quiet)
+        self.activate()
         return
 
 
@@ -117,7 +125,9 @@ class mcclibusbDevice(device):
         
         # Activate device
         self.L.activate_device.argtypes=[pyudev_t, c_bool]
-        if self.L.activate_device(self.pyudev, c_bool(quiet)) != 1:
+        self.L.activate_device.restype=pyudev_t
+        self.pyudev = self.L.activate_device(self.pyudev, c_bool(self.quiet))
+        if self.pyudev == 0:
             raise IOError("Communication with the device failed.")
 
         if self.pyudev.model == 1: self.name = 'MCC USB-1608G'
@@ -132,13 +142,15 @@ class mcclibusbDevice(device):
         # Make first query to get units, description, etc.
         self.query(reset=True)
 
-        if not quiet: self.pprint()
+        if not self.quiet: self.pprint()
         return
 
     
     # Deactivate connection to device (close serial port)
     def deactivate(self):
-        # !!!
+        self.L.deactivate_device.argtypes=[pyudev_t, c_bool]
+        if self.L.deactivate_device(self.pyudev, c_bool(self.quiet)) ==0:
+            raise IOError("Communication with the device failed.")
         self.driverConnected=False
         return
 
@@ -153,25 +165,31 @@ class mcclibusbDevice(device):
                 if 'differential' in self.params:
                     self.config['differential']=self.params['differential']
                 else:
-                    self.config['differential']=False            
+                    self.config['differential']=True # default on            
 
             # Set up analog channels
             if self.config['differential']:
-                self.config['channel_names']=['Analog input %02i' % i for i in range(8)]
+                self.config['channel_names']=['Analog input %i' % i for i in range(8)]
             else:
-                self.config['channel_names']=['Analog input %02i' % i for i in range(16)]
+                self.config['channel_names']=['Analog input %i' % i for i in range(16)]
             self.params['n_channels']=len(self.config['channel_names'])
             self.params['raw_units']=['V']*self.params['n_channels']
             self.config['eng_units']=['V']*self.params['n_channels']            
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
 
-            # Sampling rate
+            # Sampling rate and number of samples
             if not 'sample_rate' in self.config:
                 if 'sample_rate' in self.params:
                     self.config['sample_rate']=self.params['sample_rate']
                 else:
-                    self.config['sample_rate']=1. # Hz
+                    self.config['sample_rate']=100. # Hz
+
+            if not 'n_samples' in self.config:
+                if 'n_samples' in self.params:
+                    self.config['n_samples']=self.params['n_samples']
+                else:
+                    self.config['n_samples']=1
 
             # Gain range for analog inputs
             if not 'analog_input_gain' in self.config:            
@@ -184,39 +202,34 @@ class mcclibusbDevice(device):
             for g in self.config['analog_input_gain']:
                 if not g in [10,5,2,1]:
                     raise ValueError("Error setting analog gain for MCC USB device: valid options are 1,2,5,10 V")
-
-            # Set up differential or single ended mode and apply analog ranges and sample rates
-            self.L.set_diff_mode.argtypes=[pyudev_t, c_bool, c_bool]
-            ret = self.L.set_diff_mode(self.pyudev, c_bool(self.config['differential']), c_bool(quiet))
-            if ret==0: raise IOError("Unable to communicate with MCC USB device.")
-
-            self.L.set_analog_ranges.argtypes=[pyudev_t, c_uint_p, c_bool] # Gains are array of uints
-            ret = self.L.set_analog_ranges(self.pyudev, c_int_p(self.config['analog_input_gain']), c_bool(quiet))
-            if ret==0: raise IOError("Unable to communicate with MCC USB device.")
             
-            self.L.set_sample_rates.argtypes=[pyudev_t, c_long, c_bool] # Sample rate is a long int
-            ret = self.L.set_sample_rates(self.pyudev, c_long(self.config['sample_rate']), c_bool(quiet))
-            if ret==0: raise IOError("Unable to communicate with MCC USB device.")
-            
+            # Set up differential or single ended mode and apply analog gain ranges (sample rate set at run-time).
+            gains = np.array(self.config['analog_input_gain'],dtype=np.uint8).ctypes.data_as(POINTER(c_uint8))
+            self.L.set_analog_config.argtypes=[pyudev_t, c_bool, POINTER(c_uint8), c_int, c_bool]
+            self.L.set_analog_config.restype=pyudev_t
+            self.pyudev = self.L.set_analog_config(self.pyudev, c_bool(self.config['differential']), gains,\
+                         c_int(self.config['n_samples']), c_bool(self.quiet))
+            if self.pyudev==0: raise IOError("Unable to communicate with MCC USB device.")
+
             # Set up the 8 digital channels as a single input byte
             self.params['n_channels'] += 1
             self.config['channel_names'].append('Digital input')
             self.params['raw_units'].append('')
-            self.params['eng_units'].append('')
+            self.config['eng_units'].append('')
             self.config['scale'].append(1.)
             self.config['offset'].append(0.)
-
+            
             # Set up the two 20 MHz 32-bit counters as two additional channels
             self.params['n_channels'] += 2
             self.config['channel_names'].extend(['Counter 0','Counter 1'])
             self.params['raw_units'].extend(['Hz','Hz'])
-            self.params['eng_units'].extend(['Hz','Hz'])
+            self.config['eng_units'].extend(['Hz','Hz'])
             self.config['scale'].extend([1.,1.])
             self.config['offset'].extend([0.,0.])
 
             # Configure digital I/O pins as inputs
             self.L.set_digital_direction.argtypes=[pyudev_t, c_bool, c_bool]
-            ret = self.L.set_digital_direction(self.pyudev, c_bool(True), c_bool(quiet))
+            ret = self.L.set_digital_direction(self.pyudev, c_bool(True), c_bool(self.quiet))
             if ret==0: raise IOError("Unable to communicate with MCC USB device.")
             
             # Set up triggering mode?
@@ -259,19 +272,46 @@ class mcclibusbDevice(device):
 
     # Read values from device.
     def get_values(self):
-        self.L.analog_read.argtypes=[pyudev_t, c_bool]
-        self.L.analog_read.restype=POINTER(c_float) # Array of floats
-        analog_vals = self.L.analog_read(self.pyudev, c_bool(quiet))
-        if analog_vals[0] == None: raise IOError("Communication with the device failed.")
+        self.L.analog_read.argtypes=[pyudev_t, c_double, c_bool]
+        if self.L.analog_read(self.pyudev, c_double(self.config['sample_rate']), c_bool(self.quiet)) != 1:
+            raise IOError("Communication with the device failed.")
+
+        """
+        /*
+            // Post process to voltage?  We can do this on the Python side.
+            int i,j,k;
+            uint8_t gain;
+            uint16_t data;
+            for (i = 0; i < pyudev.n_samples; i++) {
+	            printf("%6d", i);
+	            for (j = 0; j < pyudev.n_channels; j++) {
+                      gain = pyudev.list[j].range;
+	              k = i*pyudev.n_channels + j;
+	              data = rint(pyudev.buffer[k]*pyudev.table_AIN[gain][0] + pyudev.table_AIN[gain][1]);
+	              printf(", %8.4lf", volts_USB1608G(gain, data));
+	            }
+	            printf("\n");
+	          }
+            */
+        """
+
+        # Unpack buffer to array
+        analog_vals = struct.unpack(self.pyudev.buffer,'i%i' % self.pyudev.n_channels * self.pyudev.n_samples)
+        analog_vals = np.array(analog_vals).reshape(self.pyudev.n_channels,self.pyudev.n_samples).astype(float)
+        print analog_vals.shape
+        # Convert from uint16_t to voltage
+        for j in range(self.pyudev.n_channels):
+            gain = self.pyudev.list[j].range
+            analog_vals[j,:] = analog_vals[j,:]*self.pyudev.table_AIN[gain][0] + self.pyudev.table_AIN[gain][1]
 
         self.L.digital_read.argtypes=[pyudev_t, c_bool]
-        self.L.digital_read.restype=c_uint # one unsigned int, containing all the bits in binary form.
-        digital_vals = self.L.digital_read(self.pyudev, c_bool(quiet))
+        self.L.digital_read.restype=c_uint8 # one unsigned int, containing all the bits in binary form.
+        digital_vals = self.L.digital_read(self.pyudev, c_bool(self.quiet))
         if digital_vals == None: raise IOError("Communication with the device failed.")
 
         self.L.counter_read.argtypes=[pyudev_t, c_bool]
         self.L.counter_read.restype=POINTER(c_ulong) # Array of unsigned long
-        counter_vals = self.L.counter_read(self.pyudev, c_bool(quiet)) # Must return already in Hz
+        counter_vals = self.L.counter_read(self.pyudev, c_bool(self.quiet)) # Must return already in Hz
         if counter_vals[0] == None: raise IOError("Communication with the device failed.")
 
         self.lastValue = np.vstack((analog_vals, digital_vals))

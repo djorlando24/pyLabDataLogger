@@ -7,12 +7,8 @@
     #include this code in usb-1608G.c provided by libmccusb
     to add required support and interface functions. 
 
-    the Python interface will expect the following methods:
-        pyudev_t detect_device(bool quiet)
-        int activate_device(pyudev_t pyudev, bool quiet)
-    
     The pyudev_t struct contains a PyObject* which is a PyCapsule
-    containing the libusb_device_handle pointer, followed by
+    containing the libusb_device_handle po(char*)inter, followed by
     any required flags or parameters to pass.
 
     @author Daniel Duke <daniel.duke@monash.edu>
@@ -41,25 +37,30 @@ typedef struct {
     PyObject* udev_capsule;
     _Bool usb1608GX_2AO;
     int model;
+    int n_channels;
+    int n_samples;
+    float table_AIN[NGAINS_1608G][2];
+    float table_AO[NCHAN_AO_1608GX][2];
+    uint16_t *buffer;
+    ScanList list[NCHAN_1608G];
 } pyudev_t;
 
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Device detection - determine exact model number and open libusb udev pointer
 pyudev_t detect_device(_Bool quiet) {
   
   libusb_device_handle *udev = NULL;
   udev = NULL;
   int usb1608GX_2AO = FALSE;
-  pyudev_t pyudev = {NULL, FALSE, 0};
+  pyudev_t pyudev = {NULL, FALSE, 0, 0, 0, {{0}}, {{0}}, NULL};
   
   int ret = libusb_init(NULL);
   if (ret < 0) {
     printf("\tlibusb_init: Failed to initialize libusb\n");
     return pyudev;
   }
-
-   
-
+    
   if ((udev = usb_device_find_USB_MCC(USB1608G_PID, NULL))) {
     if (!quiet) printf("\tdetected USB 1608G\n");  
     pyudev.model = 1;
@@ -94,9 +95,9 @@ pyudev_t detect_device(_Bool quiet) {
 
 }
 
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Device activation & setup
-int activate_device(pyudev_t pyudev, _Bool quiet) {
+pyudev_t activate_device(pyudev_t pyudev, _Bool quiet) {
 
   // Unpack pyudev struct contents
   libusb_device_handle *udev = PyCapsule_GetPointer(pyudev.udev_capsule, "udev");
@@ -104,8 +105,8 @@ int activate_device(pyudev_t pyudev, _Bool quiet) {
   
   // Init vars
   struct tm calDate;
-  float table_AIN[NGAINS_1608G][2];
-  float table_AO[NCHAN_AO_1608GX][2];
+  //float table_AIN[NGAINS_1608G][2];
+  //float table_AO[NCHAN_AO_1608GX][2];
   int i;
 
   // Init device
@@ -115,30 +116,170 @@ int activate_device(pyudev_t pyudev, _Bool quiet) {
   //print out the wMaxPacketSize.  Should be 512
   if (!quiet) printf("\twMaxPacketSize = %d\n", usb_get_max_packet_size(udev,0));
 
-  usbBuildGainTable_USB1608G(udev, table_AIN);
+  // Gain tables
+  usbBuildGainTable_USB1608G(udev, pyudev.table_AIN);
   for (i = 0; i < NGAINS_1608G; i++) {
-    if (!quiet) printf("\tGain: %d   Slope = %f   Offset = %f\n", i, table_AIN[i][0], table_AIN[i][1]);
+    if (!quiet) printf("\tGain: %d   Slope = %f   Offset = %f\n", i, pyudev.table_AIN[i][0], pyudev.table_AIN[i][1]);
   }
 
   if (usb1608GX_2AO) {
-    usbBuildGainTable_USB1608GX_2AO(udev, table_AO);
-    printf("\n");
+    usbBuildGainTable_USB1608GX_2AO(udev, pyudev.table_AO);
     for (i = 0; i < NCHAN_AO_1608GX; i++) {
-      if (!quiet) printf("\tVDAC%d:    Slope = %f    Offset = %f\n", i, table_AO[i][0], table_AO[i][1]);
+      if (!quiet) printf("\tVDAC%d:    Slope = %f    Offset = %f\n", i, pyudev.table_AO[i][0], pyudev.table_AO[i][1]);
     }
   }
 
-  usbCalDate_USB1608G(udev, &calDate);
-  if (!quiet) printf("\n");
-  if (!quiet) printf("\tMFG Calibration date = %s\n", asctime(&calDate));
- 
-  /*char* serial[9];
-  usbGetSerialNumber_USB1608G(udev, serial);
-  printf("Serial number = %s\n", serial);
   
-  uint16_t version = 0;
-  usbFPGAVersion_USB1608G(udev, &version);
-  printf("FPGA version %02x.%02x\n", version >> 0x8, version & 0xff);
-  */
+  if (!quiet) {
+    usbCalDate_USB1608G(udev, &calDate);
+    printf("\tMFG Calibration date = %s", asctime(&calDate));
+ 
+    char* serial[9];
+    usbGetSerialNumber_USB1608G(udev, (char*)serial);
+    printf("\tSerial number = %s\n", (char*)serial);
+    uint16_t version = 0;
+    usbFPGAVersion_USB1608G(udev, &version);
+    printf("\tFPGA version %02x.%02x\n", version >> 0x8, version & 0xff);
+
+  }
+  
+  
+  return pyudev;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Device deactivation
+int deactivate_device(pyudev_t pyudev, _Bool quiet) {
+
+  // Unpack pyudev struct contents
+  libusb_device_handle *udev = PyCapsule_GetPointer(pyudev.udev_capsule, "udev");
+  usbAInScanStop_USB1608G(udev);
+  usbAInScanClearFIFO_USB1608G(udev);
+  usbDLatchW_USB1608G(udev, 0x0);                  // zero out the DIO
+  if (pyudev.usb1608GX_2AO) {
+	  usbAOutScanStop_USB1608GX_2AO(udev);
+	  usbAOut_USB1608GX_2AO(udev, 0, 0x0, pyudev.table_AO);
+	  usbAOut_USB1608GX_2AO(udev, 1, 0x0, pyudev.table_AO);
+  }
+  cleanup_USB1608G(udev);
+  
+  // deallocate memory for analog input buffer.
+  if (pyudev.buffer != NULL) {
+      free(pyudev.buffer); // Free old memory as n_samples may have changed.
+  }
+
   return 1;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Set differential or single ended mode and gains on analog channels
+pyudev_t set_analog_config(pyudev_t pyudev, _Bool differential, uint8_t gains[], int n_samples, _Bool quiet) {
+
+    uint8_t mode, gain, channel;
+    
+    // Unpack pyudev struct contents
+    libusb_device_handle *udev = PyCapsule_GetPointer(pyudev.udev_capsule, "udev");
+    
+    if (differential) {
+        mode = SINGLE_ENDED;
+        pyudev.n_channels = 8;
+    } else {
+        mode = DIFFERENTIAL;
+        pyudev.n_channels = 16;
+    }
+    
+    for (channel = 0; channel < pyudev.n_channels; channel++) {
+      //if (!quiet) printf("\tCh. %i Gain=%i\n",channel,gains[channel]);
+	  switch(gains[channel]) {
+	    case 10: gain = BP_10V; break;
+	    case 5: gain = BP_5V; break;
+	    case 2: gain = BP_2V; break;
+	    case 1: gain = BP_1V; break;
+	    default:  gain = BP_10V; break;
+	  }
+	  pyudev.list[channel].range = gain;  
+	  pyudev.list[channel].mode = mode;
+	  pyudev.list[channel].channel = channel;
+	}   
+    
+    pyudev.list[pyudev.n_channels-1].mode |= LAST_CHANNEL;
+
+    // Record settings for persistence
+    pyudev.n_samples = n_samples;
+
+    // Setup
+    usbAInConfig_USB1608G(udev, pyudev.list);
+    //usbAInScanStop_USB1608G(udev);
+	//usbAInScanClearFIFO_USB1608G(udev);
+
+    // Allocate memory for analog input buffer.
+    if (pyudev.buffer != NULL) {
+        free(pyudev.buffer); // Free old memory as n_samples may have changed.
+    }
+    pyudev.buffer = malloc(2*pyudev.n_channels*pyudev.n_samples);
+    if (pyudev.buffer == NULL) {
+      perror("Can not allocate memory for buffer");
+    }
+    
+    return pyudev;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Read analog channels into preallocated buffer
+int analog_read(pyudev_t pyudev, double sample_rate, _Bool quiet) {
+    
+    // Unpack pyudev struct contents
+    libusb_device_handle *udev = PyCapsule_GetPointer(pyudev.udev_capsule, "udev");
+    
+    /*if (pyudev.buffer == NULL) {
+      pyudev.buffer = malloc(2*pyudev.n_channels*pyudev.n_samples);
+    }*/
+
+    if (pyudev.buffer == NULL) {
+      perror("No memory for buffer");
+      return 0;
+    }
+
+    //if (!quiet) printf("\tn_ch = %i, n_samples = %i\n", pyudev.n_channels, pyudev.n_samples);
+
+    // Setup
+    //usbAInConfig_USB1608G(udev, pyudev.list);
+    usbAInScanStop_USB1608G(udev);
+	usbAInScanClearFIFO_USB1608G(udev);
+    
+    // Acquire    - here could specify triggering with last byte (mode) but currently set to free-run
+    usbAInScanStart_USB1608G(udev, pyudev.n_samples, 0, sample_rate, 0x0);
+	int ret = usbAInScanRead_USB1608G(udev, pyudev.n_samples, pyudev.n_channels, pyudev.buffer);
+	if (!quiet) printf("\nn bytes read = %i, should be %i\n", ret, 2*pyudev.n_channels*pyudev.n_samples);
+
+    usbAInScanStop_USB1608G(udev);
+    usbAInScanClearFIFO_USB1608G(udev);
+    
+    return 1;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assign digital pins
+int set_digital_direction(pyudev_t pyudev, _Bool inputMode, _Bool quiet) {
+
+    // Unpack pyudev struct contents
+    libusb_device_handle *udev = PyCapsule_GetPointer(pyudev.udev_capsule, "udev");
+
+    // Set the mode ...
+    usbDTristateW_USB1608G(udev,0xf0);
+    
+    return 1;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Read digital pins
+uint8_t digital_read(pyudev_t pyudev, _Bool quiet) {
+
+    // Unpack pyudev struct contents
+    libusb_device_handle *udev = PyCapsule_GetPointer(pyudev.udev_capsule, "udev");
+
+    // Read the digital pin states
+
+    return usbDLatchR_USB1608G(udev);;
 }
