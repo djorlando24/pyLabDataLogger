@@ -61,6 +61,8 @@ usb_device_table = [
     {'vid':0x0557, 'pid':0x2008, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},
     {'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/gpib', 'name':'GPIB-USB adapter'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-iseries', 'name':'Omega iSeries via RS-485'},
+    {'vid':0x0408, 'pid':0x6051, 'driver':'arduino', 'name':'Arduino Pro via FTDI FT231X'},
+
 
     # Single-board computers
     {'vid':0x1d6b, 'pid':0x0104, 'driver':'beaglebone', 'name':'Beaglebone Black'},

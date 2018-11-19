@@ -22,8 +22,8 @@ import numpy as np
 import site, itertools, glob
 import datetime, time
 
-import ctypes, ctypes.util
-from ctypes import c_int, c_bool, py_object, c_long, c_uint, c_ulong, c_float, c_uint8, c_uint16, POINTER, cast, addressof, c_double
+import ctypes, ctypes.util, struct
+from ctypes import c_int, c_bool, py_object, c_long, c_uint, c_ulong, c_float, c_uint8, c_uint16, POINTER, cast, addressof, c_double, c_char_p
 #from threading import Lock
 
 # This is the pyudev_t struct defined by the interface C header file
@@ -37,7 +37,8 @@ class pyudev_t(ctypes.Structure):
                  ("n_samples", c_int),
                  ("table_AIN", c_float*16),
                  ("table_AO", c_float*16),
-                 ("buffer", POINTER(c_uint16))
+                 ("buffer", POINTER(c_uint16)),
+                 ("list", POINTER(c_uint8)),
                 ]
 
 
@@ -296,12 +297,21 @@ class mcclibusbDevice(device):
         """
 
         # Unpack buffer to array
-        analog_vals = struct.unpack(self.pyudev.buffer,'i%i' % self.pyudev.n_channels * self.pyudev.n_samples)
+        analog_vals = list(self.pyudev.buffer[:self.pyudev.n_channels * self.pyudev.n_samples])
         analog_vals = np.array(analog_vals).reshape(self.pyudev.n_channels,self.pyudev.n_samples).astype(float)
-        print analog_vals.shape
-        # Convert from uint16_t to voltage
+        # Convert from uint16_t to voltage, correcting using the internal calibration table set up at initialization time
         for j in range(self.pyudev.n_channels):
-            gain = self.pyudev.list[j].range
+            """
+                typedef struct ScanList_t {
+                  uint8_t mode;
+                  uint8_t range;
+                  uint8_t channel;
+                } ScanList;
+            """
+            print self.pyudev.list[:24] # these numbers are coming out wrong!
+            gain = self.pyudev.list[j + 1] # +0 = mode, +1 = range, +2 = channel
+            if gain>self.pyudev.n_channels*3 : raise IndexError("Invalid gain index")
+            print self.pyudev.table_AIN[gain*2 + 0], self.pyudev.table_AIN[gain*2 + 1]
             analog_vals[j,:] = analog_vals[j,:]*self.pyudev.table_AIN[gain][0] + self.pyudev.table_AIN[gain][1]
 
         self.L.digital_read.argtypes=[pyudev_t, c_bool]

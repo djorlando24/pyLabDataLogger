@@ -190,7 +190,6 @@ pyudev_t set_analog_config(pyudev_t pyudev, _Bool differential, uint8_t gains[],
     }
     
     for (channel = 0; channel < pyudev.n_channels; channel++) {
-      //if (!quiet) printf("\tCh. %i Gain=%i\n",channel,gains[channel]);
 	  switch(gains[channel]) {
 	    case 10: gain = BP_10V; break;
 	    case 5: gain = BP_5V; break;
@@ -221,6 +220,11 @@ pyudev_t set_analog_config(pyudev_t pyudev, _Bool differential, uint8_t gains[],
     if (pyudev.buffer == NULL) {
       perror("Can not allocate memory for buffer");
     }
+
+    // Debugging
+    /*for (channel = 0; channel < pyudev.n_channels; channel++) {
+        printf("\tCh. %d Range=%d, Mode=%d\n",pyudev.list[channel].channel, pyudev.list[channel].range,pyudev.list[channel].mode);
+    }*/
     
     return pyudev;
 }
