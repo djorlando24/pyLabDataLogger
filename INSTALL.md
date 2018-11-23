@@ -49,6 +49,8 @@ Those which require legacy versions or are hard to find have been stored in the 
 
 pyLabDataLogger also requires the following external software:
 
+- hidapi development packages, available on Linux through package manager (apt-get install hidapi-dev) and on MacOS through Homebrew (brew install hidapi).
+
 - python2 and python3 development headers
 
 - Any generic USB serial port drivers that your system does not have. By default Linux has most standard serial to USB device drivers in the kernel. MacOS and Windows may require FTDI, CP2102, etc. driver packages. These should come with the hardware and are also available online.

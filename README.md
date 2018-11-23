@@ -38,6 +38,7 @@ Laboratory datalogging for USB and Serial devices
     - USB audio capture devices via ALSA (on Linux)
     - Tenma 72-2710 USB programmable bench power supply
     - Omega IR-USB thermometer 
+    - Omega iSeries temperature process controllers, via RS-485
     - CENTER 310 humidity meter
     - OHAUS digital lab scales via RS232-to-USB
 

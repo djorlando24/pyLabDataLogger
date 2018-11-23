@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 20/10/2018
+    @date 23/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -18,7 +18,7 @@
 
 from device import device
 import numpy as np
-import datetime, time, struct
+import datetime, time, struct, sys
 
 try:
     import serial
@@ -34,6 +34,7 @@ class serialDevice(device):
         in the params dict.
     """
 
+
     def __init__(self,params={},tty_prefix='/dev/',quiet=False,**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
@@ -47,6 +48,7 @@ class serialDevice(device):
         
         return
 
+    ########################################################################################################################
     # Detect if device is present
     def scan(self,override_params=None,quiet=False):
         self.port = None
@@ -84,8 +86,18 @@ class serialDevice(device):
         else: self.activate(quiet=quiet)
         return
 
+    ########################################################################################################################
     # Establish connection to device (ie open serial port)
     def activate(self,quiet=False):
+    
+        # Over-ride serial comms parameters for special devices
+        subdriver = self.params['driver'].split('/')[1:]
+        if subdriver=='omega-iseries':
+            if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.SEVENBITS
+            if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_EVEN
+            if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_ONE
+            self.params['timeout']=0.5
+        
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
         if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.EIGHTBITS
@@ -111,12 +123,14 @@ class serialDevice(device):
         if not quiet: self.pprint()
         return
 
+    ########################################################################################################################
     # Deactivate connection to device (close serial port)
     def deactivate(self):
         self.Serial.close()
         self.driverConnected=False
         return
 
+    ########################################################################################################################
     # Apply configuration changes to the driver (subdriver-specific)
     def apply_config(self):
         subdriver = self.params['driver'].split('/')[1:]
@@ -133,6 +147,14 @@ class serialDevice(device):
                 # No settings can be modified at present. In future we could allow tare/zero or
                 # a change of units.
                 pass
+            elif subdriver=='center310':
+                # No settings can be modified at present.
+                # The comms is one-way, the device cannot be controlled remotely.
+                pass
+            elif subdriver=='omega-iseries':
+                # No settings can be modified at present. In future we could allow changing of
+                # set points.
+                pass
             else:
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
 
@@ -145,6 +167,7 @@ class serialDevice(device):
         
         return
 
+    ########################################################################################################################
     # Update configuration (ie change sample rate or number of samples)
     def update_config(self,config_keys={}):
         for key in config_keys.keys():
@@ -162,9 +185,11 @@ class serialDevice(device):
         if self.driverConnected: self.activate()
         else: print "Error resetting %s: device is not detected" % self.name
 
+    ########################################################################################################################
     # Blocking call to send a request and get a string back.
     # This method block is for devices that use a standard
     # method; call<CR/LF> -short delay- response<CR/LF>.
+    # Works well for most RS-232 devices.
     def blockingSerialRequest(self,request,terminationChar='\r',maxlen=1024,min_response_length=0):
         s=''
         response=None
@@ -181,12 +206,36 @@ class serialDevice(device):
             if (time.time() - t_) > self.params['timeout_total']: raise IOError
         return response
     
+    ########################################################################################################################
+    # Special function to handle reading data that shouldn't have any special characters stripped out.
+    # This is useful if the length of the data could be arbitrary and not even whole numbers of bytes,
+    # or if the read command doesn't reliably returned buffered data (i.e. for RS-485 where there is
+    # some delay for the direction switching)
+    def blockingRawSerialRequest(self,request,terminationChar='\r',maxlen=1024,min_response_length=0):
+        self.Serial.write(request)
+        t_=time.time()
+        time.sleep(0.01)
+        data=''
+        while len(data)<maxlen:
+            data += self.Serial.read(1)
+            if len(data) > 0:
+                if (data[-1] == terminationChar) and (len(data)>min_response_length):
+                    break
+            if (time.time() - t_) > self.params['timeout_total']: raise IOError
+        return data
+    
+    ########################################################################################################################
     # Configure device based on what sub-driver is being used.
     # This is done when self.query(reset=True) is called, as at
     # this point we might need to poll the device to check a setting.
     def configure_device(self):
+    
         subdriver = self.subdriver
+        
+        # By default, using blockingSerialRequest
+        self.serialCommsFunction = self.blockingSerialRequest
 
+        # ----------------------------------------------------------------------------------------
         if subdriver=='omega-ir-usb': # Statup config for IR-USB
             self.name = "Omega IR-USB"
             self.config['channel_names']=['tempC','tempF','ambientC','ambientF','emissivity']
@@ -201,7 +250,7 @@ class serialDevice(device):
             self.config['set_emissivity']=None
 
 
-
+        # ----------------------------------------------------------------------------------------
         elif subdriver=='ohaus7k': # Startup config for OHAUS Valor 7000
             #Get the units currently set on the display
             unit='?'
@@ -224,7 +273,7 @@ class serialDevice(device):
             self.responseTerminator='\r'
 
 
-
+        # ----------------------------------------------------------------------------------------
         elif subdriver=='center310': # Startup config for CENTER 310
             self.name = "Center 310 Humidity/Temperature meter"
             self.config['channel_names']=['humidity','temperature','timer','hold','min_max']
@@ -246,16 +295,33 @@ class serialDevice(device):
                 print "\t%s communication error" % self.name
                 print "\t",e
             
-            
-
-
-
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='omega-iseries': # Startup config for Omega iSeries Process Controller
+            self.name = "Omega iSeries Process Controller"
+            if not 'units' in self.params: u='degC'
+            else: u=self.params['units']
+            self.config['channel_names']=['Current Value','Set Point 1','Set Point 2','Alarm']
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.params['raw_units']=[u,u,u,'']
+            self.config['eng_units']=[u,u,u,'']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.serialQuery=['*\xb01X\xb01',\
+                              '*\xb01R\xb01',\
+                              '*\xb01R\xb02',\
+                              '*\xb01U\xb01']
+            self.queryTerminator='\r'
+            self.responseTerminator='\r'
+            self.serialCommsFunction=self.blockingRawSerialRequest
+            self.params['min_response_length']=1 # bytes
+        
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         return
 
+    ########################################################################################################################
     # Convert string responses from serial port into usable numbers/values
-    def convert_raw_string_to_values(self, rawData):
+    def convert_raw_string_to_values(self, rawData, requests=None):
         
         # Parse depending on subdriver
         subdriver = self.subdriver
@@ -266,6 +332,7 @@ class serialDevice(device):
             elif rawData[0] is None: raise IndexError
             elif len(rawData[0]) is None: raise IndexError
 
+            # ----------------------------------------------------------------------------------------
             if subdriver=='omega-ir-usb':
                 if len(rawData)<2: return [None]*self.params['n_channels']
                 vals= [float(rawData[0].strip('>')), float(rawData[1].strip('>'))]
@@ -275,11 +342,13 @@ class serialDevice(device):
                 else: vals.append(float(rawData[3].split('=')[1]))
                 return vals
 
+            # ----------------------------------------------------------------------------------------
             elif subdriver=='ohaus7k':
                 vals=rawData[0].split(' ')
                 self.params['raw_units']=[vals[-1].strip()]
                 return [float(vals[0])]
 
+            # ----------------------------------------------------------------------------------------
             elif subdriver=='center310':
                 '''
                     Software transmits 0x41 / A to request a normal report. or 0x4b / K for the model number.
@@ -336,6 +405,59 @@ class serialDevice(device):
                 else: self.params['flags']=flags.strip()
                 return [humidity, temperature, time_min*60 + time_sec, hold, minmax]
 
+            # ----------------------------------------------------------------------------------------
+            if subdriver=='omega-iseries':
+                """ Omega iSeries returns binary that doesn't always conform to ASCII standard.
+                    The number of bits returned can also vary. Values from RAM are converted to
+                    quasi-ascii format while values in EEPROM tend to be in a custom binary floating
+                    point format."""
+                vals=[]
+                for n in range(len(rawData)):
+                    data = rawData[n]
+                    request = requests[n]
+                    
+                    
+                    if 'R' in request:
+                        # 'R' indicates reading a set point from flash memory, this must be decoded from binary.
+                        #print repr(request), repr(data.strip()[5:])
+                        decoded = data.strip()[6:].replace('\xae','\x2e').replace('\xb0','0').replace(r'\xb','')
+                        
+                        value = float(int(decoded[3:],16))
+                        #print "{0:x}".format(int(decoded[:3],16))
+                        decimal_bits = (int(decoded[:3],16) >> 8) & 0x7
+                        if decimal_bits == 0x2: value /= 10.
+                        if decimal_bits == 0x3: value /= 100.
+                        if decimal_bits == 0x4: value /= 1000.
+                        sign_bit = int(decoded[:3],16) >> 11
+                        if sign_bit == 0x1: value = -value
+                        #print value
+                        vals.append(value)
+                        #print value
+                    elif 'X' in request or 'U' in request:
+                        # 'X' indicates reading a value from RAM already formatted in ASCII.
+                        # 'U' is a status code.
+                        # Simple float conversion should work.
+                        try:
+                            if 'X\xb02' in request: start_byte = 6
+                            else:
+                                start_byte = 5
+                                if data[start_byte]=='1': start_byte+=1
+                            #print repr(request), repr(data.strip()[start_byte:])
+                            decoded = data.strip()[start_byte:].replace('\xae','\x2e').replace('\xb0','0').replace('\xb1','1').replace('\xb2','2')
+                            decoded = decoded.replace('\xb3','3').replace('\xb4','4').replace('\xb5','5').replace('\xb6','6').replace('\xb7','7')
+                            decoded = decoded.replace('\xb8','8').replace('\xb9','9').replace('\xb0','0')
+                            #print repr(decoded), decoded
+                            vals.append(float(decoded))
+                        except ValueError as e:
+                            print e
+                            vals.append(np.nan)
+                            continue
+                    else:
+                        
+                        raise KeyError("I don't know how to decode this serial command")
+
+                return vals
+
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         except ValueError:
@@ -347,15 +469,15 @@ class serialDevice(device):
     
     
     
-    
+    ########################################################################################################################
     # Read latest values
     def get_values(self):
         try:
             rawData=[]
             for n in range(len(self.serialQuery)):
-                rawData.append(self.blockingSerialRequest(self.serialQuery[n]+self.queryTerminator,\
+                rawData.append(self.serialCommsFunction(self.serialQuery[n]+self.queryTerminator,\
                         self.responseTerminator,min_response_length=self.params['min_response_length']))
-            self.lastValue = self.convert_raw_string_to_values(rawData)
+            self.lastValue = self.convert_raw_string_to_values(rawData,self.serialQuery)
 
         except IOError as e:
             print "\t%s communication error" % self.name
@@ -363,7 +485,7 @@ class serialDevice(device):
 
         return [np.nan]*self.params['n_channels']
 
-
+    ########################################################################################################################
     # Handle query for values
     def query(self, reset=False):
 
@@ -391,5 +513,3 @@ class serialDevice(device):
         self.lastScaled = np.array(lastValueSanitized) * self.config['scale'] + self.config['offset']
         self.updateTimestamp()
         return self.lastValue
-
-
