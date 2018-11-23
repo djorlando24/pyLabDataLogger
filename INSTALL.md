@@ -19,10 +19,12 @@ Those which require legacy versions or are hard to find have been stored in the 
 
 - *sigrok*
   You will need to build from source code to get support for the latest devices.
+  The version supplied with Ubuntu LTS for example is way out of date and is missing many drivers.
   see https://sigrok.org/wiki/Downloads
 
-    - I found the versions shipped with Ubuntu didn't support all my hardware. Sigrok depends on the following linux packages:
-        libftdi, libusb, doxygen, swig, glibmm, python-gobject, python-gi-dev
+    - I found the versions shipped with Ubuntu didn't support all my hardware. 
+      Sigrok depends on the following linux packages:
+          libftdi, libusb, doxygen, swig, glibmm, python-gobject, python-gi-dev
 
     - sigrok-firmware-fx2lafw for USBee ADCs, with udev rules installed to avoid
       need for root (see https://sigrok.org/wiki/Fx2lafw)
