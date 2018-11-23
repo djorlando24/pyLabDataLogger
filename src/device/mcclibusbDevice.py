@@ -6,7 +6,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 13/11/2018
+    @date 23/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -26,6 +26,10 @@ import ctypes, ctypes.util, struct
 from ctypes import c_int, c_bool, py_object, c_long, c_uint, c_ulong, c_float, c_uint8, c_uint16, POINTER, cast, addressof, c_double, c_char_p
 #from threading import Lock
 
+# This is the ScanList struct defined by the interface C header file
+class ScanList_t(ctypes.Structure):
+     _fields_ = [("mode", c_uint8),("range", c_uint8),("channel", c_uint8)]
+
 # This is the pyudev_t struct defined by the interface C header file
 # it has a pyCapsule object that points to the usb device handle
 # and some boolean flags etc. required for mode of operation etc.
@@ -38,7 +42,7 @@ class pyudev_t(ctypes.Structure):
                  ("table_AIN", c_float*16),
                  ("table_AO", c_float*16),
                  ("buffer", POINTER(c_uint16)),
-                 ("list", POINTER(c_uint8)),
+                 ("list", POINTER(ScanList_t)),
                 ]
 
 
@@ -273,58 +277,26 @@ class mcclibusbDevice(device):
 
     # Read values from device.
     def get_values(self):
-        self.L.analog_read.argtypes=[pyudev_t, c_double, c_bool]
-        if self.L.analog_read(self.pyudev, c_double(self.config['sample_rate']), c_bool(self.quiet)) != 1:
-            raise IOError("Communication with the device failed.")
+        Nvals = self.pyudev.n_channels * self.pyudev.n_samples
+        analog_vals = np.empty((Nvals,))
+        self.L.analog_read.argtypes=[pyudev_t, c_double, c_bool, POINTER(c_double)]
+        if self.L.analog_read(self.pyudev, c_double(self.config['sample_rate']), c_bool(self.quiet),\
+            analog_vals.ctypes.data_as(POINTER(c_double))) == 0:
+            raise IOError("Communication with the device failed.") 
+        analog_vals = analog_vals.reshape(self.pyudev.n_channels,self.pyudev.n_samples)
 
-        """
-        /*
-            // Post process to voltage?  We can do this on the Python side.
-            int i,j,k;
-            uint8_t gain;
-            uint16_t data;
-            for (i = 0; i < pyudev.n_samples; i++) {
-	            printf("%6d", i);
-	            for (j = 0; j < pyudev.n_channels; j++) {
-                      gain = pyudev.list[j].range;
-	              k = i*pyudev.n_channels + j;
-	              data = rint(pyudev.buffer[k]*pyudev.table_AIN[gain][0] + pyudev.table_AIN[gain][1]);
-	              printf(", %8.4lf", volts_USB1608G(gain, data));
-	            }
-	            printf("\n");
-	          }
-            */
-        """
-
-        # Unpack buffer to array
-        analog_vals = list(self.pyudev.buffer[:self.pyudev.n_channels * self.pyudev.n_samples])
-        analog_vals = np.array(analog_vals).reshape(self.pyudev.n_channels,self.pyudev.n_samples).astype(float)
-        # Convert from uint16_t to voltage, correcting using the internal calibration table set up at initialization time
-        for j in range(self.pyudev.n_channels):
-            """
-                typedef struct ScanList_t {
-                  uint8_t mode;
-                  uint8_t range;
-                  uint8_t channel;
-                } ScanList;
-            """
-            print self.pyudev.list[:24] # these numbers are coming out wrong!
-            gain = self.pyudev.list[j + 1] # +0 = mode, +1 = range, +2 = channel
-            if gain>self.pyudev.n_channels*3 : raise IndexError("Invalid gain index")
-            print self.pyudev.table_AIN[gain*2 + 0], self.pyudev.table_AIN[gain*2 + 1]
-            analog_vals[j,:] = analog_vals[j,:]*self.pyudev.table_AIN[gain][0] + self.pyudev.table_AIN[gain][1]
-
-        self.L.digital_read.argtypes=[pyudev_t, c_bool]
+        self.L.digital_read.argtypes=[pyudev_t]
         self.L.digital_read.restype=c_uint8 # one unsigned int, containing all the bits in binary form.
-        digital_vals = self.L.digital_read(self.pyudev, c_bool(self.quiet))
+        digital_vals = self.L.digital_read(self.pyudev)
         if digital_vals == None: raise IOError("Communication with the device failed.")
 
-        self.L.counter_read.argtypes=[pyudev_t, c_bool]
-        self.L.counter_read.restype=POINTER(c_ulong) # Array of unsigned long
-        counter_vals = self.L.counter_read(self.pyudev, c_bool(self.quiet)) # Must return already in Hz
-        if counter_vals[0] == None: raise IOError("Communication with the device failed.")
+        self.L.counter_read.argtypes=[pyudev_t, c_int]
+        self.L.counter_read.restype=c_uint16
+        counter0 = self.L.counter_read(self.pyudev,0)
+        counter1 = self.L.counter_read(self.pyudev,1) 
+        if (counter0 == None) or (counter1 == None): raise IOError("Communication with the device failed.")
 
-        self.lastValue = np.vstack((analog_vals, digital_vals))
+        self.lastValue = np.vstack((analog_vals, digital_vals, counter0, counter1))
 
         return
 

@@ -166,7 +166,7 @@ int deactivate_device(pyudev_t pyudev, _Bool quiet) {
   
   // deallocate memory for analog input buffer.
   if (pyudev.buffer != NULL) {
-      free(pyudev.buffer); // Free old memory as n_samples may have changed.
+      free(pyudev.buffer);
   }
 
   return 1;
@@ -230,18 +230,20 @@ pyudev_t set_analog_config(pyudev_t pyudev, _Bool differential, uint8_t gains[],
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Read analog channels into preallocated buffer
-int analog_read(pyudev_t pyudev, double sample_rate, _Bool quiet) {
+// Read analog channels into preallocated buffer, then compute calibrated voltages and store this as an array.
+// A pointer to the array (volts) is passed in which could be a NumPy array ready to be filled.
+int analog_read(pyudev_t pyudev, double sample_rate, _Bool quiet, double* volts) {
     
     // Unpack pyudev struct contents
     libusb_device_handle *udev = PyCapsule_GetPointer(pyudev.udev_capsule, "udev");
     
-    /*if (pyudev.buffer == NULL) {
-      pyudev.buffer = malloc(2*pyudev.n_channels*pyudev.n_samples);
-    }*/
-
     if (pyudev.buffer == NULL) {
       perror("No memory for buffer");
+      return 0;
+    }
+
+    if (volts == NULL) {
+      perror("No memory for output volts");
       return 0;
     }
 
@@ -250,16 +252,32 @@ int analog_read(pyudev_t pyudev, double sample_rate, _Bool quiet) {
     // Setup
     //usbAInConfig_USB1608G(udev, pyudev.list);
     usbAInScanStop_USB1608G(udev);
-	usbAInScanClearFIFO_USB1608G(udev);
+    usbAInScanClearFIFO_USB1608G(udev);
     
     // Acquire    - here could specify triggering with last byte (mode) but currently set to free-run
     usbAInScanStart_USB1608G(udev, pyudev.n_samples, 0, sample_rate, 0x0);
-	int ret = usbAInScanRead_USB1608G(udev, pyudev.n_samples, pyudev.n_channels, pyudev.buffer);
-	if (!quiet) printf("\nn bytes read = %i, should be %i\n", ret, 2*pyudev.n_channels*pyudev.n_samples);
+    int ret = usbAInScanRead_USB1608G(udev, pyudev.n_samples, pyudev.n_channels, pyudev.buffer);
+    if (!quiet) printf("\nn bytes read = %i, should be %i\n", ret, 2*pyudev.n_channels*pyudev.n_samples);
 
     usbAInScanStop_USB1608G(udev);
     usbAInScanClearFIFO_USB1608G(udev);
-    
+
+    // Post process to voltage
+    int i,j,k;
+    uint8_t gain;
+    uint16_t s;
+    for (i = 0; i < pyudev.n_samples; i++) {
+        //printf("In C: %6d", i);
+        for (j = 0; j < pyudev.n_channels; j++) {
+              gain = pyudev.list[j].range;
+              k = i*pyudev.n_channels + j;
+              s = rint(pyudev.buffer[k]*pyudev.table_AIN[gain][0] + pyudev.table_AIN[gain][1]);
+              volts[k] = volts_USB1608G(gain, s);
+              //printf(", %8.4lf", volts[k]); //volts_USB1608G(gain, s));
+        }
+        //printf("\n");
+      }
+   
     return 1;
 }
 
@@ -278,7 +296,7 @@ int set_digital_direction(pyudev_t pyudev, _Bool inputMode, _Bool quiet) {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Read digital pins
-uint8_t digital_read(pyudev_t pyudev, _Bool quiet) {
+uint8_t digital_read(pyudev_t pyudev) {
 
     // Unpack pyudev struct contents
     libusb_device_handle *udev = PyCapsule_GetPointer(pyudev.udev_capsule, "udev");
@@ -286,4 +304,16 @@ uint8_t digital_read(pyudev_t pyudev, _Bool quiet) {
     // Read the digital pin states
 
     return usbDLatchR_USB1608G(udev);;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Read counter
+uint16_t counter_read(pyudev_t pyudev, int counter) {
+    // Unpack pyudev struct contents
+    libusb_device_handle *udev = PyCapsule_GetPointer(pyudev.udev_capsule, "udev");
+ 
+    int c;
+    if (counter==0) c=COUNTER0;
+    if (counter==1) c=COUNTER1;
+    return usbCounter_USB1608G(udev, c);
 }
