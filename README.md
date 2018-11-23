@@ -35,6 +35,9 @@ Laboratory datalogging for USB and Serial devices
        (i.e. Arduinos, RS-232 and RS-485 to serial adapters)
     - pyAPT devices (ie Thorlabs translation stages)
 
+- Measurement Computing devices via mcc-libusb
+    - MCC-USB-1608G confirmed working
+
 - Devices with specialised drivers
     - Picolog USB-TC-08 thermocouple logger
     - USB audio capture devices via ALSA (on Linux)
@@ -54,7 +57,6 @@ Laboratory datalogging for USB and Serial devices
 - Raspberry PI GPIO pins
 - Pico RS-232 TC-08 thermocouple logger
 - PicoScope headless oscilloscopes
-- Measurement Computing devices via mcc-libusb
 - NI-VISA type devices, including
     - Thorlabs PM16-120 power meter
     - NI USB DAQ boards ie 6212-series
