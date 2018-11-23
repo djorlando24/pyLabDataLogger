@@ -1,6 +1,8 @@
 # pyLabDataLogger
 Laboratory datalogging for USB and Serial devices
 
+## Caution, this software is in Beta and may not work reliably yet!
+
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
