@@ -73,5 +73,6 @@ Laboratory datalogging for USB and Serial devices
   the driver manually when the device is detected.
 
 - While Rigol scopes are supported by both sigrok and usbtmc, they are not fully
-  compilant with the standards and connectivity issues are common. These still need
-  to be fixed.
+  compilant with the standards and connectivity issues are common. These still need to be fixed.
+
+See Hardware.md for more detailed information.
