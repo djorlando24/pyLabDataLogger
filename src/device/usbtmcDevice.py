@@ -89,15 +89,23 @@ class usbtmcDevice(device):
         self.instr.timeout = 2
         self.driverConnected = True
         
-        # Try and get ID of device as a check for successful connection
+        # Reset device (works for A33220a ok)
         try:
             self.instr.clear()
+        except usbtmc.usbtmc.UsbtmcException as e:
+            print '\t',e
+            pass
+
+        # Try and get ID of device as a check for successful connection
+        try:
             self.params['IDN'] = self.ask("*IDN?")
             print "\tdetected %s" % self.params['IDN']
-            self.write("SYST:BEEP") # beep the interface
+            if self.subdriver=='33220a': 
+                self.write("SYST:BEEP") # beep the interface
         except:
             self.params['IDN']='?'
-            raise
+            if not quiet: print '[no response]\n'
+            #raise
                     
         # Make first query to get units, description, etc.
         self.query(reset=True)
@@ -120,6 +128,12 @@ class usbtmcDevice(device):
             if self.deviceClass is None: raise IOError
             
             # Apply subdriver-specific variable writes
+            if self.subdriver=='33220a':
+                # Currently this is a read-only device. In future we could set the delay time etc. from here.
+                pass
+            if self.subdriver=='rigol-ds':
+                # Currently this is a read-only device. In future we could set the sample rates etc.
+                pass
             if subdriver=='?':
                 #...
                 pass
@@ -127,7 +141,7 @@ class usbtmcDevice(device):
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
 
         except IOError as e:
-            print "\t%s communication error" % self.name
+            print "\tcommunication error"
             print "\t",e
         except ValueError:
             print "%s - Invalid setting requested" % self.name
@@ -161,7 +175,7 @@ class usbtmcDevice(device):
         assert(self.instr)
         response=""
         time.sleep(0.001)
-        response = self.instr.ask(cmd+'\n') #.strip()
+        response = self.instr.ask(cmd+'\r\n') #.strip()
         if self.debugMode:
             sys.stdout.write('%s\n' % response)
             sys.stdout.flush()
@@ -253,7 +267,16 @@ class usbtmcDevice(device):
                 self.params['Ch%i Waveform Parameters' % n] = self.ask(":WAV:PRE?").split(',')
                 time.sleep(0.01)
         
-        
+        elif self.subdriver=='thorlabs-tsp01':        
+            self.name = "Thorlabs TSP01 Thermometer/Barometer - %s" % self.params['IDN']
+            self.config['channel_names']=['T1','T2','T_internal','Humidity']
+            self.params['raw_units']=['degC','degC','degC','%']
+            self.config['eng_units']=['degC','degC','degC','%']
+            self.config['scale']=[1.,1.,1.,1.]
+            self.config['offset']=[0.,0.,0.,0.]
+            self.params['n_channels']=len(self.config['channel_names'])            
+            self.tmcQuery=['SENS1:TEMP:DATA?','SENS2:TEMP:DATA?','SENS3:TEMP:DATA?','SENS2:HUM:DATA?']
+
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         return
@@ -264,6 +287,8 @@ class usbtmcDevice(device):
             return np.array(data,dtype=np.float32)
         elif self.subdriver=='rigol-ds':
             return np.array( struct.unpack(data,'<b'), dtype=np.uint8 )
+        elif self.subdriver=='thorlabs-tsp01':
+            return np.array([float(v) for v in data])
         else: raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         return None
         
@@ -274,22 +299,28 @@ class usbtmcDevice(device):
             rawData=[]
             for n in range(len(self.tmcQuery)): # loop channels
                 # Commands to setup acquisiton are delimited by commas.
-                if not ',' in self.tmcQuery[n]: q = self.tmcQuery[n] # no setup ocmmands
+                if not ',' in self.tmcQuery[n]: q = self.tmcQuery[n] # no setup commands
                 else:
                     qs = self.tmcQuery[n].split(',') # split commands up
                     for q in qs[:-1]:
                         self.write(q) # send setup commands with 10ms delay
                         time.sleep(0.01)
                     q = qs[-1]
-                rawData.append(self.ask(q)) # request data
+                try:
+                    rawData.append(self.ask(q)) # request data
+                except:
+                    rawData.append(np.nan) # failed to get data
+                    self.debugMode: print "[no response]\n"
+            
             self.lastValue = self.convert_to_array(rawData)
 
         except IOError as e:
-            print "\t%s communication error" % self.name
+            print "\tcommunication error"
             print "\t",e
 
         return [np.nan]*self.params['n_channels']
 
+    
     # Handle query for values
     def query(self, reset=False):
 

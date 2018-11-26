@@ -7,7 +7,7 @@ Laboratory datalogging for USB and Serial devices
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 1/11/2018
+    @date 26/11/2018
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -52,6 +52,7 @@ Laboratory datalogging for USB and Serial devices
 
 
 ## Soon to be supported hardware
+- Thorlabs TSP01 temperature & humidity sensor
 - more SPI bus devices (i.e. MPL11A1 barometer)
 - more I2C bus devices (ie time of flight sensors)
 - Raspberry PI GPIO pins
