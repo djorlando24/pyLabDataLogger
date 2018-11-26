@@ -15,7 +15,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 23/11/2018
+    @date 27/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -26,6 +26,7 @@
     Monash University, Australia
 */
 
+#include <time.h>
 #include "Python.h"
 
 #define FALSE 0
@@ -41,7 +42,6 @@ typedef struct {
     int n_samples;
     float table_AIN[NGAINS_1608G][2];
     float table_AO[NCHAN_AO_1608GX][2];
-    uint16_t *buffer;
     ScanList list[NCHAN_1608G];
 } pyudev_t;
 
@@ -53,7 +53,7 @@ pyudev_t detect_device(_Bool quiet) {
   libusb_device_handle *udev = NULL;
   udev = NULL;
   int usb1608GX_2AO = FALSE;
-  pyudev_t pyudev = {NULL, FALSE, 0, 0, 0, {{0}}, {{0}}, NULL};
+  pyudev_t pyudev = {NULL, FALSE, 0, 0, 0, {{0}}, {{0}}};
   
   int ret = libusb_init(NULL);
   if (ret < 0) {
@@ -105,8 +105,6 @@ pyudev_t activate_device(pyudev_t pyudev, _Bool quiet) {
   
   // Init vars
   struct tm calDate;
-  //float table_AIN[NGAINS_1608G][2];
-  //float table_AO[NCHAN_AO_1608GX][2];
   int i;
 
   // Init device
@@ -163,11 +161,6 @@ int deactivate_device(pyudev_t pyudev, _Bool quiet) {
 	  usbAOut_USB1608GX_2AO(udev, 1, 0x0, pyudev.table_AO);
   }
   cleanup_USB1608G(udev);
-  
-  // deallocate memory for analog input buffer.
-  if (pyudev.buffer != NULL) {
-      free(pyudev.buffer);
-  }
 
   return 1;
 }
@@ -209,22 +202,6 @@ pyudev_t set_analog_config(pyudev_t pyudev, _Bool differential, uint8_t gains[],
 
     // Setup
     usbAInConfig_USB1608G(udev, pyudev.list);
-    //usbAInScanStop_USB1608G(udev);
-	//usbAInScanClearFIFO_USB1608G(udev);
-
-    // Allocate memory for analog input buffer.
-    if (pyudev.buffer != NULL) {
-        free(pyudev.buffer); // Free old memory as n_samples may have changed.
-    }
-    pyudev.buffer = malloc(2*pyudev.n_channels*pyudev.n_samples);
-    if (pyudev.buffer == NULL) {
-      perror("Can not allocate memory for buffer");
-    }
-
-    // Debugging
-    /*for (channel = 0; channel < pyudev.n_channels; channel++) {
-        printf("\tCh. %d Range=%d, Mode=%d\n",pyudev.list[channel].channel, pyudev.list[channel].range,pyudev.list[channel].mode);
-    }*/
     
     return pyudev;
 }
@@ -236,34 +213,48 @@ int analog_read(pyudev_t pyudev, double sample_rate, _Bool quiet, double* volts)
     
     // Unpack pyudev struct contents
     libusb_device_handle *udev = PyCapsule_GetPointer(pyudev.udev_capsule, "udev");
-    
-    if (pyudev.buffer == NULL) {
-      perror("No memory for buffer");
-      return 0;
-    }
 
     if (volts == NULL) {
       perror("No memory for output volts");
       return 0;
     }
 
-    //if (!quiet) printf("\tn_ch = %i, n_samples = %i\n", pyudev.n_channels, pyudev.n_samples);
-
-    // Setup
+    // Acquire in high frequency scan mode - does not seem to work!
     //usbAInConfig_USB1608G(udev, pyudev.list);
-    usbAInScanStop_USB1608G(udev);
+    /*usbAInScanStop_USB1608G(udev);
     usbAInScanClearFIFO_USB1608G(udev);
-    
-    // Acquire    - here could specify triggering with last byte (mode) but currently set to free-run
     usbAInScanStart_USB1608G(udev, pyudev.n_samples, 0, sample_rate, 0x0);
     int ret = usbAInScanRead_USB1608G(udev, pyudev.n_samples, pyudev.n_channels, pyudev.buffer);
     if (!quiet) printf("\nn bytes read = %i, should be %i\n", ret, 2*pyudev.n_channels*pyudev.n_samples);
-
     usbAInScanStop_USB1608G(udev);
-    usbAInScanClearFIFO_USB1608G(udev);
+    usbAInScanClearFIFO_USB1608G(udev);*/
 
+    // Acquire using a blocking loop.
+    int i,j,k=0;
+    double deltat_us = 1e6/sample_rate;
+    double waittime;
+    clock_t time;
+    uint16_t buffer[pyudev.n_channels*pyudev.n_samples];
+    for (i = 0; i < pyudev.n_samples; i++) {
+
+        time = clock();
+        for (j = 0; j < pyudev.n_channels; j++) {
+            //printf("\t%i\n",j);
+            buffer[k] = usbAIn_USB1608G(udev, pyudev.list[j].channel);
+            k++;
+        }
+
+        time = clock() - time;
+        waittime = deltat_us - (double)time/CLOCKS_PER_SEC*1e6;
+        if (waittime>0) {
+            usleep(waittime);
+        } else {
+            double maxf = CLOCKS_PER_SEC/((double)time);
+            if (!quiet) printf("\tUnable to achieve requested sample rate in mcc-libusb: Best possible sample rate %f Hz\n",maxf);
+        }
+    }
+    
     // Post process to voltage
-    int i,j,k;
     uint8_t gain;
     uint16_t s;
     for (i = 0; i < pyudev.n_samples; i++) {
@@ -271,7 +262,7 @@ int analog_read(pyudev_t pyudev, double sample_rate, _Bool quiet, double* volts)
         for (j = 0; j < pyudev.n_channels; j++) {
               gain = pyudev.list[j].range;
               k = i*pyudev.n_channels + j;
-              s = rint(pyudev.buffer[k]*pyudev.table_AIN[gain][0] + pyudev.table_AIN[gain][1]);
+              s = rint(buffer[k]*pyudev.table_AIN[gain][0] + pyudev.table_AIN[gain][1]);
               volts[k] = volts_USB1608G(gain, s);
               //printf(", %8.4lf", volts[k]); //volts_USB1608G(gain, s));
         }
@@ -296,6 +287,7 @@ int set_digital_direction(pyudev_t pyudev, _Bool inputMode, _Bool quiet) {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Read digital pins
+// Currently a single read, in future could implement time resolved acquisition
 uint8_t digital_read(pyudev_t pyudev) {
 
     // Unpack pyudev struct contents
@@ -303,11 +295,12 @@ uint8_t digital_read(pyudev_t pyudev) {
 
     // Read the digital pin states
 
-    return usbDLatchR_USB1608G(udev);;
+    return usbDLatchR_USB1608G(udev);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Read counter
+// Currently a single read, in future could implement time resolved acquisition
 uint16_t counter_read(pyudev_t pyudev, int counter) {
     // Unpack pyudev struct contents
     libusb_device_handle *udev = PyCapsule_GetPointer(pyudev.udev_capsule, "udev");

@@ -6,7 +6,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 23/11/2018
+    @date 27/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -41,7 +41,6 @@ class pyudev_t(ctypes.Structure):
                  ("n_samples", c_int),
                  ("table_AIN", c_float*16),
                  ("table_AO", c_float*16),
-                 ("buffer", POINTER(c_uint16)),
                  ("list", POINTER(ScanList_t)),
                 ]
 
@@ -188,13 +187,13 @@ class mcclibusbDevice(device):
                 if 'sample_rate' in self.params:
                     self.config['sample_rate']=self.params['sample_rate']
                 else:
-                    self.config['sample_rate']=100. # Hz
+                    self.config['sample_rate']=1000. # Hz
 
             if not 'n_samples' in self.config:
                 if 'n_samples' in self.params:
                     self.config['n_samples']=self.params['n_samples']
                 else:
-                    self.config['n_samples']=1
+                    self.config['n_samples']=5
 
             # Gain range for analog inputs
             if not 'analog_input_gain' in self.config:            
@@ -285,6 +284,8 @@ class mcclibusbDevice(device):
             raise IOError("Communication with the device failed.") 
         analog_vals = analog_vals.reshape(self.pyudev.n_channels,self.pyudev.n_samples)
 
+        # Currently, only one sampling of the digital IO and counter.
+        # Would need to fold these into the analog read loop if we wanted real-time.
         self.L.digital_read.argtypes=[pyudev_t]
         self.L.digital_read.restype=c_uint8 # one unsigned int, containing all the bits in binary form.
         digital_vals = self.L.digital_read(self.pyudev)
@@ -295,9 +296,12 @@ class mcclibusbDevice(device):
         counter0 = self.L.counter_read(self.pyudev,0)
         counter1 = self.L.counter_read(self.pyudev,1) 
         if (counter0 == None) or (counter1 == None): raise IOError("Communication with the device failed.")
-
-        self.lastValue = np.vstack((analog_vals, digital_vals, counter0, counter1))
-
+        
+        self.lastValue = []
+        for i in range(analog_vals.shape[0]):
+            self.lastValue.append(analog_vals[i,:])
+        self.lastValue.extend([digital_vals, counter0, counter1])
+        
         return
 
     # Handle query for values
@@ -321,7 +325,9 @@ class mcclibusbDevice(device):
         for v in self.lastValue: 
             if v is None: lastValueSanitized.append(np.nan)
             else: lastValueSanitized.append(v)
-        self.lastScaled = np.array(lastValueSanitized) * self.config['scale'] + self.config['offset']
+        self.lastScaled=[]
+        for i in range(len(lastValueSanitized)):
+            self.lastScaled.append(np.array(lastValueSanitized[i]) * self.config['scale'][i] + self.config['offset'][i])
         self.updateTimestamp()
         return self.lastValue
 

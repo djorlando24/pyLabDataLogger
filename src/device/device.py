@@ -80,7 +80,7 @@ class device:
                       
                       
         # Scalars.
-        if ~isinstance( self.lastValue[0], list) and ~isinstance(self.lastValue[0], np.ndarray):
+        if (not isinstance( self.lastValue[0], list)) and (not isinstance(self.lastValue[0], np.ndarray)):
             if 'raw_units' in self.params:
                 sys.stdout.write(lead+'Raw values: ')
                 for n in range(self.params['n_channels']):
