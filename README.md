@@ -23,12 +23,14 @@ Laboratory datalogging for USB and Serial devices
 ## Supported hardware
 
 - Sigrok devices
-       confirmed working: Tenma 72-7730A multimeter, 72-7712 Thermometer,
-       USBee/LHT00SU1 ADC & logic analyser via fx2lafw driver
+     confirmed working:
+    - Tenma 72-7730A multimeter
+    - Tenma 72-7712 thermometer
+    - USBee/LHT00SU1 ADC & logic analyser via fx2lafw driver
 
 - USBTMC devices that use SCPI command set
-       confirmed working: Agilent 33220A waveform generator (USB),
-       Rigol DS series oscilloscopes.
+    - Agilent 33220A waveform generator (via USB),
+    - Thorlabs TSP01 temperature & humidity logger
 
 - Microcontrollers using FTDI or CP2102 serial over USB chips
        that push strings with format "VARNAME=VALUE, VARNAME=..."
@@ -52,12 +54,12 @@ Laboratory datalogging for USB and Serial devices
 
 
 ## Soon to be supported hardware
-- Thorlabs TSP01 temperature & humidity sensor
 - more SPI bus devices (i.e. MPL11A1 barometer)
 - more I2C bus devices (ie time of flight sensors)
 - Raspberry PI GPIO pins
 - Pico RS-232 TC-08 thermocouple logger
 - PicoScope headless oscilloscopes
+- Rigol DS oscilloscopes (should be supported by usbtmc or sigrok, but they don't properly follow the expected communications protocols)
 - NI-VISA type devices, including
     - Thorlabs PM16-120 power meter
     - NI USB DAQ boards ie 6212-series

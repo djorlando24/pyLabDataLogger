@@ -24,3 +24,7 @@ The generic HID serial adapters are easily confused as their VID/PID are the sam
 You will need to tell pyLabDataLogger which of these devices is found at a given USB device address:
 
 		Code block
+
+## Thorlabs TSP01
+Make sure the usbtmc rules are added in /etc/udev/rules.d as per INSTALL.md
+If the device won't communicate, unplug & replug it.

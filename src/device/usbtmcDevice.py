@@ -89,12 +89,16 @@ class usbtmcDevice(device):
         self.instr.timeout = 2
         self.driverConnected = True
         
-        # Reset device (works for A33220a ok)
+        # Reset device
         try:
-            self.instr.clear()
+            if self.subdriver=='thorlabs-tsp01':
+                #self.write("*CLS\r") # clear status
+                self.write("*RST\r") # reset
+            else:
+                self.instr.clear()
         except usbtmc.usbtmc.UsbtmcException as e:
             print '\t',e
-            pass
+            #raise
 
         # Try and get ID of device as a check for successful connection
         try:
@@ -102,6 +106,7 @@ class usbtmcDevice(device):
             print "\tdetected %s" % self.params['IDN']
             if self.subdriver=='33220a': 
                 self.write("SYST:BEEP") # beep the interface
+        except KeyboardInterrupt: raise
         except:
             self.params['IDN']='?'
             if not quiet: print '[no response]\n'
@@ -122,7 +127,6 @@ class usbtmcDevice(device):
 
     # Apply configuration changes to the driver (subdriver-specific)
     def apply_config(self):
-        subdriver = self.params['driver'].split('/')[1:]
         try:
             assert(self.deviceClass)
             if self.deviceClass is None: raise IOError
@@ -275,7 +279,7 @@ class usbtmcDevice(device):
             self.config['scale']=[1.,1.,1.,1.]
             self.config['offset']=[0.,0.,0.,0.]
             self.params['n_channels']=len(self.config['channel_names'])            
-            self.tmcQuery=['SENS1:TEMP:DATA?','SENS2:TEMP:DATA?','SENS3:TEMP:DATA?','SENS2:HUM:DATA?']
+            self.tmcQuery=['SENS3:TEMP:DATA?','SENS4:TEMP:DATA?','SENS1:TEMP:DATA?','SENS2:HUM:DATA?']
 
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -308,9 +312,11 @@ class usbtmcDevice(device):
                     q = qs[-1]
                 try:
                     rawData.append(self.ask(q)) # request data
+                except KeyboardInterrupt: raise
                 except:
                     rawData.append(np.nan) # failed to get data
-                    self.debugMode: print "[no response]\n"
+                    if self.debugMode: print "[no response]\n"
+
             
             self.lastValue = self.convert_to_array(rawData)
 
