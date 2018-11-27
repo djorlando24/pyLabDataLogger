@@ -10,7 +10,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 26/11/2018
+    @date 27/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -25,8 +25,8 @@
 usb_device_table = [
 
     # Sigrok devices with fixed VID and PID
-    {'vid':0x1a86, 'pid':0xe008, 'bcdDevice':0x1300, 'driver':'sigrok/tenma-72-7730', 'name':'Tenma 72-7730A Multimeter'}, # bcdDevice 0x1400 on some machines and 0x1300 on others!?
-    {'vid':0x1a86, 'pid':0xe008, 'bcdDevice':0x1300, 'driver':'sigrok/uni-t-ut32x', 'name':'Tenma 72-7712 Thermometer'},
+    {'vid':0x1a86, 'pid':0xe008, 'driver':'sigrok/tenma-72-7730', 'name':'Tenma 72-7730A Multimeter'},
+    {'vid':0x1a86, 'pid':0xe008, 'driver':'sigrok/uni-t-ut32x', 'name':'Tenma 72-7712 Thermometer'},
     {'vid':0x1ab1, 'pid':0x04ce, 'driver':'sigrok/rigol-ds', 'name':'Rigol DS Oscilloscope'},
     {'vid':0x08a9, 'pid':0x0014, 'driver':'sigrok/fx2lafw', 'name':'LHT00SU1 logic analyzer'},
                  
@@ -85,6 +85,7 @@ usb_device_table = [
 
 # Search table for a match
 def match_device(dev):
+    matches=[]
     for match in usb_device_table:
         # Find matching VID and PID (mandatory)
         if (dev.idVendor == match['vid']) and (dev.idProduct == match['pid']):
@@ -94,8 +95,8 @@ def match_device(dev):
                 if key in match.keys():
                     if match[key] != get_property(dev,key): matching=False
                     elif match[key] is None: matching=True
-            if matching: return match
-    return None
+            if matching: matches.append(match)
+    return matches
 
 # Get device property, catch exception if not possible.
 def get_property(dev,key):
@@ -115,13 +116,37 @@ def search_for_usb_devices(debugMode=False):
 
     print "Scanning for USB devices..."
     found_entries = []
-    for dev in usb.core.find(find_all=True): 
+
+    # Search all USB devices on the computer
+    for dev in usb.core.find(find_all=True):
+        # Get properties 
         manufacturer = get_property(dev,'manufacturer')
         serial_number = get_property(dev,'serial_number')
         if debugMode:
             print 'bus=%03i address=%03i : vid=0x%04x pid=0x%04x : class=0x%02x device=0x%04x manufacturer=%s serial=%s' %\
              (dev.bus, dev.address, dev.idVendor, dev.idProduct,dev.bDeviceClass,dev.bcdDevice,manufacturer,serial_number)
-        table_entry = match_device(dev)
+
+        # Check if device is a match with any in the supported devices table
+        found_devices = match_device(dev)
+        if len(found_devices) == 0: table_entry = None
+        elif len(found_devices) == 1: table_entry = found_devices[0]
+        else:
+            # Multiple possible matches (generic/common USB adapter)
+            print '\nGeneric USB adapter found at %i.%i. Please choose which hardware you have on this adapter:' % (dev.bus, dev.address)
+            print "0) None (don't use this device)"
+            n=1; choose_n=-1
+            for d in found_devices: 
+                print '%i) %s (%s)' % (n,d['name'],d['driver'])
+                n+=1
+            while (choose_n<0) | (choose_n>len(found_devices)):
+                try:
+                    choose_n = int(raw_input('> '))
+                except ValueError:
+                    choose_n = -1
+                if choose_n == 0: table_entry = None
+                if choose_n <= len(found_devices): table_entry = found_devices[choose_n-1]
+            
+        # If matching device found, add to found_entries list
         if table_entry is not None:
             table_entry['manufacturer']=manufacturer
             table_entry['serial_number']=dev._serial_number

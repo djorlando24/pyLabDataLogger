@@ -59,7 +59,7 @@ class srdevice(device):
         if 'debugMode' in kwargs: self.debugMode=kwargs['debugMode']
         else: self.debugMode=False
 
-        if 'quiet' in kwargs; self.quiet = kwargs['quiet']
+        if 'quiet' in kwargs: self.quiet = kwargs['quiet']
         else: self.quiet=True
 
         if params is not {}:
@@ -265,31 +265,44 @@ class srdevice(device):
             self.updateTimestamp()
             self.srsession.stop()
             
-            # Parse analog values
-            self.params['raw_units'] = []
+            # Parse analog values - get buffer
+            if self.debugMode: print '\tOutput buffer =',self.data_buffer
             delimited_buffer = self.data_buffer[0].split('\n')
-            n = 0
             n_analog_channels = self.params['n_channels'] - sum(self.params['sr_logic_channel'])
-            self.lastValue = [[]]*n_analog_channels
+            
+            # Make list of empty lists to put values in.
+            # initialize raw_units to empty strings.
+            self.lastValue = []; self.params['raw_units'] = []
+            for i in range(n_analog_channels):
+                self.lastValue.append([])
+                self.params['raw_units'].append('')
+            
+            # Loop thru buffer entries
+            n = 0
             for aVal in delimited_buffer:
                 if len(aVal) >0:
                     s=aVal.strip(':').split(' ')
                    
                     if not 'FRAME-END' in aVal:
-                        self.lastValue[n].append(float(s[1]))
+                        self.lastValue[n].append(float(s[1])) # save value
+                        self.params['raw_units'][n] = ' '.join(s[2:]).strip() # save unit
                         n = (n+1)%n_analog_channels               
 
-                    # Update raw_units
-                    #if len(self.params['raw_units']) < n_analog_channels:
-                    #    self.params['raw_units'].append(s[-1].strip())
-                    self.params['raw_units'].append(s[-1].strip())
 
-                    # Check existence of eng_units
-                    if not 'eng_units' in self.config:
-                        self.params['eng_units'] = self.params['raw_units']
-                    if len(self.params['eng_units']) != len(self.params['raw_units']):
-                        self.params['eng_units'] = self.params['raw_units']
-            
+            # Check existence of eng_units
+            if not 'eng_units' in self.config:
+                self.params['eng_units'] = self.params['raw_units']
+            if len(self.params['eng_units']) != len(self.params['raw_units']):
+                self.params['eng_units'] = self.params['raw_units']
+
+            # Put in NaN if buffer under-full or empty
+            if len(delimited_buffer[0]) == 0:
+                self.lastValue = [[np.nan]]*n_analog_channels
+                self.params['raw_units'] = ['']*n_analog_channels
+            if [] in self.lastValue:
+                for n in range(len(self.lastValue)):
+                    if self.lastValue[n]==[]: self.lastValue[n]=[np.nan]              
+
             # Parse binary data
             if self.has_digital_input:
                 digital_data = []
@@ -307,6 +320,11 @@ class srdevice(device):
             # Convert analog values to scaled values
             for t in range(self.config['n_samples']):
                 self.lastScaled = np.array(self.lastValue)[:,t] * self.config['scale'] + self.config['offset']
+
+            # If only 1 sample, convert self.lastValue to list rather than list of lists with 1 item each.
+            if self.config['n_samples']<2:
+                self.lastValue = [ v[0] for v in self.lastValue ]
+                print self.lastValue, self.params['raw_units']
 
         except IOError:
             print "Unable to communicate with %s"  % self.name
