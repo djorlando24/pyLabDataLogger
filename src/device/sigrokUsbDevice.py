@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 11/10/2018
+    @date 27/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -24,6 +24,13 @@ try:
 except ImportError:
     print "Please install pyUSB"
     raise
+
+try:
+    import sigrok.core.classes as sr
+except ImportError:
+    print "Please install sigrok with Python bindings"
+    raise
+
 
 
 class srdevice(device):
@@ -47,6 +54,14 @@ class srdevice(device):
         
         self.lastValueTimestamp = None # Time when last value was obtained
         
+        self.subdriver = self.params['driver'].lower().split('/')[1]
+
+        if 'debugMode' in kwargs: self.debugMode=kwargs['debugMode']
+        else: self.debugMode=False
+
+        if 'quiet' in kwargs; self.quiet = kwargs['quiet']
+        else: self.quiet=True
+
         if params is not {}:
             try:
                 self.scan()
@@ -86,13 +101,28 @@ class srdevice(device):
                                             12000000,16000000,24000000)
         elif (self.params['model'] == 'UT32x') or (self.params['model'] == '72-7730'):
             self.config['valid_samplerates']=(None,)
+        elif self.subdriver == 'rigol-ds':
+            if not self.quiet: print '\tSample rate must be set on the oscilloscope in advance'
+            self.config['valid_samplerates']=(1,)
         else:
-            print '\tDefault samplerates not known for',self.params['model']
+            if not self.quiet: print '\tDefault samplerates not known for',self.params['model']
             self.config['valid_samplerates']=(1,)
         
         self.config['samplerate']=self.config['valid_samplerates'][0]
     
+    # Callback for sigrok logging (for debug mode)
+    def log_callback_debug(self, loglevel, s):  
+        if self.quiet: return
+        if loglevel != sr.LogLevel.SPEW:
+            print "\t\tsr(%s):" % loglevel, repr(s)
+        return
 
+    # Callback for sigrok logging (for normal operation mode)
+    def log_callback_normal(self, loglevel, s):
+        if self.quiet: return
+        if loglevel == sr.LogLevel.INFO:
+            print "\t\tsr(%s):" % loglevel, repr(s)
+        return
 
     # Establish connection to device (ie open port)
     def activate(self):
@@ -102,10 +132,14 @@ class srdevice(device):
         # Make new Sigrok context, attempt to load driver requested.
         print "\tconnecting to %s - sigrok driver" % self.name
         try:
-            import sigrok.core.classes as sr
             self.srcontext = sr.Context.create()
-            srdriver = self.srcontext.drivers[self.params['driver'].lower().split('/')[1]]
-            srdevs = srdriver.scan(conn='%i.%i' % (self.bus, self.adds))
+            if self.debugMode: self.srcontext.set_log_callback(self.log_callback_debug) # noisy debugging
+            else: self.srcontext.set_log_callback(self.log_callback_normal) # minimal messages
+            srdriver = self.srcontext.drivers[self.subdriver]
+            if self.subdriver == 'rigol-ds':
+                srdevs = srdriver.scan()  # Only one Rigol DS scope can be used at a time
+            else:
+                srdevs = srdriver.scan(conn='%i.%i' % (self.bus, self.adds)) # find by address in case of multiple devices
             if len(srdevs) == 0: raise IOError("\tsigrok unable to communicate with device %s." % self.name)
             
             # Set up sigrok device
@@ -120,7 +154,7 @@ class srdevice(device):
         except IOError:
             return
                 
-        print "\t%s - %s with %d channels: %s" % (self.srdev.driver.name, str.join(' ',\
+        if not self.quiet: print "\t%s - %s with %d channels: %s" % (self.srdev.driver.name, str.join(' ',\
                 [s for s in (self.srdev.vendor, self.srdev.model, self.srdev.version) if s]),\
                 len(self.srdev.channels), str.join(' ', [c.name for c in self.srdev.channels]))
 
@@ -132,7 +166,7 @@ class srdevice(device):
             #self.params['sr_channels'].append([c for c in self.srdev.channels if c.type==sr.ChannelType.LOGIC])
             #self.params['raw_units'].append('')
             self.has_digital_input = True
-        
+
         self.config['channel_names'] = [c.name for c in self.srdev.channels]
         self.params['sr_channels'] = [c for c in self.srdev.channels]
         self.params['sr_logic_channel'] = [c.type == sr.ChannelType.LOGIC for c in self.srdev.channels]
@@ -143,21 +177,16 @@ class srdevice(device):
         self.config['scale'] = np.ones(nch,)
         self.config['offset'] = np.zeros(nch,)
         self.config['enabled'] = [c.enabled for c in self.srdev.channels]
+        if False in self.config['enabled']: 
+            if not self.quiet: 
+                print "\tEnabled channels:",[self.config['channel_names'][i] for i in range(nch) if self.config['enabled'][i]]
         self.default_samplerate()
         
         # Set default configuration parameters
         if not 'n_samples' in self.config.keys(): self.config['n_samples']=1
         self.params['n_channels']=len(self.srdev.channels)
         self.apply_config()
-        
-        # Prepare for sampling
-        self.srsession = self.srcontext.create_session()
-        self.srsession.add_device(self.srdev)
-        self.srsession.start()
-        if self.has_digital_input:
-            self.srdoutput = self.srcontext.output_formats['bits'].create_output(self.srdev)
-        self.sraoutput = self.srcontext.output_formats['analog'].create_output(self.srdev)
-        
+               
         # Run one set of samples to update raw_units and check connection is good.
         self.query()
         self.pprint()
@@ -167,9 +196,14 @@ class srdevice(device):
 
     # Apply configuration changes from self.config to the underlying driver.
     def apply_config(self):
-        import sigrok.core.classes as sr
-        # Set num samples and samplate rate
-        self.srdev.config_set(sr.ConfigKey.LIMIT_SAMPLES, int(self.config['n_samples']))
+
+        # Set num samples / frames
+        if self.subdriver == 'rigol-ds':
+            # Oscilloscopes use frames
+            self.srdev.config_set(sr.ConfigKey.LIMIT_FRAMES,  int(self.config['n_samples']))
+        else:
+            # Other devices use samples
+            self.srdev.config_set(sr.ConfigKey.LIMIT_SAMPLES, int(self.config['n_samples']))
         
         for i in range(len(self.params['sr_channels'])):
             if isinstance( self.params['sr_channels'][i], list):
@@ -177,30 +211,40 @@ class srdevice(device):
             else:
                 self.params['sr_channels'][i].enable = self.config['enabled'][i]
     
-        # Set samplerate if reqiured
-        if self.config['valid_samplerates'][0] is not None:
-            try:
-                if not self.config['samplerate'] in self.config['valid_samplerates']:
-                    print "Samplerate",self.config['samplerate'],"not accepted"
-                    print "Valid sample rates =",self.config['valid_samplerates']
-                self.srdev.config_set(sr.ConfigKey.SAMPLERATE, self.config['samplerate'])
-            except ValueError as err:
-                pass
+        # Set samplerate if reqiured (not supported on Rigol DS)
+        if self.subdriver != 'rigol-ds':
+            if self.config['valid_samplerates'][0] is not None:
+                try:
+                    if not self.config['samplerate'] in self.config['valid_samplerates']:
+                        print "Samplerate",self.config['samplerate'],"not accepted"
+                        print "Valid sample rates =",self.config['valid_samplerates']
+                    self.srdev.config_set(sr.ConfigKey.SAMPLERATE, self.config['samplerate'])
+                except ValueError as err:
+                    pass
     
         return
 
+    
 
     # Deactivate connection to device (ie close serial port)
     def deactivate(self):
-        import sigrok.core.classes as sr
         self.close()
         del self.srdev, self.srcontext
         self.driverConnected=False
         return
 
+
+    
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self):
         
+        self.srsession = self.srcontext.create_session()
+        self.srsession.add_device(self.srdev)
+        self.srsession.start()
+        if self.has_digital_input:
+            self.srdoutput = self.srcontext.output_formats['bits'].create_output(self.srdev)
+        self.sraoutput = self.srcontext.output_formats['analog'].create_output(self.srdev)
+
         try:
             assert self.sraoutput, self.srsession
             if self.has_digital_input: assert self.srdoutput
@@ -216,24 +260,25 @@ class srdevice(device):
             self.srsession.add_datafeed_callback(datafeed_in)
             
             # Sample
-            self.data_buffer = ['', '']
+            self.data_buffer = ['', '']  
             self.srsession.run()
             self.updateTimestamp()
             self.srsession.stop()
             
             # Parse analog values
+            self.params['raw_units'] = []
+            delimited_buffer = self.data_buffer[0].split('\n')
+            n = 0
             n_analog_channels = self.params['n_channels'] - sum(self.params['sr_logic_channel'])
             self.lastValue = [[]]*n_analog_channels
-            self.params['raw_units'] = []       
-            n = 0
-            if len(''.join(self.data_buffer)) < 1: raise IOError
-            for aVal in self.data_buffer[0].split('\n'):
+            for aVal in delimited_buffer:
                 if len(aVal) >0:
                     s=aVal.strip(':').split(' ')
-                    
-                    self.lastValue[n].append(float(s[1]))
-                    n = (n+1)%n_analog_channels
-                    
+                   
+                    if not 'FRAME-END' in aVal:
+                        self.lastValue[n].append(float(s[1]))
+                        n = (n+1)%n_analog_channels               
+
                     # Update raw_units
                     #if len(self.params['raw_units']) < n_analog_channels:
                     #    self.params['raw_units'].append(s[-1].strip())

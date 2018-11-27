@@ -7,7 +7,7 @@ Laboratory datalogging for USB and Serial devices
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 26/11/2018
+    @date 27/11/2018
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -26,6 +26,7 @@ Laboratory datalogging for USB and Serial devices
      confirmed working:
     - Tenma 72-7730A multimeter
     - Tenma 72-7712 thermometer
+    - Rigol DS-series oscilloscopes
     - USBee/LHT00SU1 ADC & logic analyser via fx2lafw driver
 
 - USBTMC devices that use SCPI command set
@@ -56,10 +57,9 @@ Laboratory datalogging for USB and Serial devices
 ## Soon to be supported hardware
 - more SPI bus devices (i.e. MPL11A1 barometer)
 - more I2C bus devices (ie time of flight sensors)
-- Raspberry PI GPIO pins
+- Raspberry PI GPIO pins (for triggering measurements as well as logging their state)
 - Pico RS-232 TC-08 thermocouple logger
 - PicoScope headless oscilloscopes
-- Rigol DS oscilloscopes (should be supported by usbtmc or sigrok, but they don't properly follow the expected communications protocols)
 - NI-VISA type devices, including
     - Thorlabs PM16-120 power meter
     - NI USB DAQ boards ie 6212-series
@@ -74,8 +74,5 @@ Laboratory datalogging for USB and Serial devices
   you can run scripts/reset-WCH.CN.sh. These devices also have generic USB-to
   -serial adapters than can easily be confused. It may be necessary to specify
   the driver manually when the device is detected.
-
-- While Rigol scopes are supported by both sigrok and usbtmc, they are not fully
-  compilant with the standards and connectivity issues are common. These still need to be fixed.
 
 See Hardware.md for more detailed information.
