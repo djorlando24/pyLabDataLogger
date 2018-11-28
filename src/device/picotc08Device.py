@@ -455,13 +455,13 @@ class usbtc08_logger():
 
     def unit_celsius(self):
         self.unit = usbtc08.USBTC08_UNITS_CENTIGRADE
-        self.unit_text = u'°C'
+        self.unit_text = 'C'
         if self.debugMode:
             print '\tself.unit set to %s.' % self.unit_text
 
     def unit_fahrenheit(self):
         self.unit = usbtc08.USBTC08_UNITS_FAHRENHEIT
-        self.unit_text = u'°F'
+        self.unit_text = 'F'
         if self.debugMode:
             print '\tself.unit set to %s.' % self.unit_text
 
@@ -473,7 +473,7 @@ class usbtc08_logger():
 
     def unit_rankine(self):
         self.unit = usbtc08.USBTC08_UNITS_RANKINE
-        self.unit_text = u'°R'
+        self.unit_text = 'R'
         if self.debugMode:
             print '\tself.unit set to %s.' % self.unit_text
 

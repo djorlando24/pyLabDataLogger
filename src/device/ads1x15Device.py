@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 13/10/2018
+    @date 28/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -61,6 +61,8 @@ class ads1x15Device(i2cDevice):
         self.config['offset']=np.zeros(self.params['n_channels'],)
 
         print "Activating %s on i2c bus at %i:%s with %i channels" % (self.params['driver'],self.params['bus'],self.params['address'],self.params['n_channels'])
+        if ('untitled' in self.name.lower()) or (self.name==''):
+            self.name = '%s I2C %i:%s' % (self.params['driver'],self.params['bus'],self.params['address'])
         self.apply_config()
         self.driverConnected=True
         

@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 11/10/2018
+    @date 28/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -20,12 +20,18 @@ from device import device
 import datetime, time
 import numpy as np
 
-
+try:
+    import RPi.GPIO as GPIO
+    GPIO.setmode(GPIO.BCM) # Broadcom pin-numbering scheme
+except ImportError:
+    print "Error, RPi.GPIO could not be loaded"
+    exit()
+    
 ########################################################################################################################
 class gpioDevice(device):
     """ Class providing support for Raspberry Pi GPIO """
 
-    def __init__(self,params={}):
+    def __init__(self,params={},**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
@@ -35,14 +41,19 @@ class gpioDevice(device):
         if params is {}: return
         
         # Set up default input pins for Raspberry Pi controller. (just inputs, not outputs).
-        self.params['pins']=(5,6,19,20,16,17,18)
-        self.params['pup']=(False,False,False,False,False,False,False) # pull up input?
-        self.config['channel_names']=['TTL In 1','TTL In 2','HX: Water level','HX: Heater','Button1','Button2','Button3']
+        if not 'pins' in self.params: raise KeyError("Please  specify which input pins to monitor")
+        if not 'pup' in self.params:
+                print "Pull-up/down not specified: setting default mode pull-up off"
+                self.params['pup']=(False)*len(self.params['pins'])
+        elif len(self.params['pup']) < len(self.params['pins']):
+                raise IndexError("number of pup entries does not match number of pins")
+        if not 'channel_names' in self.params:
+                self.params['channel_names']=['Pin%02i' % p for p in self.params['pins']]
         self.params['n_channels']=len(self.params['pins'])
         self.config['scale']=np.ones(len(self.params['pins']),)
         self.config['offset']=np.zeros(len(self.params['pins']),)
-        self.params['raw_units']=None
-        self.config['eng_units']=None
+        self.params['raw_units']=['']*len(self.params['pins'])
+        self.config['eng_units']=['']*len(self.params['pins'])
         
         self.scan()
         return
@@ -50,21 +61,16 @@ class gpioDevice(device):
     # Detect if device is present
     def scan(self,override_params=None):
         if override_params is not None: self.params = override_params
-        try:
-            import RPi.GPIO as GPIO
-            GPIO.setmode(GPIO.BCM) # Broadcom pin-numbering scheme
-            self.activate()
-        except ImportError:
-            print "Error, RPi.GPIO could not be loaded"
-            return
+        assert(GPIO)
+        self.activate()
 
     # Activate I/O
     def activate(self):
         if len(self.params['pins']) < 1:
             print "Error, no input GPIO pins specified"
             return
-        for pin, pud in self.params['pins'], self.params['pud']:
-            if pud: GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        for pin, pup in zip(self.params['pins'], self.params['pup']):
+            if pup: GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
             else: GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
         self.driverConnected=True
         
@@ -72,9 +78,9 @@ class gpioDevice(device):
 
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self):
-        lastValue = []
+        self.lastValue = []
         for pin in self.params['pins']:
-            lastValue.append(GPIO.input(pin))
+            self.lastValue.append(GPIO.input(pin))
         
         self.lastScaled = np.array(self.lastValue) * self.config['scale'] + self.config['offset']
         

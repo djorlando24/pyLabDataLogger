@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 23/11/2018
+    @date 28/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -44,13 +44,17 @@ class serialDevice(device):
         self.lastValueTimestamp = None # Time when last value was obtained
         self.Serial = None
         self.tty_prefix = tty_prefix
-        if params is not {}: self.scan(quiet=quiet)
+        if 'quiet' in kwargs:
+            self.quiet = quiet | kwargs['quiet']
+        else:
+            self.quiet = quiet
+        if params is not {}: self.scan()
         
         return
 
     ########################################################################################################################
     # Detect if device is present
-    def scan(self,override_params=None,quiet=False):
+    def scan(self,override_params=None):
         self.port = None
         if override_params is not None: self.params = override_params
         
@@ -70,7 +74,7 @@ class serialDevice(device):
                         self.params['tty']=self.port
                 else:
                     if serialport.vid==self.params['vid'] and serialport.pid==self.params['pid']:
-                        if not quiet: print '\t',serialport.hwid, serialport.name
+                        if not self.quiet: print '\t',serialport.hwid, serialport.name
                         if serialport.name is not None:
                             self.port = serialport.name # Linux
                         else:
@@ -83,12 +87,12 @@ class serialDevice(device):
             print "\tYou may need to install a specific USB-to-Serial driver."
             print "\tfound non-matching ports:",list_ports.comports()[0]
         
-        else: self.activate(quiet=quiet)
+        else: self.activate()
         return
 
     ########################################################################################################################
     # Establish connection to device (ie open serial port)
-    def activate(self,quiet=False):
+    def activate(self):
     
         # Over-ride serial comms parameters for special devices
         subdriver = self.params['driver'].split('/')[1:]
@@ -111,6 +115,12 @@ class serialDevice(device):
         if not 'timeout_total' in self.params.keys(): self.params['timeout_total']=10. # sec for total request loop
         if not 'min_response_length' in self.params.keys(): self.params['min_response_length']=0 # bytes
         
+        if not self.quiet: print "\tOpening serial port %s: %s (%i, %s, %s, %s, %s, %i)" % (self.port,\
+                                    self.params['baudrate'],\
+                                    self.params['bytesize'], self.params['parity'],\
+                                    self.params['stopbits'], self.params['xonxoff'],\
+                                    self.params['rtscts'], self.params['timeout'])
+                                    
         self.Serial = serial.Serial(port=self.port, baudrate=self.params['baudrate'],\
                                     bytesize=self.params['bytesize'], parity=self.params['parity'],\
                                     stopbits=self.params['stopbits'], xonxoff=self.params['xonxoff'],\
@@ -120,7 +130,7 @@ class serialDevice(device):
                                     
         # Make first query to get units, description, etc.
         self.query(reset=True)
-        if not quiet: self.pprint()
+        if not self.quiet: self.pprint()
         return
 
     ########################################################################################################################
@@ -193,6 +203,9 @@ class serialDevice(device):
     def blockingSerialRequest(self,request,terminationChar='\r',maxlen=1024,min_response_length=0):
         s=''
         response=None
+        if not self.quiet:
+            sys.stdout.write('\t'+self.port+':'+repr(request)+'\t')
+            sys.stdout.flush()
         self.Serial.write(request)
         t_=time.time()
         time.sleep(0.01)
@@ -204,6 +217,7 @@ class serialDevice(device):
                 response=s.strip()
                 break
             if (time.time() - t_) > self.params['timeout_total']: raise IOError
+        if not self.quiet: sys.stdout.write(repr(response)+'\n')
         return response
     
     ########################################################################################################################
