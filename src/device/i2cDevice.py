@@ -66,6 +66,10 @@ class i2cDevice(device):
         # Default I2C bus parameters
         if not 'bus' in params.keys(): params['bus']=1
         
+        # apply kwargs to params
+        for k in ['differential','gain']:
+           if k in kwargs: self.params[k]=kwargs[k]
+        
         if params is {}: return
         self.scan(quiet=quiet)
         return

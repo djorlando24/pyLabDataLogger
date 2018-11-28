@@ -95,7 +95,7 @@ class serialDevice(device):
     def activate(self):
     
         # Over-ride serial comms parameters for special devices
-        subdriver = self.params['driver'].split('/')[1:]
+        subdriver = ''.join(self.params['driver'].split('/')[1:])
         if subdriver=='omega-iseries':
             if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.SEVENBITS
             if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_EVEN
@@ -336,7 +336,7 @@ class serialDevice(device):
     ########################################################################################################################
     # Convert string responses from serial port into usable numbers/values
     def convert_raw_string_to_values(self, rawData, requests=None):
-        
+        self.lastValue=[np.nan]*self.params['n_channels']
         # Parse depending on subdriver
         subdriver = self.subdriver
         try:
@@ -497,7 +497,7 @@ class serialDevice(device):
             print "\t%s communication error" % self.name
             print "\t",e
 
-        return [np.nan]*self.params['n_channels']
+        return #[np.nan]*self.params['n_channels']
 
     ########################################################################################################################
     # Handle query for values
@@ -518,7 +518,8 @@ class serialDevice(device):
 
         # Read values        
         self.get_values()
-
+	if self.lastValue is None: self.lastValue=[np.nan]*self.params['n_channels']
+	
         # Generate scaled values. Convert non-numerics to NaN
         lastValueSanitized = []
         for v in self.lastValue: 

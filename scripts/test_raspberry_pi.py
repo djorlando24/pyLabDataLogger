@@ -23,7 +23,8 @@
 """
 
 from pyLabDataLogger.device import usbDevice, serialDevice, i2cDevice, gpioDevice
-import time
+import time, serial
+
 if __name__ == '__main__':
 
     devices=[]
@@ -34,13 +35,13 @@ if __name__ == '__main__':
 
     """
     # Serial via UART setup
-    d={'driver':'serial/omega-iseries', 'name':'Omega iSeries via RPi UART', 'port':'/dev/ttyAMA0'}
+    d={'driver':'serial/omega-iseries', 'name':'Omega iSeries via RPi UART', 'port':'/dev/serial0'}
     devices.append(serialDevice.serialDevice(params=d,**special_args))
     """
 
     # GPIO pins setup
     gpioInputPins=(5,6,19,20,16,17,18)
-    gpioInputPullup=(False,False,False,False,False,False,False) # pull up input?
+    gpioInputPullup=(False,False,False,False,False,False,False) # pull up inputs
     gpioChannelNames=['TTL In 1','TTL In 2','HX: Water level','HX: Heater','Button1','Button2','Button3']
     devices.append(gpioDevice.gpioDevice({'pins':gpioInputPins,'pup':gpioInputPullup,'channel_names':gpioChannelNames}))
 
@@ -49,7 +50,7 @@ if __name__ == '__main__':
     if len(found)==0: 
         print "No I2C devices found."
     else:
-        devices.extend(i2cDevice.load_i2c_devices(found)) 
+        devices.extend(i2cDevice.load_i2c_devices(found, **special_args)) 
     
     
     # USB setup

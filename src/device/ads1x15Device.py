@@ -46,7 +46,11 @@ class ads1x15Device(i2cDevice):
             print "Error: unknown driver. Choices are ADS1015 or ADS1115"
             return
 
-        if not 'differential' in self.params.keys(): self.diff=True
+        if not 'differential' in self.params.keys(): 
+            print "\tDefault differential mode" 
+            self.diff=True
+        else: 
+            self.diff=self.params['differential']
 
         if self.diff:
             self.params['n_channels']=2
@@ -59,7 +63,7 @@ class ads1x15Device(i2cDevice):
         self.config['eng_units']=['V']*self.params['n_channels']
         self.config['scale']=np.ones(self.params['n_channels'],)
         self.config['offset']=np.zeros(self.params['n_channels'],)
-
+        if 'gain' in self.params: self.config['gain']=self.params['gain']
         print "Activating %s on i2c bus at %i:%s with %i channels" % (self.params['driver'],self.params['bus'],self.params['address'],self.params['n_channels'])
         if ('untitled' in self.name.lower()) or (self.name==''):
             self.name = '%s I2C %i:%s' % (self.params['driver'],self.params['bus'],self.params['address'])
@@ -69,14 +73,13 @@ class ads1x15Device(i2cDevice):
         return
 
     # Apply configuration (i.e. gain parameter)
-    def apply_config(self):
-        assert self.diff
+    def apply_config(self,default_gain=2/3):
         valid_gain_values=[2/3, 1,2,4,8,16]
-        if not 'gain' in self.config.keys(): self.config['gain']=[2/3]*self.params['n_channels']
+        if not 'gain' in self.config.keys(): self.config['gain']=[default_gain]*self.params['n_channels']
         for chg in self.config['gain']:
             if not chg in valid_gain_values:
                 print "Error, gain values are invalid. Resetting"
-                self.config['gain']=[2/3]*self.params['n_channels']
+                self.config['gain']=[default_gain]*self.params['n_channels']
         return
 
     # Update device with new value, update lastValue and lastValueTimestamp
@@ -89,6 +92,8 @@ class ads1x15Device(i2cDevice):
                 if self.diff: j=i/2
                 else: j=i
                 values[i] = self.ADC.read_adc(i, gain=self.config['gain'][j])*4.096/32768.
+                if self.config['gain'][j]==0: values[i] /= 2/3.
+                else: values[i] /= self.config['gain'][j]
             self.updateTimestamp()
             
             if self.diff:
