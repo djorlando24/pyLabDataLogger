@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 23/10/2018
+    @date 29/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -19,7 +19,7 @@
 
 """
 
-from device import device
+from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
 
@@ -67,7 +67,7 @@ class alsaDevice(device):
             usbCoreDev = usb.core.find(idVendor=self.params['vid'],idProduct=self.params['pid'])
 
         if usbCoreDev is None:
-            raise IOError("USB Device %s not found" % self.params['name'])
+            raise pyLabDataLoggerIOError("USB Device %s not found" % self.params['name'])
 
         #print usbCoreDev.bus, usbCoreDev.address
 
@@ -165,7 +165,7 @@ class alsaDevice(device):
         subdriver = self.params['driver'].split('/')[1:]
         try:
             assert(self.deviceClass)
-            if self.deviceClass is None: raise IOError
+            if self.deviceClass is None: raise pyLabDataLoggerIOError("Could not access PCM device")
             
             # Apply subdriver-specific variable writes
             if subdriver=='?':
@@ -174,9 +174,6 @@ class alsaDevice(device):
             else:
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
 
-        except IOError as e:
-            print "\t%s communication error" % self.name
-            print "\t",e
         except ValueError:
             print "%s - Invalid setting requested" % self.name
             print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
@@ -208,7 +205,7 @@ class alsaDevice(device):
         # Check
         try:
             assert(self.pcm)
-            if self.pcm is None: raise IOError
+            if self.pcm is None: raise pyLabDataLoggerIOError("Could not access PCM device")
         except:
             print "Connection to the ALSA PCM device is not open."
 

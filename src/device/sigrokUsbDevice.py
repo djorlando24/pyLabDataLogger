@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 27/11/2018
+    @date 29/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -16,7 +16,7 @@
     Monash University, Australia
 """
 
-from device import device
+from device import device, pyLabDataLoggerIOError
 import numpy as np
 
 try:
@@ -63,12 +63,9 @@ class srdevice(device):
         else: self.quiet=True
 
         if params is not {}:
-            try:
-                self.scan()
-                self.activate()
-            except IOError:
-                return
-            
+            self.scan()
+            self.activate()
+        
         return
 
     # Detect if device is present
@@ -83,7 +80,7 @@ class srdevice(device):
             usbCoreDev = usb.core.find(idVendor=self.params['vid'],idProduct=self.params['pid'])
             
         if usbCoreDev is None:
-            raise IOError("USB Device %s not found" % self.params['name'])
+            raise pyLabDataLoggerIOError("USB Device %s not found" % self.params['name'])
 
         # Parse driver parameters
         self.driver = self.params['driver'].lower().split('/')[0]
@@ -131,28 +128,25 @@ class srdevice(device):
             
         # Make new Sigrok context, attempt to load driver requested.
         print "\tconnecting to %s - sigrok driver" % self.name
-        try:
-            self.srcontext = sr.Context.create()
-            if self.debugMode: self.srcontext.set_log_callback(self.log_callback_debug) # noisy debugging
-            else: self.srcontext.set_log_callback(self.log_callback_normal) # minimal messages
-            srdriver = self.srcontext.drivers[self.subdriver]
-            if self.subdriver == 'rigol-ds':
-                srdevs = srdriver.scan()  # Only one Rigol DS scope can be used at a time
-            else:
-                srdevs = srdriver.scan(conn='%i.%i' % (self.bus, self.adds)) # find by address in case of multiple devices
-            if len(srdevs) == 0: raise IOError("\tsigrok unable to communicate with device %s." % self.name)
-            
-            # Set up sigrok device
-            self.srdev = srdevs[0]
-            self.params['model']=self.srdev.model
-            self.params['vendor']=self.srdev.vendor
-            self.params['version']=self.srdev.version
-            self.params['raw_units'] = []
-            self.srdev.open()
-            self.driverConnected = True
-            self.has_digital_input = False
-        except IOError:
-            return
+        self.srcontext = sr.Context.create()
+        if self.debugMode: self.srcontext.set_log_callback(self.log_callback_debug) # noisy debugging
+        else: self.srcontext.set_log_callback(self.log_callback_normal) # minimal messages
+        srdriver = self.srcontext.drivers[self.subdriver]
+        if self.subdriver == 'rigol-ds':
+            srdevs = srdriver.scan()  # Only one Rigol DS scope can be used at a time
+        else:
+            srdevs = srdriver.scan(conn='%i.%i' % (self.bus, self.adds)) # find by address in case of multiple devices
+        if len(srdevs) == 0: raise pyLabDataLoggerIOError("\tsigrok unable to communicate with device %s." % self.name)
+        
+        # Set up sigrok device
+        self.srdev = srdevs[0]
+        self.params['model']=self.srdev.model
+        self.params['vendor']=self.srdev.vendor
+        self.params['version']=self.srdev.version
+        self.params['raw_units'] = []
+        self.srdev.open()
+        self.driverConnected = True
+        self.has_digital_input = False
                 
         if not self.quiet: print "\t%s - %s with %d channels: %s" % (self.srdev.driver.name, str.join(' ',\
                 [s for s in (self.srdev.vendor, self.srdev.model, self.srdev.version) if s]),\
@@ -245,11 +239,8 @@ class srdevice(device):
             self.srdoutput = self.srcontext.output_formats['bits'].create_output(self.srdev)
         self.sraoutput = self.srcontext.output_formats['analog'].create_output(self.srdev)
 
-        try:
-            assert self.sraoutput, self.srsession
-            if self.has_digital_input: assert self.srdoutput
-        except:
-            raise
+        assert self.sraoutput, self.srsession
+        if self.has_digital_input: assert self.srdoutput
     
         def datafeed_in(device, packet):
             if self.has_digital_input: self.data_buffer[1] += self.srdoutput.receive(packet)
@@ -326,7 +317,7 @@ class srdevice(device):
                 self.lastValue = [ v[0] for v in self.lastValue ]
                 print self.lastValue, self.params['raw_units']
 
-        except IOError:
+        except pyLabDataLoggerIOError:
             print "Unable to communicate with %s"  % self.name
             self.lastValue=[np.nan]*self.params['n_channels']
 

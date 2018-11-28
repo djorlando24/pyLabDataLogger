@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 12/10/2018
+    @date 29/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -17,6 +17,7 @@
 """
 
 from serialDevice import serialDevice
+from device import pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
 
@@ -37,7 +38,7 @@ class arduinoSerialDevice(serialDevice):
         # Check
         try:
             assert(self.Serial)
-            if self.Serial is None: raise IOError
+            if self.Serial is None: raise pyLabDataLoggerIOError("Could not access serial port")
         except:
             print "Serial connection to Arduino device is not open."
         

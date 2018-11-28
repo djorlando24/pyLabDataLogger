@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 28/11/2018
+    @date 29/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -17,6 +17,7 @@
 """
 
 from i2cDevice import *
+from device import pyLabDataLoggerIOError
 import datetime, time
 import numpy as np
 
@@ -87,26 +88,23 @@ class ads1x15Device(i2cDevice):
 
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self):
-        try:
-            assert self.ADC
-            # Read all the ADC channel values in a list.
-            values = [0]*4
-            for i in range(4):
-                if self.diff: j=i/2
-                else: j=i
-                values[i] = self.ADC.read_adc(i, gain=self.config['gain'][j])*4.096/32768.
-                if self.config['gain'][j]==0: values[i] /= 2/3.
-                else: values[i] /= self.config['gain'][j]
-            self.updateTimestamp()
-            
-            if self.diff:
-                self.lastValue=[values[0]-values[1],values[2]-values[3]]
-            else:
-                self.lastValue=values
+        assert self.ADC
+        # Read all the ADC channel values in a list.
+        values = [0]*4
+        for i in range(4):
+            if self.diff: j=i/2
+            else: j=i
+            values[i] = self.ADC.read_adc(i, gain=self.config['gain'][j])*4.096/32768.
+            if self.config['gain'][j]==0: values[i] /= 2/3.
+            else: values[i] /= self.config['gain'][j]
+        self.updateTimestamp()
+        
+        if self.diff:
+            self.lastValue=[values[0]-values[1],values[2]-values[3]]
+        else:
+            self.lastValue=values
 
-            self.lastScaled = np.array(self.lastValue) * self.config['scale'] + self.config['offset']
-        except:
-            raise
+        self.lastScaled = np.array(self.lastValue) * self.config['scale'] + self.config['offset']
             
         return
 

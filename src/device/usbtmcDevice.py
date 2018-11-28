@@ -8,7 +8,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 01/11/2018
+    @date 29/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -19,7 +19,7 @@
     Monash University, Australia
 """
 
-from device import device
+from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time, struct, sys
 
@@ -73,7 +73,7 @@ class usbtmcDevice(device):
             usbCoreDev = usb.core.find(idVendor=self.params['vid'],idProduct=self.params['pid'])
         
         if usbCoreDev is None:
-            raise IOError("USB Device %s not found" % self.params['name'])
+            raise pyLabDataLoggerIOError("USB Device %s not found" % self.params['name'])
         else:
             self.bus = usbCoreDev.bus
             self.adds = usbCoreDev.address
@@ -98,7 +98,6 @@ class usbtmcDevice(device):
                 self.instr.clear()
         except usbtmc.usbtmc.UsbtmcException as e:
             print '\t',e
-            #raise
 
         # Try and get ID of device as a check for successful connection
         try:
@@ -110,7 +109,6 @@ class usbtmcDevice(device):
         except:
             self.params['IDN']='?'
             if not quiet: print '[no response]\n'
-            #raise
                     
         # Make first query to get units, description, etc.
         self.query(reset=True)
@@ -129,7 +127,7 @@ class usbtmcDevice(device):
     def apply_config(self):
         try:
             assert(self.deviceClass)
-            if self.deviceClass is None: raise IOError
+            if self.deviceClass is None: raise pyLabDataLoggerIOError("Could not access device.")
             
             # Apply subdriver-specific variable writes
             if self.subdriver=='33220a':
@@ -142,11 +140,8 @@ class usbtmcDevice(device):
                 #...
                 pass
             else:
-                raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
-
-        except IOError as e:
-            print "\tcommunication error"
-            print "\t",e
+                raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
+    
         except ValueError:
             print "%s - Invalid setting requested" % self.name
             print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
@@ -299,30 +294,25 @@ class usbtmcDevice(device):
 
     # Read latest values
     def get_values(self):
-        try:
-            rawData=[]
-            for n in range(len(self.tmcQuery)): # loop channels
-                # Commands to setup acquisiton are delimited by commas.
-                if not ',' in self.tmcQuery[n]: q = self.tmcQuery[n] # no setup commands
-                else:
-                    qs = self.tmcQuery[n].split(',') # split commands up
-                    for q in qs[:-1]:
-                        self.write(q) # send setup commands with 10ms delay
-                        time.sleep(0.01)
-                    q = qs[-1]
-                try:
-                    rawData.append(self.ask(q)) # request data
-                except KeyboardInterrupt: raise
-                except:
-                    rawData.append(np.nan) # failed to get data
-                    if self.debugMode: print "[no response]\n"
+        rawData=[]
+        for n in range(len(self.tmcQuery)): # loop channels
+            # Commands to setup acquisiton are delimited by commas.
+            if not ',' in self.tmcQuery[n]: q = self.tmcQuery[n] # no setup commands
+            else:
+                qs = self.tmcQuery[n].split(',') # split commands up
+                for q in qs[:-1]:
+                    self.write(q) # send setup commands with 10ms delay
+                    time.sleep(0.01)
+                q = qs[-1]
+            try:
+                rawData.append(self.ask(q)) # request data
+            except KeyboardInterrupt: raise
+            except:
+                rawData.append(np.nan) # failed to get data
+                if self.debugMode: print "[no response]\n"
 
-            
-            self.lastValue = self.convert_to_array(rawData)
-
-        except IOError as e:
-            print "\tcommunication error"
-            print "\t",e
+        
+        self.lastValue = self.convert_to_array(rawData)
 
         return [np.nan]*self.params['n_channels']
 
@@ -333,7 +323,7 @@ class usbtmcDevice(device):
         # Check
         try:
             assert(self.instr)
-            if self.instr is None: raise IOError
+            if self.instr is None: raise pyLabDataLoggerIOError("Could not access device.")
         except:
             print "Connection to the device is not open."
 

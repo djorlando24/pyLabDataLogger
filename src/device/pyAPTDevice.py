@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 12/10/2018
+    @date 29/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -16,7 +16,7 @@
     Monash University, Australia
 """
 
-from device import device
+from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
 
@@ -65,7 +65,7 @@ class pyAPTDevice(device):
             usbCoreDev = usb.core.find(idVendor=self.params['vid'],idProduct=self.params['pid'])
             
         if usbCoreDev is None:
-            raise IOError("USB Device %s not found" % self.params['name'])
+            raise pyLabDataLoggerIOError("USB Device %s not found" % self.params['name'])
 
         # Parse driver parameters
         self.bus = usbCoreDev.bus
@@ -157,7 +157,7 @@ class pyAPTDevice(device):
     def query(self, reset=False):
 
         # Check port open
-        assert(self.dev)#: raise IOError("Could not communicate with pyAPT device")
+        assert(self.dev)#: raise pyLabDataLoggerIOError("Could not communicate with pyAPT device")
         
         # If first time or reset, get configuration
         if (not 'raw_units' in self.params) or reset:           

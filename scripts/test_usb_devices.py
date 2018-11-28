@@ -41,5 +41,5 @@ if __name__ == '__main__':
             time.sleep(1)
     except KeyboardInterrupt:
         print "Stopped."
-    except:
+    except: # all other errors
         raise

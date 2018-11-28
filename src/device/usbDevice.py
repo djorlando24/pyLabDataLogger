@@ -10,7 +10,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 27/11/2018
+    @date 28/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -60,9 +60,9 @@ usb_device_table = [
     # Devices using Serial-to-USB adapters whose VID and PID may change depending on the dongle
     {'vid':0x0557, 'pid':0x2008, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},
     {'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/gpib', 'name':'GPIB-USB adapter'},
-    {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-iseries', 'name':'Omega iSeries via RS-485'},
+    {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-iseries/485', 'name':'Omega iSeries via RS-485'},
     {'vid':0x0408, 'pid':0x6051, 'driver':'arduino', 'name':'Arduino Pro via FTDI FT231X'},
-
+    {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/omega-iseries/232', 'name':'Omega iSeries via RS-232'},
 
     # Single-board computers
     {'vid':0x1d6b, 'pid':0x0104, 'driver':'beaglebone', 'name':'Beaglebone Black'},
@@ -175,43 +175,36 @@ def load_usb_devices(devs=None,**kwargs):
         driverClass = d['driver'].split('/')[0].lower()
 
         # USB serial types -- load appropriate top level driver here.
-        try:
-            if driverClass == 'tenmaserial':
-                from pyLabDataLogger.device import tenmaSerialDevice
-                device_list.append(tenmaSerialDevice.tenmaPowerSupplySerialDevice(params=d,**kwargs))
-            elif driverClass == 'serial':
-                from pyLabDataLogger.device import serialDevice
-                device_list.append(serialDevice.serialDevice(params=d,**kwargs))
-            elif driverClass == 'arduino':
-                from pyLabDataLogger.device import arduinoDevice
-                device_list.append(arduinoDevice.arduinoSerialDevice(params=d,**kwargs))
-            elif driverClass == 'sigrok':
-                from pyLabDataLogger.device import sigrokUsbDevice
-                device_list.append(sigrokUsbDevice.srdevice(params=d,**kwargs))
-            elif driverClass == 'pyapt':
-                from pyLabDataLogger.device import pyAPTDevice
-                device_list.append(pyAPTDevice.pyAPTDevice(params=d,**kwargs))
-            elif driverClass == 'picotc08':
-                from pyLabDataLogger.device import picotc08Device
-                device_list.append(picotc08Device.usbtc08Device(params=d,**kwargs))
-            elif driverClass == 'alsa':
-                from pyLabDataLogger.device import alsaDevice
-                device_list.append(alsaDevice.alsaDevice(params=d,**kwargs))
-            elif driverClass == 'usbtmc':
-                from pyLabDataLogger.device import usbtmcDevice
-                device_list.append(usbtmcDevice.usbtmcDevice(params=d,**kwargs))
-            elif driverClass == 'mcc-libusb':
-                from pyLabDataLogger.device import mcclibusbDevice
-                device_list.append(mcclibusbDevice.mcclibusbDevice(params=d,**kwargs))
-            
-            else:
-                print "\tI don't know what to do with this device"
-        except KeyError as e: # driver couldn't handle the subdriver settings
-            print '\t',e
-            continue
-        except IOError as e: # the device couldn't be accessed
-            print '\t',e
-            continue
+        if driverClass == 'tenmaserial':
+            from pyLabDataLogger.device import tenmaSerialDevice
+            device_list.append(tenmaSerialDevice.tenmaPowerSupplySerialDevice(params=d,**kwargs))
+        elif driverClass == 'serial':
+            from pyLabDataLogger.device import serialDevice
+            device_list.append(serialDevice.serialDevice(params=d,**kwargs))
+        elif driverClass == 'arduino':
+            from pyLabDataLogger.device import arduinoDevice
+            device_list.append(arduinoDevice.arduinoSerialDevice(params=d,**kwargs))
+        elif driverClass == 'sigrok':
+            from pyLabDataLogger.device import sigrokUsbDevice
+            device_list.append(sigrokUsbDevice.srdevice(params=d,**kwargs))
+        elif driverClass == 'pyapt':
+            from pyLabDataLogger.device import pyAPTDevice
+            device_list.append(pyAPTDevice.pyAPTDevice(params=d,**kwargs))
+        elif driverClass == 'picotc08':
+            from pyLabDataLogger.device import picotc08Device
+            device_list.append(picotc08Device.usbtc08Device(params=d,**kwargs))
+        elif driverClass == 'alsa':
+            from pyLabDataLogger.device import alsaDevice
+            device_list.append(alsaDevice.alsaDevice(params=d,**kwargs))
+        elif driverClass == 'usbtmc':
+            from pyLabDataLogger.device import usbtmcDevice
+            device_list.append(usbtmcDevice.usbtmcDevice(params=d,**kwargs))
+        elif driverClass == 'mcc-libusb':
+            from pyLabDataLogger.device import mcclibusbDevice
+            device_list.append(mcclibusbDevice.mcclibusbDevice(params=d,**kwargs))
+        
+        else:
+            print "\tI don't know what to do with this device"
 
     return device_list
 

@@ -6,7 +6,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 27/11/2018
+    @date 29/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -17,7 +17,7 @@
     Monash University, Australia
 """
 
-from device import device
+from device import device, pyLabDataLoggerIOError
 import numpy as np
 import site, itertools, glob
 import datetime, time
@@ -132,7 +132,7 @@ class mcclibusbDevice(device):
         self.L.activate_device.restype=pyudev_t
         self.pyudev = self.L.activate_device(self.pyudev, c_bool(self.quiet))
         if self.pyudev == 0:
-            raise IOError("Communication with the device failed.")
+            raise pyLabDataLoggerIOError("Communication with the device failed.")
 
         if self.pyudev.model == 1: self.name = 'MCC USB-1608G'
         elif self.pyudev.model == 2: self.name = 'MCC USB-1608GX'
@@ -154,7 +154,7 @@ class mcclibusbDevice(device):
     def deactivate(self):
         self.L.deactivate_device.argtypes=[pyudev_t, c_bool]
         if self.L.deactivate_device(self.pyudev, c_bool(self.quiet)) ==0:
-            raise IOError("Communication with the device failed.")
+            raise pyLabDataLoggerIOError("Communication with the device failed.")
         self.driverConnected=False
         return
 
@@ -213,7 +213,7 @@ class mcclibusbDevice(device):
             self.L.set_analog_config.restype=pyudev_t
             self.pyudev = self.L.set_analog_config(self.pyudev, c_bool(self.config['differential']), gains,\
                          c_int(self.config['n_samples']), c_bool(self.quiet))
-            if self.pyudev==0: raise IOError("Unable to communicate with MCC USB device.")
+            if self.pyudev==0: raise pyLabDataLoggerIOError("Unable to communicate with MCC USB device.")
 
             # Set up the 8 digital channels as a single input byte
             self.params['n_channels'] += 1
@@ -234,7 +234,7 @@ class mcclibusbDevice(device):
             # Configure digital I/O pins as inputs
             self.L.set_digital_direction.argtypes=[pyudev_t, c_bool, c_bool]
             ret = self.L.set_digital_direction(self.pyudev, c_bool(True), c_bool(self.quiet))
-            if ret==0: raise IOError("Unable to communicate with MCC USB device.")
+            if ret==0: raise pyLabDataLoggerIOError("Unable to communicate with MCC USB device.")
             
             # Set up triggering mode?
             # (not sure if supported by mcc-libusb)
@@ -243,9 +243,6 @@ class mcclibusbDevice(device):
             # (all supported by mcc-libusb)
             # ...
         
-        except IOError as e:
-            print "\t%s communication error" % self.name
-            print "\t",e
         except ValueError:
             print "%s - Invalid setting requested" % self.name
             print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
@@ -281,7 +278,7 @@ class mcclibusbDevice(device):
         self.L.analog_read.argtypes=[pyudev_t, c_double, c_bool, POINTER(c_double)]
         if self.L.analog_read(self.pyudev, c_double(self.config['sample_rate']), c_bool(self.quiet),\
             analog_vals.ctypes.data_as(POINTER(c_double))) == 0:
-            raise IOError("Communication with the device failed.") 
+            raise pyLabDataLoggerIOError("Communication with the device failed.") 
         analog_vals = analog_vals.reshape(self.pyudev.n_channels,self.pyudev.n_samples)
 
         # Currently, only one sampling of the digital IO and counter.
@@ -289,13 +286,13 @@ class mcclibusbDevice(device):
         self.L.digital_read.argtypes=[pyudev_t]
         self.L.digital_read.restype=c_uint8 # one unsigned int, containing all the bits in binary form.
         digital_vals = self.L.digital_read(self.pyudev)
-        if digital_vals == None: raise IOError("Communication with the device failed.")
+        if digital_vals == None: raise pyLabDataLoggerIOError("Communication with the device failed.")
 
         self.L.counter_read.argtypes=[pyudev_t, c_int]
         self.L.counter_read.restype=c_uint16
         counter0 = self.L.counter_read(self.pyudev,0)
         counter1 = self.L.counter_read(self.pyudev,1) 
-        if (counter0 == None) or (counter1 == None): raise IOError("Communication with the device failed.")
+        if (counter0 == None) or (counter1 == None): raise pyLabDataLoggerIOError("Communication with the device failed.")
         
         self.lastValue = []
         for i in range(analog_vals.shape[0]):

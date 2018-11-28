@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 28/11/2018
+    @date 29/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -16,7 +16,7 @@
     Monash University, Australia
 """
 
-from device import device
+from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time, struct, sys
 
@@ -48,8 +48,11 @@ class serialDevice(device):
             self.quiet = quiet | kwargs['quiet']
         else:
             self.quiet = quiet
-        if params is not {}: self.scan()
         
+        self.driver = self.params['driver'].split('/')[1:]
+        self.subdriver = self.driver[0].lower()
+        
+        if params is not {}: self.scan()
         return
 
     ########################################################################################################################
@@ -95,8 +98,7 @@ class serialDevice(device):
     def activate(self):
     
         # Over-ride serial comms parameters for special devices
-        subdriver = ''.join(self.params['driver'].split('/')[1:])
-        if subdriver=='omega-iseries':
+        if self.subdriver=='omega-iseries':
             if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.SEVENBITS
             if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_EVEN
             if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_ONE
@@ -146,7 +148,7 @@ class serialDevice(device):
         subdriver = self.params['driver'].split('/')[1:]
         try:
             assert(self.Serial)
-            if self.Serial is None: raise IOError
+            if self.Serial is None: raise pyLabDataLoggerIOError("Could not access serial port.")
 
             # Apply subdriver-specific variable writes
             if subdriver=='omega-ir-usb':
@@ -167,10 +169,7 @@ class serialDevice(device):
                 pass
             else:
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
-
-        except IOError as e:
-            print "\t%s communication error" % self.name
-            print "\t",e
+    
         except ValueError:
             print "%s - Invalid set point requested" % self.name
             print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
@@ -201,23 +200,26 @@ class serialDevice(device):
     # method; call<CR/LF> -short delay- response<CR/LF>.
     # Works well for most RS-232 devices.
     def blockingSerialRequest(self,request,terminationChar='\r',maxlen=1024,min_response_length=0):
-        s=''
-        response=None
-        if not self.quiet:
-            sys.stdout.write('\t'+self.port+':'+repr(request)+'\t')
-            sys.stdout.flush()
-        self.Serial.write(request)
-        t_=time.time()
-        time.sleep(0.01)
-        while len(s)<maxlen:
-            s+=self.Serial.read(1)
-            if len(s) == 0: # response timed out
-                break
-            if (s[-1] == terminationChar) and (len(s)>min_response_length):
-                response=s.strip()
-                break
-            if (time.time() - t_) > self.params['timeout_total']: raise IOError
-        if not self.quiet: sys.stdout.write(repr(response)+'\n')
+        try:
+            s=''
+            response=None
+            if not self.quiet:
+                sys.stdout.write('\t'+self.port+':'+repr(request)+'\t')
+                sys.stdout.flush()
+            self.Serial.write(request)
+            t_=time.time()
+            time.sleep(0.01)
+            while len(s)<maxlen:
+                s+=self.Serial.read(1)
+                if len(s) == 0: # response timed out
+                    break
+                if (s[-1] == terminationChar) and (len(s)>min_response_length):
+                    response=s.strip()
+                    break
+                if (time.time() - t_) > self.params['timeout_total']: raise pyLabDataLoggerIOError("timeout")
+            if not self.quiet: sys.stdout.write(repr(response)+'\n')
+        except pyLabDataLoggerIOError:
+            pass
         return response
     
     ########################################################################################################################
@@ -226,16 +228,19 @@ class serialDevice(device):
     # or if the read command doesn't reliably returned buffered data (i.e. for RS-485 where there is
     # some delay for the direction switching)
     def blockingRawSerialRequest(self,request,terminationChar='\r',maxlen=1024,min_response_length=0):
-        self.Serial.write(request)
-        t_=time.time()
-        time.sleep(0.01)
-        data=''
-        while len(data)<maxlen:
-            data += self.Serial.read(1)
-            if len(data) > 0:
-                if (data[-1] == terminationChar) and (len(data)>min_response_length):
-                    break
-            if (time.time() - t_) > self.params['timeout_total']: raise IOError
+        try:
+            self.Serial.write(request)
+            t_=time.time()
+            time.sleep(0.01)
+            data=''
+            while len(data)<maxlen:
+                data += self.Serial.read(1)
+                if len(data) > 0:
+                    if (data[-1] == terminationChar) and (len(data)>min_response_length):
+                        break
+                if (time.time() - t_) > self.params['timeout_total']: raise pyLabDataLoggerIOError("timeout")
+        except pyLabDataLoggerIOError:
+            pass
         return data
     
     ########################################################################################################################
@@ -268,12 +273,8 @@ class serialDevice(device):
         elif subdriver=='ohaus7k': # Startup config for OHAUS Valor 7000
             #Get the units currently set on the display
             unit='?'
-            try:
-                unit=self.blockingSerialRequest('PU\r\n','\r')
-                if unit is None: unit='?'
-            except IOError:
-                # It's ok, we can get this on the query() later
-                pass
+            unit=self.blockingSerialRequest('PU\r\n','\r')
+            if unit is None: unit='?'
             # Fixed settings.
             self.name = "OHAUS Valor 7000 Scale"
             self.config['channel_names']=['weight']
@@ -302,12 +303,9 @@ class serialDevice(device):
             self.params['min_response_length']=4 # bytes
             
             # Confirm model number. Send 'K' and response will be \r\n terminated.
-            try:
-                self.params['ID']=self.blockingSerialRequest('K\r\n','\r')
-                print "\tReturned Model ID =",self.params['ID']
-            except IOError as e:
-                print "\t%s communication error" % self.name
-                print "\t",e
+            self.params['ID']=self.blockingSerialRequest('K\r\n','\r')
+            print "\tReturned Model ID =",self.params['ID']
+
             
         # ----------------------------------------------------------------------------------------
         elif subdriver=='omega-iseries': # Startup config for Omega iSeries Process Controller
@@ -320,10 +318,19 @@ class serialDevice(device):
             self.config['eng_units']=[u,u,u,'']
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
-            self.serialQuery=['*\xb01X\xb01',\
-                              '*\xb01R\xb01',\
-                              '*\xb01R\xb02',\
-                              '*\xb01U\xb01']
+            if '485' in self.driver:
+                if not self.quiet: print '\tRS-485 comms mode with fixed bus address = 01'
+                #RS-485 requires device address, must be 01
+                self.serialQuery=['*\xb01X\xb01',\
+                                  '*\xb01R\xb01',\
+                                  '*\xb01R\xb02',\
+                                  '*\xb01U\xb01']
+            else: # RS-232
+                if not self.quiet: print '\tRS-232 comms mode'
+                self.serialQuery=['*X\xb01',\
+                                  '*R\xb01',\
+                                  '*R\xb02',\
+                                  '*U\xb01']
             self.queryTerminator='\r'
             self.responseTerminator='\r'
             self.serialCommsFunction=self.blockingRawSerialRequest
@@ -486,18 +493,13 @@ class serialDevice(device):
     ########################################################################################################################
     # Read latest values
     def get_values(self):
-        try:
-            rawData=[]
-            for n in range(len(self.serialQuery)):
-                rawData.append(self.serialCommsFunction(self.serialQuery[n]+self.queryTerminator,\
-                        self.responseTerminator,min_response_length=self.params['min_response_length']))
-            self.lastValue = self.convert_raw_string_to_values(rawData,self.serialQuery)
+        rawData=[]
+        for n in range(len(self.serialQuery)):
+            rawData.append(self.serialCommsFunction(self.serialQuery[n]+self.queryTerminator,\
+                    self.responseTerminator,min_response_length=self.params['min_response_length']))
+        self.lastValue = self.convert_raw_string_to_values(rawData,self.serialQuery)
 
-        except IOError as e:
-            print "\t%s communication error" % self.name
-            print "\t",e
-
-        return #[np.nan]*self.params['n_channels']
+        return
 
     ########################################################################################################################
     # Handle query for values
@@ -506,14 +508,12 @@ class serialDevice(device):
         # Check
         try:
             assert(self.Serial)
-            if self.Serial is None: raise IOError
+            if self.Serial is None: raise pyLabDataLoggerIOError("Could not access serial port.")
         except:
             print "Serial connection to the device is not open."
 
         # If first time or reset, get configuration
         if not 'raw_units' in self.params.keys() or reset:
-            driver = self.params['driver'].split('/')[1:]
-            self.subdriver = driver[0].lower()
             self.configure_device()
 
         # Read values        

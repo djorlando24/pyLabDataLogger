@@ -6,7 +6,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 12/10/2018
+    @date 29/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -17,7 +17,7 @@
     Monash University, Australia
 """
 
-from device import device
+from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
 import atexit
@@ -527,7 +527,7 @@ class usbtc08Device(device):
             else:
                 usbCoreDev = usb.core.find(idVendor=self.params['vid'],idProduct=self.params['pid'])
             if usbCoreDev is None:
-                raise IOError("USB Device %s not found" % self.params['name'])
+                raise pyLabDataLoggerIOError("USB Device %s not found" % self.params['name'])
             self.bus = usbCoreDev.bus
             self.adds = usbCoreDev.address
         
@@ -595,12 +595,10 @@ class usbtc08Device(device):
         #subdriver = self.params['driver'].split('/')[1:]
         try:
             assert(self.dev)
-            if self.dev is None: raise IOError
+            if self.dev is None: raise pyLabDataLoggerIOError("Could not access the device")
             self.reset() # Reload driver, taking new values from self.config for internal_units, channel_names, and tc_config (TC type).
             
-        except IOError as e:
-            print "\t%s communication error" % self.name
-            print "\t",e
+
         except ValueError:
             print "%s - Invalid setting requested" % self.name
             print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
@@ -632,7 +630,7 @@ class usbtc08Device(device):
         # Check
         try:
             assert(self.dev)
-            if self.dev is None: raise IOError
+            if self.dev is None: raise pyLabDataLoggerIOError("Could not access the device")
         except:
             print "Connection to the device is not open."
 

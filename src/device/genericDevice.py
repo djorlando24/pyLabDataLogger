@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 12/10/2018
+    @date 29/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -16,7 +16,7 @@
     Monash University, Australia
 """
 
-from device import device
+from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
 
@@ -76,7 +76,7 @@ class genericDevice(device):
         subdriver = self.params['driver'].split('/')[1:]
         try:
             assert(self.deviceClass)
-            if self.deviceClass is None: raise IOError
+            if self.deviceClass is None: raise pyLabDataLoggerIOError("Could not access device.")
             
             # Apply subdriver-specific variable writes
             if subdriver=='?':
@@ -84,10 +84,7 @@ class genericDevice(device):
                 pass
             else:
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
-
-        except IOError as e:
-            print "\t%s communication error" % self.name
-            print "\t",e
+        
         except ValueError:
             print "%s - Invalid setting requested" % self.name
             print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
@@ -119,7 +116,7 @@ class genericDevice(device):
         # Check
         try:
             assert(self.deviceClass)
-            if self.deviceClass is None: raise IOError
+            if self.deviceClass is None: raise pyLabDataLoggerIOError
         except:
             print "Connection to the device is not open."
 

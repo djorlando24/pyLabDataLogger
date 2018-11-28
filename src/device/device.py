@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 1/11/2018
+    @date 29/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -19,6 +19,22 @@
 import datetime
 import numpy as np
 import sys
+
+class pyLabDataLoggerIOError(IOError):
+    """ Exception raised when an IO error occurs in a driver.
+        Generally IO errors can be handled with generic IOError
+        but this exception is particularly for timeouts on blocking
+        communication routines, which are caught and should only give
+        a brief warning, and failures to connect to a previously setup
+        device (ie something got unplugged while the code was running)
+    """
+    def __init__(self, *args, **kwargs):
+        # Call the base class constructor with the parameters it needs
+        super(pyLabDataLoggerIOError, self).__init__(*args,**kwargs)
+        print "\tIO Error: ",''.join(args)
+        pass
+
+
 
 class device:
     """ Main class defining a device in pyPiDataLogger.
