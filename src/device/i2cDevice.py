@@ -69,6 +69,9 @@ class i2cDevice(device):
         # apply kwargs to params
         for k in ['differential','gain']:
            if k in kwargs: self.params[k]=kwargs[k]
+        # apply kwargs to config
+        for k in ['channel_names']:
+           if k in kwargs: self.config[k]=kwargs[k]
         
         if params is {}: return
         self.scan(quiet=quiet)

@@ -41,8 +41,8 @@ if __name__ == '__main__':
 
     # GPIO pins setup
     gpioInputPins=(5,6,19,20,16,17,18)
-    gpioInputPullup=(False,False,False,False,False,False,False) # pull up inputs
-    gpioChannelNames=['TTL In 1','TTL In 2','HX: Water level','HX: Heater','Button1','Button2','Button3']
+    gpioInputPullup=(False,False,True,True,True,True,True) # pull up inputs
+    gpioChannelNames=['TTLIn1','TTLIn2','HX Water low','Heating','But1','But2','But3']
     devices.append(gpioDevice.gpioDevice({'pins':gpioInputPins,'pup':gpioInputPullup,'channel_names':gpioChannelNames}))
 
     # I2C setup    

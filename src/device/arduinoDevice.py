@@ -55,9 +55,9 @@ class arduinoSerialDevice(serialDevice):
 
         # First pass?
         values=[]
-        if not 'channel_names' in self.params.keys() or reset:
+        if not 'channel_names' in self.config.keys() or reset:
             reset=True
-            self.params['channel_names']=[]
+            self.config['channel_names']=[]
             self.params['raw_units']=[]
             self.config['eng_units']=[]
             self.params['n_channels']=0
@@ -69,7 +69,7 @@ class arduinoSerialDevice(serialDevice):
                 while nbytes<buffer_limit:
                     s+=self.Serial.read(1)
                     if s[-1] == '=':
-                        self.params['channel_names'].append(s[:-2].strip())
+                        self.config['channel_names'].append(s[:-2].strip())
                         self.params['n_channels']+=1
                         break
                     nbytes+=1

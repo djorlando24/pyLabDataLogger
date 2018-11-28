@@ -54,10 +54,13 @@ class ads1x15Device(i2cDevice):
 
         if self.diff:
             self.params['n_channels']=2
-            self.config['channel_names']=['ChA','ChB']
+            if not 'channel_names' in self.config:
+                self.config['channel_names']=['ChA','ChB']
         else:
             self.params['n_channels']=4
-            self.config['channel_names']=['Ch1','Ch2','Ch3','Ch4']
+            if not 'channel_names' in self.config:
+                self.config['channel_names']=['Ch1','Ch2','Ch3','Ch4']
+
 
         self.params['raw_units']=['V']*self.params['n_channels']
         self.config['eng_units']=['V']*self.params['n_channels']

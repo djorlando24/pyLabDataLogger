@@ -47,8 +47,9 @@ class gpioDevice(device):
                 self.params['pup']=(False)*len(self.params['pins'])
         elif len(self.params['pup']) < len(self.params['pins']):
                 raise IndexError("number of pup entries does not match number of pins")
-        if not 'channel_names' in self.params:
-                self.params['channel_names']=['Pin%02i' % p for p in self.params['pins']]
+        if 'channel_names' in self.params: self.config['channel_names']=self.params['channel_names']
+        elif 'channel_names' in kwargs: self.config['channel_names']=kwargs['channel_names']
+        else: self.params['channel_names']=['Pin%02i' % p for p in self.params['pins']]
         self.params['n_channels']=len(self.params['pins'])
         self.config['scale']=np.ones(len(self.params['pins']),)
         self.config['offset']=np.zeros(len(self.params['pins']),)
