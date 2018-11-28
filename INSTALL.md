@@ -17,18 +17,6 @@ Those which require legacy versions or are hard to find have been stored in the 
 
 - *Center 310* hygrometer support is built-in, there are some test utilities in thirdParty/C310
 
-- *sigrok*
-  You will need to build from source code to get support for the latest devices.
-  The version supplied with Ubuntu LTS for example is way out of date and is missing many drivers.
-  see https://sigrok.org/wiki/Downloads
-
-    - I found the versions shipped with Ubuntu didn't support all my hardware. 
-      Sigrok depends on the following linux packages:
-          libftdi, libusb, doxygen, swig, glibmm, python-gobject, python-gi-dev
-
-    - sigrok-firmware-fx2lafw for USBee ADCs, with udev rules installed to avoid
-      need for root (see https://sigrok.org/wiki/Fx2lafw)
-
 ### External python modules you must install yourself
 
 - numpy (usually comes bundled with Python)
@@ -47,6 +35,9 @@ Those which require legacy versions or are hard to find have been stored in the 
 - For ALSA audio devices, pyalsaaudio
   https://github.com/larsimmisch/pyalsaaudio.git
 
+- For Picoscope devices, picopython
+  https://github.com/colinoflynn/pico-python.git
+
 ## Non-Python dependencies
 
 pyLabDataLogger also requires the following external software:
@@ -57,9 +48,22 @@ pyLabDataLogger also requires the following external software:
 
 - Any generic USB serial port drivers that your system does not have. By default Linux has most standard serial to USB device drivers in the kernel. MacOS and Windows may require FTDI, CP2102, etc. driver packages. These should come with the hardware and are also available online.
 
+- *sigrok*
+  You will need to build from source code to get support for the latest devices.
+  The version supplied with Ubuntu LTS for example is way out of date and is missing many drivers.
+  see https://sigrok.org/wiki/Downloads
+
+    - I found the versions shipped with Ubuntu didn't support all my hardware. 
+      Sigrok depends on the following linux packages:
+          libftdi, libusb, doxygen, swig, glibmm, python-gobject, python-gi-dev
+
+    - sigrok-firmware-fx2lafw for USBee ADCs, with udev rules installed to avoid
+      need for root (see https://sigrok.org/wiki/Fx2lafw)
+
 - for audio devices, ALSA and asound2lib (with asound2lib-dev sources)
     
 - For Pico devices, the open source Pico libraries need to be installed.
+  These are available from an apt repository for easy installation on Ubuntu.
   see https://www.picotech.com
 
 - For Measurement Computing devices, mcclibusb
