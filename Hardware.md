@@ -7,13 +7,12 @@ Those special configurations are explained below.
 
 ## Omega iSeries Process Controllers
 The iSeries process controllers need to be set in the following mode. How to do this is explained in the manual.
-- RS485 mode
 - 9600 baud
 - 7 data bits
 - 1 stop bit
 - odd parity
 - command mode (not continuous)
-- echo on
+- For RS485, echo on. For RS232, echo off.
 - bus address 001 (in future this could be variable to support >1 controller on an RS-485 bus).
 
 ## Tenma thermometer and multimeters via Sigrok driver

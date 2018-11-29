@@ -5,7 +5,7 @@
     @copyright (c) 2018 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 29/11/2018
+    @date 30/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -100,7 +100,7 @@ class serialDevice(device):
         # Over-ride serial comms parameters for special devices
         if self.subdriver=='omega-iseries':
             if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.SEVENBITS
-            if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_EVEN
+            if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_ODD
             if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_ONE
             self.params['timeout']=0.5
         
@@ -111,7 +111,7 @@ class serialDevice(device):
         if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_ONE
         if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=False
         if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
-        if not 'timeout' in self.params.keys(): self.params['timeout']=2. # sec for a single byte read/write
+        if not 'timeout' in self.params.keys(): self.params['timeout']=1. # sec for a single byte read/write
         
         # Default serial comms parameters used in this class
         if not 'timeout_total' in self.params.keys(): self.params['timeout_total']=10. # sec for total request loop
@@ -319,18 +319,18 @@ class serialDevice(device):
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
             if '485' in self.driver:
-                if not self.quiet: print '\tRS-485 comms mode with fixed bus address = 01'
-                #RS-485 requires device address, must be 01
+                if not self.quiet: print '\tRS-485 comms mode with fixed address = 01'
+                #RS-485 requires commands to be prepended with the device's address
                 self.serialQuery=['*\xb01X\xb01',\
                                   '*\xb01R\xb01',\
                                   '*\xb01R\xb02',\
                                   '*\xb01U\xb01']
             else: # RS-232
-                if not self.quiet: print '\tRS-232 comms mode'
-                self.serialQuery=['*X\xb01',\
-                                  '*R\xb01',\
-                                  '*R\xb02',\
-                                  '*U\xb01']
+                if not self.quiet: print '\tRS-232 comms mode with fixed address = 01'
+                self.serialQuery=['*\xb01X\xb01',\
+                                  '*\xb01R\xb01',\
+                                  '*\xb01R\xb02',\
+                                  '*\xb01U\xb01']
             self.queryTerminator='\r'
             self.responseTerminator='\r'
             self.serialCommsFunction=self.blockingRawSerialRequest
