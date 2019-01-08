@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 29/11/2018
+    @date 08/01/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -257,10 +257,13 @@ class srdevice(device):
             self.srsession.stop()
             
             # Parse analog values - get buffer
-            if self.debugMode: print '\tOutput buffer =',self.data_buffer
+            #if self.debugMode: print '\tOutput buffer =',self.data_buffer
             delimited_buffer = self.data_buffer[0].split('\n')
-            n_analog_channels = self.params['n_channels'] - sum(self.params['sr_logic_channel'])
-            
+            if 'enabled' in self.config:
+                n_analog_channels = np.sum(self.config['enabled']) - sum(self.params['sr_logic_channel'])
+            else:
+                n_analog_channels = np.sum(self.params['n_channels']) - sum(self.params['sr_logic_channel']) 
+
             # Make list of empty lists to put values in.
             # initialize raw_units to empty strings.
             self.lastValue = []; self.params['raw_units'] = []
@@ -307,7 +310,7 @@ class srdevice(device):
                 # Assume digital channels always come first in mixed mode devices?
                 self.lastValue = digital_data + self.lastValue
                 self.params['raw_units'] = ['']*len(digital_data) + self.params['raw_units']
-            
+          
             # Convert analog values to scaled values
             for t in range(self.config['n_samples']):
                 self.lastScaled = np.array(self.lastValue)[:,t] * self.config['scale'] + self.config['offset']
@@ -321,6 +324,30 @@ class srdevice(device):
             print "Unable to communicate with %s"  % self.name
             self.lastValue=[np.nan]*self.params['n_channels']
 
-                
+
+        # Expand the length of units and lastValue and lastScaled if not all channels are enabled.
+        if (len(self.lastValue)<self.params['n_channels']) and ('enabled' in self.config):
+            idx = []; n=0
+            for c in self.config['enabled']:
+                if c==1: 
+                    idx.append(n)
+                    n+=1
+                else: idx.append(None)
+            lastValue=[]
+            lastScaled=[]
+            raw_units=[]
+            for n in idx:
+                if n is None: 
+                    lastValue.append(np.nan)
+                    lastScaled.append(np.nan)
+                    raw_units.append('')
+                else:
+                    lastValue.append(self.lastValue[n])
+                    lastScaled.append(self.lastScaled[n])
+                    raw_units.append(self.params['raw_units'][n])
+            self.lastValue = lastValue
+            self.lastScaled = lastScaled
+            self.params['raw_units'] = raw_units
+
         return self.lastValue
 
