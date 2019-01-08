@@ -10,7 +10,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 28/11/2018
+    @date 08/01/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -34,7 +34,7 @@ usb_device_table = [
     #{'vid':0x1ab1, 'pid':0x04ce, 'driver':'usbtmc/rigol-ds', 'name':'Rigol DS Oscilloscope'}, # not reliable
     {'vid':0x0957, 'pid':0x0407, 'driver':'usbtmc/33220a', 'name':'Agilent 33220A Waveform Generator'},
     {'vid':0x1313, 'pid':0x80f8, 'driver':'usbtmc/thorlabs-tsp01', 'name':'Thorlabs TSP01 Thermometer/Barometer'},
-    
+
     # VISA devices with fixed VID and PID
     {'vid':0x3923, 'pid':0x7269, 'driver':'visa/ni6212', 'name':'National Instruments USB-6212 BNC'},
     {'vid':0x1313, 'pid':0x807b, 'driver':'visa/pm16', 'name':'Thorlabs PM16 USB power meter'},
@@ -51,6 +51,7 @@ usb_device_table = [
     {'vid':0x0416, 'pid':0x5011, 'driver':'tenmaserial/722710', 'name':'Tenma 72-2710 Power Supply'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-ir-usb', 'name':'Omega IR-USB', 'manufacturer':'Omega Engineering'},
     {'vid':0x10c4, 'pid':0xea60, 'driver':'serial/center310', 'name':'CENTER 310 Humidity meter', 'manufacturer':'Silicon Labs'},
+    {'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/tds220gpib', 'name':'Tektronix TDS220 via usb-GPIB'},
 
     # Microcontrollers using serial-over-USB
     {'vid':0x2341, 'pid':0x8036, 'driver':'arduino', 'name':'uDuino (Leonardo)'},
@@ -59,7 +60,6 @@ usb_device_table = [
     
     # Devices using Serial-to-USB adapters whose VID and PID may change depending on the dongle
     {'vid':0x0557, 'pid':0x2008, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},
-    {'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/gpib', 'name':'GPIB-USB adapter'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-iseries/485', 'name':'Omega iSeries via RS-485'},
     {'vid':0x0408, 'pid':0x6051, 'driver':'arduino', 'name':'Arduino Pro via FTDI FT231X'},
     {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/omega-iseries/232', 'name':'Omega iSeries via RS-232'},
@@ -68,6 +68,7 @@ usb_device_table = [
     {'vid':0x1d6b, 'pid':0x0104, 'driver':'beaglebone', 'name':'Beaglebone Black'},
     
     # Known but unsupported or generic
+    #{'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/gpib', 'name':'GPIB-USB adapter'},
     #{'vid':0x067b, 'pid':0x2303, 'driver':'arduino', 'name':'Generic USB to serial cable'},
     #{'vid':0x1a86, 'pid':0x7523, 'driver':'arduino', 'name':'Generic USB to serial cable'},
     #{'vid':0x0403, 'pid':0x6001, 'driver':'arduino', 'name':'FTDI USB to Serial'},

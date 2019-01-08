@@ -246,7 +246,7 @@ class usbtmcDevice(device):
             self.config['scale']=[1.,1.,1.,1.]
             self.config['offset']=[0.,0.,0.,0.]
             self.params['n_channels']=len(self.config['channel_names'])
-            self.tmcQuery=[':WAV:SOUR 1,:WAV:DATA?',':WAV:SOUR 1,:WAV:DATA?',':WAV:SOUR 1,:WAV:DATA?',':WAV:SOUR 1,:WAV:DATA?']
+            self.tmcQuery=[':WAV:SOUR 1,:WAV:DATA?',':WAV:SOUR 2,:WAV:DATA?',':WAV:SOUR 3,:WAV:DATA?',':WAV:SOUR 4,:WAV:DATA?']
         
             # Get some parameters that don't change often
             self.params['Samples_per_sec'] = self.ask(":ACQ:SRAT?")

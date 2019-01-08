@@ -255,7 +255,36 @@ class serialDevice(device):
         self.serialCommsFunction = self.blockingSerialRequest
 
         # ----------------------------------------------------------------------------------------
-        if subdriver=='omega-ir-usb': # Statup config for IR-USB
+        if subdriver=='tds220gpib': # Startup config for Tektronix TDS220 series via GPIB to serial
+            # Configure USB-GPIB adapter to talk to bus device no. 1
+            raise RuntimeError("Set up GPIB-USB not yet implemented")
+            
+            # Find out what model we have
+            idstring = self.blockingSerialRequest('ID?\r\n',terminationChar='\r',min_response_length=1)
+            if idstring is None:  raise pyLabDataLoggerIOError("no response from oscilloscope") 
+            elif 'TDS 220' in idstring: 
+                self.name = "Tektronix TDS220"
+                self.params['n_channels']=2
+            elif 'TDS 210' in idstring:
+                self.name = "Tektronix TDS210"
+                self.params['n_channels']=2
+            elif 'TDS 224' in idstring:
+                self.name = "Tektronix TDS224"
+                self.params['n_channels']=4
+            else:
+                raise pyLabDataLoggerIOError("Unknown model %s" % idstring)
+            self.params['id']=idstring
+            self.config['channel_names']=['CH%i' % n for n in range(self.params['n_channels'])]
+            self.params['raw_units']=['V']*self.params['n_channels']
+            self.config['eng_units']=['V']*self.params['n_channels']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.serialQuery=[':DAT:SOU CH%i\r\nWAVF?' % n for n in range(self.params['n_channels'])] # To set!
+            self.queryTerminator='\r\n'
+            self.responseTerminator='\r'
+
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='omega-ir-usb': # Statup config for IR-USB
             self.name = "Omega IR-USB"
             self.config['channel_names']=['tempC','tempF','ambientC','ambientF','emissivity']
             self.params['raw_units']=['C','F','C','F','']
@@ -354,7 +383,22 @@ class serialDevice(device):
             elif len(rawData[0]) is None: raise IndexError
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='omega-ir-usb':
+            if subdriver=='tds220gpib':
+                """
+                WFMP?
+                The format of the response (assuming the DATa:SOUrce waveform is on) is:
+BYT_Nr <NR1>;BIT_Nr <NR1>;ENCdg { ASC | BIN }; BN_Fmt { RI | RP };BYT_Or { LSB | MSB };NR_Pt <NR1>; WFID <Qstring>;PT_FMT {ENV | Y};XINcr <NR3>;
+PT_Off <NR1>;XZERo <NR3>;XUNit<QString>;YMUlt <NR3>; YZEro <NR3>;YOFf <NR3>;YUNit <QString>
+                CURV?
+                CURVe { <Block> | <asc curve> }
+                <Block> is the waveform data in binary format. The waveform is formatted as: #<x><yyy><data> where <x> is the number of characters in <yyy>. For example, if <yyy> = 500, then <x> = 3, where <yyy> is the number of bytes to transfer. See Block Arguments on page 2–12.
+If width is 1, then all bytes on the bus are single data points. If width is 2, then all bytes on the bus are 2-byte pairs. Use the DATa:WIDth command to set the width. <data> is the curve data.
+<asc curve> is the waveform data in ASCII format. The format for ASCII data is <NR1>[,<NR1>...] where each <NR1> represents a data point.
+                """
+                raise RuntimeError("Not yet implemented")
+
+            # ----------------------------------------------------------------------------------------
+            elif subdriver=='omega-ir-usb':
                 if len(rawData)<2: return [None]*self.params['n_channels']
                 vals= [float(rawData[0].strip('>')), float(rawData[1].strip('>'))]
                 if len(rawData)<3: vals.extend([np.nan, np.nan])
