@@ -2,7 +2,7 @@
     Main module for spawning device threads and logging to file.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018 LTRAC
+    @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
     @date 27/11/2018

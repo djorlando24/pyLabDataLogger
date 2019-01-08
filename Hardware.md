@@ -29,3 +29,6 @@ If the device won't communicate, unplug & replug it.
 ## Rigol DS-series oscilloscopes
 The Rigol DS scopes are working via the sigrok driver, which seems to handle the non standard SCPI frame fsormat that usbtmc can't.
 The scope needs to be set up and armed before the acquisition is started. Single shot mode may not work, I find best results arming it in Auto mode and letting sigrok acquire what's most recently on the screen. If things go wrong you can set 'debugMode':True in the kwargs to the device driver and see what is happening behind the scenes.
+
+## GPIB oscilloscopes
+Oscilloscopes using the GPIB-USB adapter (http://dangerousprototypes.com/blog/2014/01/13/open-source-hardware-gpib-usb-adapter/) should be set to GPIB bus address 1. The code assumes there's only one device on the bus.
