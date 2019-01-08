@@ -55,6 +55,7 @@ Laboratory datalogging for USB and Serial devices
 
 
 ## Soon to be supported hardware
+- Tektronix TDS220 series oscilloscopes
 - more SPI bus devices (i.e. MPL11A1 barometer)
 - more I2C bus devices (ie time of flight sensors)
 - Raspberry PI GPIO pins (for triggering measurements as well as logging their state)
