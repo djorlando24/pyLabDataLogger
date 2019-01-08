@@ -7,7 +7,7 @@ Laboratory datalogging for USB and Serial devices
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 27/11/2018
+    @date 08/01/2019
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
