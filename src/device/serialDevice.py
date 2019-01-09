@@ -174,6 +174,8 @@ class serialDevice(device):
                 # No settings can be modified at present. In future we could allow changing of
                 # set points.
                 pass
+            elif subdriver=='tc08rs232':
+                raise RuntimeError("Need to implement selection of thermocouple types!")
             else:
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
     
@@ -381,6 +383,33 @@ class serialDevice(device):
             self.responseTerminator='\r'
             self.serialCommsFunction=self.blockingRawSerialRequest
             self.params['min_response_length']=1 # bytes
+
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='tc08rs232': # Startup config for TC-08 over RS-232
+            self.name = "Picolog RS-232 TC-08 thermocouple datalogger"
+            self.config['channel_names']=['Cold Junction','1','2','3','4','5','6','7','8']
+            if 'init_tc08_config' in self.params: self.config['tc_config'] = self.params['init_tc08_config']
+            else: self.config['tc_config'] = ['K','K','K','K','K','K','K','K']
+            self.params['n_channels']=9
+            self.params['raw_units']=['degC']*self.params['n_channels']
+            self.config['eng_units']=['degC']*self.params['n_channels']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.serialQuery=['\x22','\x00','\x20','\x40','\x60','\x80','\xA0','\xC0','\xE0'] 
+            self.queryTerminator=''
+            self.responseTerminator=''
+            self.params['min_response_length']=3 # bytes
+
+            # Turn it on
+            self.Serial.rts = 0            
+            self.Serial.dts = 0
+            time.sleep(0.01)
+            self.Serial.rts = 1
+            time.sleep(1.)
+
+            # Try and get device version code.
+            self.params['version']=self.blockingSerialRequest('\x01'*10,terminationChar='',sleeptime=1.,min_response_length=3,maxlen=4)
+            raise RuntimeError("breakpoint")
         
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])

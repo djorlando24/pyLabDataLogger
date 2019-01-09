@@ -1,12 +1,13 @@
 # -*- coding: UTF-8 -*-
 """
-    Generic device class - a template for making new devices
+    Picolog USB TC-08 device using Pico's usbtc08 driver.
+    (serial TC08 devices are supported by serialDevice.py)
     
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 29/11/2018
+    @date 09/01/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
