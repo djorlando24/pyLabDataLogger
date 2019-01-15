@@ -114,8 +114,13 @@ class serialDevice(device):
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=460800
             if not 'gpib-address' in self.params.keys(): self.params['gpib-address']=1 # default GPIB address is 1
         elif self.subdriver=='tc08rs232':
-            self.params['rtscts']=True
-            if not 'timeout' in self.params.keys(): self.params['timeout']=2.
+            #self.params['baudrate']=4800
+            #self.params['rtscts']=True
+            #self.params['xonxoff']=True
+            #self.params['parity']=serial.PARITY_EVEN
+            #self.params['bytesize']=serial.SEVENBITS
+            #self.params['stopbits']=serial.STOPBITS_TWO
+            pass
         
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -405,18 +410,24 @@ class serialDevice(device):
             self.config['eng_units']=['C','C','C','C','C','C','C','C','','']
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
-            self.serialQuery=['\xb00','\xb20','\xb40','\xb60','\xb80','\xbA0','\xbC0','\xbE0','\xb22','\xb42'] 
+            self.serialQuery=['\xb0\xb0','\x20','\x40','\x60','\x80','\xA0','\xC0','\xE0','\x22','\x42'] 
             self.queryTerminator=''
             self.responseTerminator=''
             self.params['min_response_length']=3 # bytes
+            self.maxlen=3
 
-            # Turn it on
+            # Set RTS and DTR to provide power to the device, as per user manual.
+            # Have confirmed these are the right ones.
             self.Serial.rts = True
             self.Serial.dtr = False
             time.sleep(1.)
 
             # Try and get device version code.
-            self.params['version']=self.blockingSerialRequest('\xb01',terminationChar='',sleeptime=1.,min_response_length=3,maxlen=3)
+            self.params['version']=None
+            #while self.params['version']==None:
+            #self.Serial.write('\x01'); time.sleep(0.05)
+            self.params['version']=self.blockingSerialRequest('\xb0\xb1',terminationChar='',sleeptime=.01,min_response_length=3,maxlen=3)
+            #time.sleep(.1)
             print '\tTC08 version =',self.params['version']
         
         else:
