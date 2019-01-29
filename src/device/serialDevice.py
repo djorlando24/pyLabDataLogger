@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 09/01/2019
+    @date 29/01/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -19,12 +19,14 @@
 from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time, struct, sys
+import binascii
 
 try:
     import serial
 except ImportError:
     print "Please install pySerial"
     raise
+
 
 ########################################################################################################################
 class serialDevice(device):
@@ -96,6 +98,7 @@ class serialDevice(device):
             print "\tUnable to connect to serial port - port unknown."
             print "\tYou may need to install a specific USB-to-Serial driver."
             print "\tfound non-matching ports:",list_ports.comports()[0]
+            raise pyLabDataLoggerIOError("Serial port driver missing")
         
         else: self.activate()
         return
@@ -145,7 +148,7 @@ class serialDevice(device):
                                     bytesize=self.params['bytesize'], parity=self.params['parity'],\
                                     stopbits=self.params['stopbits'], xonxoff=self.params['xonxoff'],\
                                     rtscts=self.params['rtscts'], timeout=self.params['timeout'])
-                                    
+        
         self.driverConnected=True
                                     
         # Make first query to get units, description, etc.
@@ -410,9 +413,10 @@ class serialDevice(device):
             self.config['eng_units']=['C','C','C','C','C','C','C','C','','']
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
-            self.serialQuery=['\xb0\xb0','\x20','\x40','\x60','\x80','\xA0','\xC0','\xE0','\x22','\x42'] 
+            self.serialQuery = [ struct.pack('>B',n) for n in [ 0,20,40,60,80,0xA0,0xC0,0xE0,0x22,0x42 ] ]
             self.queryTerminator=''
             self.responseTerminator=''
+            self.serialCommsFunction=self.blockingRawSerialRequest
             self.params['min_response_length']=3 # bytes
             self.maxlen=3
 
@@ -424,10 +428,12 @@ class serialDevice(device):
 
             # Try and get device version code.
             self.params['version']=None
-            #while self.params['version']==None:
-            #self.Serial.write('\x01'); time.sleep(0.05)
-            self.params['version']=self.blockingSerialRequest('\xb0\xb1',terminationChar='',sleeptime=.01,min_response_length=3,maxlen=3)
-            #time.sleep(.1)
+            time.sleep(1.)  #settling time
+            while True:
+                ver=struct.unpack('>3c',self.blockingRawSerialRequest(struct.pack('>B',1),terminationChar='',sleeptime=.01,min_response_length=3,maxlen=3))
+                self.params['version'] = ver[0]+binascii.hexlify(ver[1])
+                if self.params['version'][0] == 'V': break
+                time.sleep(.5)
             print '\tTC08 version =',self.params['version']
         
         else:
