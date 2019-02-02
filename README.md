@@ -2,6 +2,7 @@
 Laboratory datalogging for USB and Serial devices
 
 ## Caution, this software is in Beta and may not work reliably yet!
+## Try scripts/test_usb_devices.py to poll compatible USB devices.
 
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2019 LTRAC
