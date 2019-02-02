@@ -46,12 +46,15 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 - GPIB devices that use the GPIB-USB serial adapter
     - Tektronix TDS220 series oscilloscopes
 
-- Devices with specialised drivers
+- USB Devices with custom interfaces
     - Picolog USB-TC-08 thermocouple logger
     - USB audio capture devices via ALSA (on Linux)
-    - Tenma 72-2710 USB programmable bench power supply
     - Omega IR-USB thermometer 
-    - Omega iSeries temperature process controllers, via RS-485
+    
+- RS-232 Serial devices via Serial-to-USB adapters
+    - Tenma 72-2710 USB programmable bench power supply
+    - Pico RS-232 TC-08 thermocouple logger
+    - Omega iSeries temperature process controllers, via RS-485 or RS-232
     - CENTER 310 humidity meter
     - OHAUS digital lab scales via RS232-to-USB
 
@@ -63,7 +66,6 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 - more SPI bus devices (i.e. MPL11A1 barometer)
 - more I2C bus devices (ie time of flight sensors)
 - Raspberry PI GPIO pins (for triggering measurements as well as logging their state)
-- Pico RS-232 TC-08 thermocouple logger
 - PicoScope headless oscilloscopes
 - NI-VISA type devices, including
     - Thorlabs PM16-120 power meter
