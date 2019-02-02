@@ -37,7 +37,8 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 - Microcontrollers using FTDI or CP2102 serial over USB chips
        that push strings with format "VARNAME=VALUE, VARNAME=..."
        (i.e. Arduinos, RS-232 and RS-485 to serial adapters)
-    - pyAPT devices (ie Thorlabs translation stages)
+
+- pyAPT devices (ie Thorlabs translation stages)
 
 - Measurement Computing devices via mcc-libusb
     - MCC-USB-1608G confirmed working
