@@ -60,10 +60,10 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 
 - Single board computer (Raspberry Pi, Beaglebone) I2C, SPI & GPIO
     - Adafruit ADS1x15 12-bit ADCs via I2C
-
+    - Adafruit BMP085 barometer/altimeter via I2C
 
 ## Soon to be supported hardware
-- more SPI bus devices (i.e. MPL11A1 barometer)
+- SPI bus devices 
 - more I2C bus devices (ie time of flight sensors)
 - Raspberry PI GPIO pins (for triggering measurements as well as logging their state)
 - PicoScope headless oscilloscopes

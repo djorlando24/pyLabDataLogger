@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 29/11/2018
+    @date 06/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -44,6 +44,9 @@ def load_i2c_devices(devices=None,bus=1,**kwargs):
         if address=='0x48' or address=='0x49':
             from pyLabDataLogger.device import ads1x15Device
             device_list.append(ads1x15Device.ads1x15Device(params={'address':address, 'bus':bus},**kwargs))
+        elif address=='0x77':
+            from pyLabDataLogger.device import bmp085Device
+            device_list.append(bmp085Device.bmp085Device(params={'address':address, 'bus':bus},**kwargs))
         else:
             print "I don't know what to do with I2C device at address",address
     return device_list
