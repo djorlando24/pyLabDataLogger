@@ -7,7 +7,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 11/10/2018
+    @date 06/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -19,6 +19,7 @@
 """
 
 from pyLabDataLogger.device import usbDevice
+import time
 
 if __name__ == '__main__':
 
@@ -28,7 +29,18 @@ if __name__ == '__main__':
     if len(found)==0: 
         print "No I2C devices found."
     else:
-        i2cDevice.load_i2c_devices(found)  
+        devices = i2cDevice.load_i2c_devices(found)
        
+    try:
+        while True:
+            time.sleep(1)
+            for d in devices:
+                print d.name
+                d.query()
+                d.pprint()
+    except KeyboardInterrupt:
+        print "Stopped."
+    except: # all other errors
+        raise
      
 

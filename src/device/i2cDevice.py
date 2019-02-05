@@ -45,8 +45,8 @@ def load_i2c_devices(devices=None,bus=1,**kwargs):
             from pyLabDataLogger.device import ads1x15Device
             device_list.append(ads1x15Device.ads1x15Device(params={'address':address, 'bus':bus},**kwargs))
         elif address=='0x77':
-            from pyLabDataLogger.device import bmp085Device
-            device_list.append(bmp085Device.bmp085Device(params={'address':address, 'bus':bus},**kwargs))
+            from pyLabDataLogger.device import bmpDevice
+            device_list.append(bmpDevice.bmpDevice(params={'address':address, 'bus':bus},**kwargs))
         else:
             print "I don't know what to do with I2C device at address",address
     return device_list

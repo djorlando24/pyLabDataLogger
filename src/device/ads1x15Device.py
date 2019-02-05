@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 29/11/2018
+    @date 06/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -48,9 +48,10 @@ class ads1x15Device(i2cDevice):
             return
 
         if not 'differential' in self.params.keys(): 
-            print "\tDefault differential mode" 
+            self.diffDefault=True
             self.diff=True
         else: 
+            self.diffDefault=False
             self.diff=self.params['differential']
 
         if self.diff:
@@ -68,9 +69,15 @@ class ads1x15Device(i2cDevice):
         self.config['scale']=np.ones(self.params['n_channels'],)
         self.config['offset']=np.zeros(self.params['n_channels'],)
         if 'gain' in self.params: self.config['gain']=self.params['gain']
+
         print "Activating %s on i2c bus at %i:%s with %i channels" % (self.params['driver'],self.params['bus'],self.params['address'],self.params['n_channels'])
+        if self.diffDefault: print "\tDifferential mode (default)"
+        elif self.diff: print "\tDifferential mode specified"
+        else: print "\tSingle-ended mode"
+        
         if ('untitled' in self.name.lower()) or (self.name==''):
             self.name = '%s I2C %i:%s' % (self.params['driver'],self.params['bus'],self.params['address'])
+
         self.apply_config()
         self.driverConnected=True
         

@@ -32,3 +32,7 @@ The scope needs to be set up and armed before the acquisition is started. Single
 
 ## GPIB oscilloscopes
 Oscilloscopes using the GPIB-USB adapter (http://dangerousprototypes.com/blog/2014/01/13/open-source-hardware-gpib-usb-adapter/) should be set to GPIB bus address 1 by default. The code assumes there's only one device on the bus unless you specify 'gpib-address' when generating the device object.
+
+# I2C Devices
+I2C devices that use Adafruit libraries rely on deprecated python libraries which have been copied into thirdParty in case
+the old repositories on Github go away. These devices have been tested on Raspberry pi, but should work on Beaglebones as well.
