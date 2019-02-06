@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 29/01/2019
+    @date 06/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -129,18 +129,10 @@ class serialDevice(device):
             if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.SEVENBITS
             if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_ODD
             if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_ONE
-            self.params['timeout']=0.5
+            self.params['timeout']=1
         elif self.subdriver=='tds220gpib':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=460800
             if not 'gpib-address' in self.params.keys(): self.params['gpib-address']=1 # default GPIB address is 1
-        elif self.subdriver=='tc08rs232':
-            #self.params['baudrate']=4800
-            #self.params['rtscts']=True
-            #self.params['xonxoff']=True
-            #self.params['parity']=serial.PARITY_EVEN
-            #self.params['bytesize']=serial.SEVENBITS
-            #self.params['stopbits']=serial.STOPBITS_TWO
-            pass
         
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
