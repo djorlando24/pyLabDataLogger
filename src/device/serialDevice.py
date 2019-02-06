@@ -78,22 +78,39 @@ class serialDevice(device):
         elif 'pid' in self.params.keys() and 'vid' in self.params.keys(): # USB serial
             
             from serial.tools import list_ports
-            for serialport in list_ports.comports():
-                if not 'vid' in dir(serialport):
-                    if len(serialport)>0:
-                        self.port = serialport[0]
-                        if not self.tty_prefix in self.port: self.port = self.tty_prefix + self.port
-                        self.params['tty']=self.port
-                else:
-                    if serialport.vid==self.params['vid'] and serialport.pid==self.params['pid']:
-                        if not self.quiet: print '\t',serialport.hwid, serialport.name
-                        if serialport.name is not None:
-                            self.port = serialport.name # Linux
-                        else:
-                            self.port = serialport.device # MacOS
-                        if not self.tty_prefix in self.port: self.port = self.tty_prefix + self.port
-                        self.params['tty']=self.port
-                    
+            for serialport in list_ports.comports(): # scan all serial ports the OS can see
+		
+                if len(serialport)>1: # if the returned device is a list, tuple or dictionary with >1 value in it
+
+		    # Some versions return a dictionary, some return a tuple with the VID:PID in the last string.
+
+                    if 'VID:PID' in serialport[-1]: # tuple or list
+                        thename = serialport[0]
+                        thevid,thepid = [ int(val,16) for val in serialport[-1].split('=')[-1].split(':')]
+                        if thevid==self.params['vid'] and thepid==self.params['pid']:
+                            if not self.quiet: print '\t',serialport
+                            if thename is not None:
+                                self.port = thename # Linux
+                            else:
+                                self.port = serialport.device # MacOS
+                            if not self.tty_prefix in self.port: self.port = self.tty_prefix + self.port
+                            self.params['tty']=self.port
+
+                    elif 'vid' in dir(serialport): # dictionary
+                        if serialport.vid==self.params['vid'] and serialport.pid==self.params['pid']:
+                            if not self.quiet: print '\t',serialport.hwid, serialport.name
+                            if serialport.name is not None:
+                                self.port = serialport.name # Linux
+                            else:
+                                self.port = serialport.device # MacOS
+                            if not self.tty_prefix in self.port: self.port = self.tty_prefix + self.port
+                            self.params['tty']=self.port
+
+                elif len(list_ports.comports())==1: # only one found, use as default
+                    self.port = serialport[0]
+                    if not self.tty_prefix in self.port: self.port = self.tty_prefix + self.port
+                    self.params['tty']=self.port
+                   
         if self.port is None:
             print "\tUnable to connect to serial port - port unknown."
             print "\tYou may need to install a specific USB-to-Serial driver."
