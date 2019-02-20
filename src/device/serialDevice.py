@@ -129,6 +129,7 @@ class serialDevice(device):
             if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.SEVENBITS
             if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_ODD
             if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_ONE
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=2400
             self.params['timeout']=1
         elif self.subdriver=='tds220gpib':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=460800
@@ -265,6 +266,7 @@ class serialDevice(device):
     # some delay for the direction switching)
     def blockingRawSerialRequest(self,request,terminationChar='\r',maxlen=1024,min_response_length=0,sleeptime=0.01):
         try:
+            #print repr(request) # debugging
             self.Serial.write(request)
             t_=time.time()
             time.sleep(sleeptime)
@@ -411,6 +413,22 @@ class serialDevice(device):
             self.serialCommsFunction=self.blockingRawSerialRequest
             self.params['min_response_length']=1 # bytes
 
+            # Try and establish communication with the device. !!!
+            self.params['version']=None
+            time.sleep(1.)  #settling time
+            while True:
+                req='*\xb01R\xb05\r'
+                print "Send",repr(req)
+                ver=self.blockingRawSerialRequest(req,terminationChar='',\
+                                 sleeptime=.01,min_response_length=1,maxlen=64)
+                #ver=struct.unpack('>3c',ver)
+                print "Read",repr(ver)
+                #self.params['version'] = repr(ver)#ver[0]+binascii.hexlify(ver[1])
+                #if self.params['version'][0] == 'V': break
+                time.sleep(.1)
+            print '\tISeries ID =',self.params['version']
+
+
         # ----------------------------------------------------------------------------------------
         elif subdriver=='tc08rs232': # Startup config for TC-08 over RS-232
             self.name = "Picolog RS-232 TC-08 thermocouple datalogger"
@@ -439,7 +457,8 @@ class serialDevice(device):
             self.params['version']=None
             time.sleep(1.)  #settling time
             while True:
-                ver=struct.unpack('>3c',self.blockingRawSerialRequest(struct.pack('>B',1),terminationChar='',sleeptime=.01,min_response_length=3,maxlen=3))
+                ver=struct.unpack('>3c',self.blockingRawSerialRequest(struct.pack('>B',1),terminationChar='',\
+                                                              sleeptime=.01,min_response_length=3,maxlen=3))
                 self.params['version'] = ver[0]+binascii.hexlify(ver[1])
                 if self.params['version'][0] == 'V': break
                 time.sleep(.5)
