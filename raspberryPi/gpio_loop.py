@@ -32,14 +32,15 @@ import numpy as np
 # TTL outputs = [12,13]
 
 PL1 = 0.5 # solenoid pulse length
-DT  = 1.5 # delay to TTL out2
+DT  = 1.5 # delay from solenoid rising edge to TTL out2
 
 trigger_pin   = 16
-output_pins   = [25 , 12  , 13  , 22, 23, 21]
-output_delays = [0  , 1e-3, DT  , 0 , DT, 0 ]
-output_plen   = [PL1, 1e-3, 1e-3, DT, DT, DT]
-output_invert = [0  ,  0  , 0   , 0 , 0 , 0 ] 
-debounce_delay = 0.2 # min. time between triggers allowed
+output_pins   = [25    , 12   , 13   , 22      , 21      ]
+output_name   = ["Sol1","TTL1","TTL2","Grn LED","Yel LED"]
+output_delays = [0     , 0    , DT   , 2e-3    , 2e-3    ]
+output_plen   = [PL1   , 5e-2 , 5e-2 , DT      , DT*2    ]
+output_invert = [0     , 0    , 0    , 0       , 1       ] 
+debounce_delay = 1.0 # min. time between triggers allowed
 
 # Make a list of events to do when triggered
 timings = np.hstack((np.array(output_delays),np.array(output_delays)+np.array(output_plen)))
@@ -50,10 +51,14 @@ a = np.hstack((1-np.array(output_invert),output_invert))
 event_pins = p[np.argsort(timings)]
 event_action = a[np.argsort(timings)]
 delays = np.diff(timings[np.argsort(timings)])
+delays = np.hstack((delays,0))
 
-print event_pins
-print event_action
-print delays
+print "Event sequence:"
+for i in range(len(event_pins)):
+    pin_name = output_name[output_pins.index(event_pins[i])]
+    print "Pin %i (%s) = %i, then wait %f s" % (event_pins[i], pin_name, event_action[i], delays[i])
+print "Then wait for next trigger.\n"
+
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(trigger_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -65,8 +70,10 @@ for pin, val in zip(output_pins, output_invert):
 print("Press CTRL+C to exit")
 try:
     t0=time.time()-debounce_delay
+    print("Waiting for trigger")
     while 1:
-        if ~GPIO.input(trigger_pin) and (time.time()-t0 > debounce_delay):
+        # trigger when input pin goes LOW (it's an inverted pullup input) and debounce delay passed
+        if (GPIO.input(trigger_pin)==0) and (time.time()-t0 > debounce_delay):
             t0=time.time()
             for pin, action, dt in zip(event_pins, event_action, delays):
                 GPIO.output(pin, action)
