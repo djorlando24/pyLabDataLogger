@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 29/11/2018
+    @date 22/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -14,11 +14,19 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+
+    Changes:
+        22/02/2019 - Added logging options
 """
 
 import datetime
 import numpy as np
-import sys
+import sys, os
+
+try:
+    import h5py
+except ImportError:
+    print "Install h5py library to enable HDF5 logging support."
 
 class pyLabDataLoggerIOError(IOError):
     """ Exception raised when an IO error occurs in a driver.
@@ -88,6 +96,7 @@ class device:
         if self.driverConnected: self.activate()
         else: print "Error resetting %s: device is not detected" % self.name
 
+    ################################################################################################################################################################
     # Print values with units
     def pprint(self,lead='\t'):
         show_scaled = ('eng_units' in self.config) and ('scale' in self.config) and\
@@ -119,3 +128,97 @@ class device:
                         self.lastScaled[n],self.config['eng_units'][n].decode('utf-8'))
                     
         return
+
+    ################################################################################################################################################################
+    # log data to files
+    def log(self, filename):
+        e = os.path.splitext(filename)[-1]
+        if ('hdf5' in e) or ('h5' in e): self.log_hdf5(filename)
+        elif ('txt' in e) or ('csv' in e) or ('log' in e): self.log_text(filename)
+        else: raise ValueError("Unknown/unsupported logging format %s" % e)
+
+    # log to HDF5 file
+    # max_records specifies the largest size an array can get.
+    def log_hdf5(self, filename, max_records=1024):
+        assert(h5py)
+        
+        # Open file
+        with h5py.File(filename, 'a') as fh:
+
+            # Load group for this device.
+            if self.name in fh:
+                dg = fh[self.name]
+            else: 
+                dg = fh.create_group(self.name)
+                # On creation, add attributes from config and params
+                for attr in self.params.keys(): 
+                    dg.attrs[attr] = repr(self.params[attr])
+                for attr in self.config.keys():
+                    dg.attrs[attr] = repr(self.config[attr])
+
+            # Loop all channels of device
+            for i in range(self.params['n_channels']):
+
+                # Make/open group for channel
+                if self.config['channel_names'][i] in dg: cg = dg[self.config['channel_names'][i]]
+                else: cg = dg.create_group(self.config['channel_names'][i])
+
+                # Loop over raw values and scaled values
+                for data, desc, units in [(self.lastValue, "Raw values", self.params['raw_units'][i]),(self.lastScaled, "Scaled values", self.config['eng_units'][i])]:
+                     
+                    if desc in cg:  # Add more
+                        dset = cg[desc]
+                        ds = list(dset.shape)
+                        ds[-1] += 1
+                        dset.resize(ds)
+                        dset[...,ds[-1]-1]=data[i]
+
+                    else: # Make new array
+                        ds = list(np.array(data[i]).shape)
+                        ms = ds[:]
+                        ds.append(1)
+                        ms.append(max_records)
+                        dset = cg.create_dataset(desc, data=np.array(data[i]).reshape(tuple(ds)), maxshape=ms)
+                        dset.attrs['units']=units
+
+                print '\n', self.name, self.config['channel_names'][i], 'logfile size:', dset.shape
+
+        fh.close()
+
+    # log to text file
+    def log_text(self, filename):
+        import datetime
+        
+        # Write header
+        if not os.path.exists(filename):            
+            fh = open(filename,'w')
+            fh.write('# PyLabDataLogger text file\n')
+            fh.write('# Started %s\n' % datetime.datetime.now())
+            fh.write('#\n# DEVICE = %s\n' % self.name)
+            fh.write('#\n# CONFIG:\n')
+            for attr in self.config.keys():
+                fh.write('#        %s = %s\n' % (attr,str(self.config[attr])))
+            fh.write('#\n# PARAMS:\n')
+            for attr in self.params.keys():
+                fh.write('#        %s = %s\n' % (attr,str(self.params[attr])))
+            fh.write('#\n# CHANNELS:\n')
+            for i in range(self.params['n_channels']):
+                fh.write('#        %s\n' % self.config['channel_names'][i])
+            fh.write('\n')
+            fh.close()
+
+        # Write latest data
+        fh = open(filename,'a')
+        
+        # Loop channels.
+        for i in range(self.params['n_channels']):
+            fh.write('# CHANNEL = %s, TIMESTAMP = %s, DEV = %s\n' % (self.config['channel_names'][i],datetime.datetime.now(),self.name))
+            # Loop over raw values and scaled values
+            for data, desc, units in [(self.lastValue, "Raw values", self.params['raw_units'][i]),(self.lastScaled, "Scaled values", self.config['eng_units'][i])]:
+                fh.write('# %s, units = %s\n' % (desc,units))
+                if isinstance(data[i],np.ndarray): np.savetxt(fh, data[i].T, delimiter=',')
+                else: fh.write(str(data[i])+'\n')
+                fh.write('\n')
+
+        fh.close()
+        
