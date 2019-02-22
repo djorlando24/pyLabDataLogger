@@ -139,22 +139,34 @@ class device:
 
     # log to HDF5 file
     # max_records specifies the largest size an array can get.
-    def log_hdf5(self, filename, max_records=1024):
+    def log_hdf5(self, filename, max_records=4096):
         assert(h5py)
         
         # Open file
         with h5py.File(filename, 'a') as fh:
 
             # Load group for this device.
-            if self.name in fh:
-                dg = fh[self.name]
+            if 'name' in self.config: devname = self.config['name']
+            elif 'name' in self.params: devname = self.params['name']
+            else: devname = self.name
+            if devname in fh: dg = fh[devname]
             else: 
-                dg = fh.create_group(self.name)
+                dg = fh.create_group(devname)
                 # On creation, add attributes from config and params
                 for attr in self.params.keys(): 
                     dg.attrs[attr] = repr(self.params[attr])
                 for attr in self.config.keys():
                     dg.attrs[attr] = repr(self.config[attr])
+
+            # Create/update timestamp dataset
+            # Each device has a lastValueTimestamp which can vary a bit between devices due to latency issues.
+            if 'timestamp' in dg:
+                td = dg['timestamp']
+                td.resize([td.shape[0]+1,])
+                td[-1] = str(self.lastValueTimestamp)
+            else:
+                dg.create_dataset('timestamp',data=[str(self.lastValueTimestamp)],maxshape=(max_records,))
+
 
             # Loop all channels of device
             for i in range(self.params['n_channels']):
@@ -188,7 +200,6 @@ class device:
 
     # log to text file
     def log_text(self, filename):
-        import datetime
         
         # Write header
         if not os.path.exists(filename):            
@@ -213,7 +224,7 @@ class device:
         
         # Loop channels.
         for i in range(self.params['n_channels']):
-            fh.write('# CHANNEL = %s, TIMESTAMP = %s, DEV = %s\n' % (self.config['channel_names'][i],datetime.datetime.now(),self.name))
+            fh.write('# CHANNEL = %s, TIMESTAMP = %s, DEV = %s\n' % (self.config['channel_names'][i],self.lastValueTimestamp,self.name))
             # Loop over raw values and scaled values
             for data, desc, units in [(self.lastValue, "Raw values", self.params['raw_units'][i]),(self.lastScaled, "Scaled values", self.config['eng_units'][i])]:
                 fh.write('# %s, units = %s\n' % (desc,units))
