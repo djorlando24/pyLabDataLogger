@@ -181,7 +181,8 @@ class device:
                         dset = cg.create_dataset(desc, data=np.array(data[i]).reshape(tuple(ds)), maxshape=ms)
                         dset.attrs['units']=units
 
-                print '\n', self.name, self.config['channel_names'][i], 'logfile size:', dset.shape
+                # Debugging output.
+                #print '\n', self.name, self.config['channel_names'][i], 'logfile size:', dset.shape
 
         fh.close()
 
