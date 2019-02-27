@@ -200,7 +200,7 @@ class device:
                 # Debugging output.
                 #print '\n', self.name, self.config['channel_names'][i], 'logfile size:', dset.shape
 
-        fh.close()
+            fh.close()
 
     # log to text file
     def log_text(self, filename):

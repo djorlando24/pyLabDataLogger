@@ -11,7 +11,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 22/10/2018
+    @date 27/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -121,6 +121,8 @@ try:
                 d.pprint()
                 print ''
             GPIO.output(busy_indicator_pin, 0)
+        
+        #break
 
 except KeyboardInterrupt:
     GPIO.cleanup()
