@@ -8,7 +8,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 09/01/2019
+    @date 27/02/2019
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -62,14 +62,15 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Adafruit ADS1x15 12-bit ADCs via I2C
     - Adafruit BMP085/BMP150 barometer/altimeter via I2C
 
+- Raspberry Pi GPIO pins
+
 ## Soon to be supported hardware
-- SPI bus devices 
 - more I2C bus devices (ie time of flight sensors)
-- Raspberry PI GPIO pins (for triggering measurements as well as logging their state)
 - PicoScope headless oscilloscopes
-- NI-VISA type devices, including
+- NI-VISA over USB devices, such as
     - Thorlabs PM16-120 power meter
     - NI USB DAQ boards ie 6212-series
+- NI-VISA over Ethernet devices such as Rigol DG1000Z series waveform generators
 
 ## Notes
 - Most devices require additional python modules or third party open source

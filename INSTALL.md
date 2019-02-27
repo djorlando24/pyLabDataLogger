@@ -29,6 +29,10 @@ Those which require legacy versions or are hard to find have been stored in the 
 - for Picoscope devices, install pico-python
   https://github.com/colinoflynn/pico-python
 
+- For NI-VISA over TCP/IP, pyvisa-py module is required
+  Install by 'pip install pyvisa-py' and check installed options with
+  'python -m visa info'
+
 - For Agilent 33220A, usbtmc driver is required.
   See thirdParty/usbtmc or download yourself from https://github.com/python-ivi/python-usbtmc
 
