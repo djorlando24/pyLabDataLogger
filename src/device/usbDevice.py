@@ -41,11 +41,15 @@ usb_device_table = [
                  
     # Specialty drivers with fixed VID and PID
     {'vid':0x1b3f, 'pid':0x2008, 'driver':'alsa', 'name':'USB sound card'},
-    {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'name':'Thorlabs APT motor driver'},
     {'vid':0x09db, 'pid':0x0112, 'driver':'mcc-libusb/mccusb1608G', 'name':'MCC USB-1608GX-2AO ADC'},
     {'vid':0x1313, 'pid':0x807b, 'driver':'thorlabs/pm120', 'name':'Thorlabs PM120'},
     {'vid':0x0ce9, 'pid':0x1000, 'driver':'picotc08/usbtc08', 'name':'Picolog USB TC-08 thermocouple datalogger'},
     {'vid':0x0ce9, 'pid':0x1016, 'driver':'picoscope/picoscope2k', 'name':'Picoscope 2000 Series'},
+    
+    # Multiple devices with same VID and PID are seperated by the serial number as a unique descriptor.
+    #{'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'name':'Thorlabs APT motor driver'},
+    {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'serial_number':2501777, 'name':'Thorlabs APT motor driver X'},
+    {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'serial_number':2750971, 'name':'Thorlabs APT motor driver Y'},
         
     # Serial-over-USB devices with fixed VID and PID
     {'vid':0x0416, 'pid':0x5011, 'driver':'tenmaserial/722710', 'name':'Tenma 72-2710 Power Supply'},
