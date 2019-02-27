@@ -54,6 +54,8 @@ class tenmaPowerSupplySerialDevice(serialDevice):
         self.config['set_voltage']=None
         self.config['set_current']=None
         self.params['n_channels']=2
+        if 'quiet' in kwargs: self.quiet = kwargs['quiet']
+        else: self.quiet = quiet
         if params is not {}: self.scan()
         
         return
