@@ -29,7 +29,7 @@ Those which require legacy versions or are hard to find have been stored in the 
 - for Picoscope devices, install pico-python
   https://github.com/colinoflynn/pico-python
 
-- For NI-VISA over TCP/IP, pyvisa-py module is required
+- For VISA over TCP/IP for networked devices, pyvisa-py module is required
   Install by 'pip install pyvisa-py' and check installed options with
   'python -m visa info'
 

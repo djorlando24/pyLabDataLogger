@@ -31,8 +31,11 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - USBee/LHT00SU1 ADC & logic analyser via fx2lafw driver
 
 - USBTMC devices that use SCPI command set
-    - Agilent 33220A waveform generator (via USB),
+    - Agilent 33220A waveform generator,
     - Thorlabs TSP01 temperature & humidity logger
+
+- NI-VISA over Ethernet devices that use SCPI command set
+    - Rigol DG1000Z series delay generators
 
 - Microcontrollers using FTDI or CP2102 serial over USB chips
        that push strings with format "VARNAME=VALUE, VARNAME=..."
@@ -65,12 +68,17 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 - Raspberry Pi GPIO pins
 
 ## Soon to be supported hardware
+
+- VISA over Ethernet support for devices already supported by USB
+   - Rigol DS series scopes (port the code over from the usbtmc driver)
+   - Agilent 33220A
+
 - more I2C bus devices (ie time of flight sensors)
 - PicoScope headless oscilloscopes
 - NI-VISA over USB devices, such as
     - Thorlabs PM16-120 power meter
     - NI USB DAQ boards ie 6212-series
-- NI-VISA over Ethernet devices such as Rigol DG1000Z series waveform generators
+- Fluke thermometers with USB interface.
 
 ## Notes
 - Most devices require additional python modules or third party open source
