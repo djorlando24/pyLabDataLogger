@@ -46,7 +46,7 @@ class pyAPTDevice(device):
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
         self.serial_number = params['serial_number']
-        self.name = params['name'] #"pyAPT device" # %s" % self.serial_number
+        self.name = params['name']
         if 'quiet' in kwargs: self.quiet = kwargs['quiet']
         else: self.quiet=quiet
         if params is not {}: self.scan(quiet=self.quiet)
@@ -177,8 +177,9 @@ class pyAPTDevice(device):
             self.params['raw_min_vel']=raw_min_vel
             self.params['raw_acc']=raw_acc
             self.params['raw_max_vel']=raw_max_vel
-            
-            self.params['name']='%s %s' % (self.dev.info()[4].decode('latin-1'), self.dev.serial_number)
+        
+            # Don't overwrite 'name', it'll return something generic like "KDC101 Servo Drive"
+            self.params['pyapt_device_name']='%s %s' % (self.dev.info()[4].decode('latin-1'), self.dev.serial_number)
             
         # Get values
         self.lastValue = [self.dev.position(),self.dev.position(raw=True),self.dev.status().velocity]
