@@ -262,6 +262,8 @@ class srdevice(device):
             self.srsession.run()
             self.updateTimestamp()
             self.srsession.stop()
+            self.sessionReady = 0
+            del self.srsession
             
             # Parse analog values - get buffer
             #if self.debugMode: print '\tOutput buffer =',self.data_buffer
