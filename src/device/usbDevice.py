@@ -100,7 +100,7 @@ def match_device(dev):
                 if key in match.keys():
                     if match[key].strip() != get_property(dev,key).strip():
                         matching=False
-                        print match[key], get_property(dev,key)
+                        #print match[key], get_property(dev,key)
                     elif match[key] is None: matching=True
             if matching: matches.append(match)
     return matches
@@ -137,6 +137,16 @@ def search_for_usb_devices(debugMode=False):
 
         # Check if device is a match with any in the supported devices table
         found_devices = match_device(dev)
+
+        # If multiple matches of the same driver name, take the most specific one.
+        if len(found_devices)>1:
+            nattrs = [ len(d) for d in found_devices ]
+            ndrvrs = [ d['driver'] for d in found_devices ]
+            def checkEqualIvo(lst):
+                return not lst or lst.count(lst[0]) == len(lst)
+            if checkEqualIvo([ d['driver'] for d in found_devices ]):
+                found_devices = found_devices[nattrs.index(nattrs.max())]
+
         if len(found_devices) == 0: table_entry = None
         elif len(found_devices) == 1: table_entry = found_devices[0]
         else:
