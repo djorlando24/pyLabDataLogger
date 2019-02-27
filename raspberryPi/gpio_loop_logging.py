@@ -31,6 +31,9 @@ import numpy as np
 # Define log file
 logfilename='/home/pi/logfile_%s.hdf5' %  datetime.datetime.now().strftime('%d-%m-%y_%Hh%Mm%Ss')
 
+# Report progress and logged variables to terminal?
+verbose=True
+
 # GPIO pins and timings for the control/triggering loop.
 PL1  = 0.5 # solenoid pulse length
 DT0  = 0.5 # delay from TTL out1 to solenoid rising edge
@@ -108,8 +111,10 @@ GPIO.output(busy_indicator_pin, busy_indicator_inv)
 print("Press CTRL+C to exit")
 try:
     t0=time.time()-debounce_delay
-    print("Waiting for trigger")
+    loop_counter=0
+    print("Loop counter = %i\nWaiting for trigger" % loop_counter)
     while 1:
+    
         # trigger when input pin goes LOW (it's an inverted pullup input) and debounce delay passed
         if (GPIO.input(trigger_pin)==0) and (time.time()-t0 > debounce_delay):
                 
@@ -120,20 +125,32 @@ try:
             for pin, action, dt in zip(event_pins, event_action, delays):
                 GPIO.output(pin, action)
                 if dt>0: time.sleep(dt)
+            
+            # Activate 'busy' indicator as we are now going into our datalogging routine,
+            # which may take several seconds
+            GPIO.output(busy_indicator_pin, 1-busy_indicator_inv)
 
             # Now update all the logging devices
-            GPIO.output(busy_indicator_pin, 1-busy_indicator_inv)
             for d in devices:
                 d.query()
 
             # Now everything else is done, save to log file and output any other information.
             for d in devices:
                 d.log(logfilename)
-                print d.name
-                d.pprint()
-                print ''
+                if verbose:
+                    print d.name
+                    d.pprint()
+                    #print ''
+                
+            # Turn off the 'busy' indicator
             GPIO.output(busy_indicator_pin, busy_indicator_inv)
-        
+            
+            # Tell the user in the terminal that we are ready for the next trigger.
+            if verbose:
+                print('='*40)
+                print("Loop counter = %i\nWaiting for trigger" % loop_counter)
+
+        loop_counter+=1
         #break
 
 except KeyboardInterrupt:
