@@ -112,7 +112,13 @@ class device:
             if 'raw_units' in self.params:
                 sys.stdout.write(lead+'Raw values: ')
                 for n in range(self.params['n_channels']):
-                   sys.stdout.write(u'%s = %g %s, ' % (self.config['channel_names'][n],self.lastValue[n],self.params['raw_units'][n].decode('utf-8')))
+                    if self.params['raw_units'][n] == '':
+                        sys.stdout.write(u'%s = %g, ' % (self.config['channel_names'][n],\
+                                                            self.lastValue[n])
+                    else:
+                        sys.stdout.write(u'%s = %g %s, ' % (self.config['channel_names'][n],\
+                                                            self.lastValue[n],\
+                                                            self.params['raw_units'][n].decode('utf-8')))
                 sys.stdout.write('\n')
             else:
                 print lead+'Raw values:',self.lastValue
