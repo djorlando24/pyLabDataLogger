@@ -73,9 +73,13 @@ class pyAPTDevice(device):
         self.adds = usbCoreDev.address
         
         # Find the matching pyAPT device seen on the USB tree, ensure it exists
-        print '\tLooking for APT controllers'
-        drv = pylibftdi.Driver()
-        controllers = drv.list_devices()
+        try:
+            print '\tLooking for APT controllers'
+            drv = pylibftdi.Driver()
+            controllers = drv.list_devices()
+        except:
+            raise RuntimeError("Error loading FTDI drivers. You may need superuser priveliges.")
+        
         if self.serial_number is None:
             for controller in controllers:
                 print controller
