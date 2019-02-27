@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 29/11/2018
+    @date 27/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -49,8 +49,10 @@ class alsaDevice(device):
         self.lastValueTimestamp = None # Time when last value was obtained
         if 'card' in kwargs.keys(): self.alsacard = kwargs['card']
         elif 'card' in params.keys(): self.alsacard = self.params['card']
+        if 'quiet' in kwargs: self.quiet = kwargs['quiet']
+        else: self.quiet=quiet
         else: self.alsacard=None
-        if params is not {}: self.scan(quiet=quiet)
+        if params is not {}: self.scan(quiet=self.quiet)
         
         return
 

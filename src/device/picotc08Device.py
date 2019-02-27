@@ -509,7 +509,9 @@ class usbtc08Device(device):
         self.config['tc_config']=init_tc08_config # initial types, from defaults or specified
         self.config['channel_names']=init_tc08_chnames # initial names, from defaults or specified
         self.config['internal_units']=init_unit # C,F,K,R
-        if params is not {}: self.scan(quiet=quiet)        
+        if 'quiet' in kwargs: self.quiet = kwargs['quiet']
+        else: self.quiet=quiet
+        if params is not {}: self.scan(quiet=self.quiet)
         return
 
     # Detect if device is present

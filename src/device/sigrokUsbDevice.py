@@ -38,7 +38,7 @@ class srdevice(device):
         (which must be seperately installed).
     """
 
-    def __init__(self,params={},**kwargs):
+    def __init__(self,params={},quiet=False,**kwargs):
         
         # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.config = {}
@@ -60,7 +60,7 @@ class srdevice(device):
         else: self.debugMode=False
 
         if 'quiet' in kwargs: self.quiet = kwargs['quiet']
-        else: self.quiet=True
+        else: self.quiet=quiet
 
         if params is not {}:
             self.scan()

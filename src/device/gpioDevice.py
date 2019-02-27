@@ -31,7 +31,7 @@ except ImportError:
 class gpioDevice(device):
     """ Class providing support for Raspberry Pi GPIO """
 
-    def __init__(self,params={},**kwargs):
+    def __init__(self,params={},quiet=False,**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
@@ -39,6 +39,9 @@ class gpioDevice(device):
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
         if params is {}: return
+        
+        if 'quiet' in kwargs: self.quiet = kwargs['quiet']
+        else: self.quiet=quiet
         
         # Set up default input pins for Raspberry Pi controller. (just inputs, not outputs).
         if not 'pins' in self.params: raise KeyError("Please  specify which input pins to monitor")

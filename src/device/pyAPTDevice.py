@@ -47,8 +47,9 @@ class pyAPTDevice(device):
         self.lastValueTimestamp = None # Time when last value was obtained
         self.serial_number = params['serial_number']
         self.name = "pyAPT device" # %s" % self.serial_number
-        if params is not {}:
-            self.scan(quiet=quiet)
+        if 'quiet' in kwargs: self.quiet = kwargs['quiet']
+        else: self.quiet=quiet
+        if params is not {}: self.scan(quiet=self.quiet)
         
         return
 

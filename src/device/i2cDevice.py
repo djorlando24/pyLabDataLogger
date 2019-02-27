@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 06/02/2019
+    @date 27/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -75,9 +75,11 @@ class i2cDevice(device):
         # apply kwargs to config
         for k in ['channel_names']:
            if k in kwargs: self.config[k]=kwargs[k]
+        if 'quiet' in kwargs: self.quiet = kwargs['quiet']
+        else: self.quiet=quiet
         
         if params is {}: return
-        self.scan(quiet=quiet)
+        self.scan(quiet=self.quiet)
         return
 
     # Detect if a device is present on bus

@@ -46,10 +46,9 @@ class serialDevice(device):
         self.lastValueTimestamp = None # Time when last value was obtained
         self.Serial = None
         self.tty_prefix = tty_prefix
-        if 'quiet' in kwargs:
-            self.quiet = quiet | kwargs['quiet']
-        else:
-            self.quiet = quiet
+        
+        if 'quiet' in kwargs: self.quiet = kwargs['quiet']
+        else: self.quiet=quiet
         
         self.driver = self.params['driver'].split('/')[1:]
         self.subdriver = self.driver[0].lower()
