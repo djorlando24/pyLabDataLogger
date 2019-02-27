@@ -90,7 +90,7 @@ class serialDevice(device):
                         if not self.quiet: print '\t',serialport[-1] # report to terminal, useful for debugging.
                         vididx = serialport[-1].upper().index('PID')
                         if vididx <= 0: raise IndexError("Can't interpret USB VID:PID information!")
-                        vidpid = serialport[-1][vididx+3:vididx+16] # take fixed set of chars after 'PID='
+                        vidpid = serialport[-1][vididx+4:vididx+13] # take fixed set of chars after 'PID='
                         thevid,thepid = [ int(val,16) for val in vidpid.split(':')]
                         if thevid==self.params['vid'] and thepid==self.params['pid']:
                             if not self.quiet: print '\t',serialport
