@@ -109,7 +109,8 @@ class tenmaPowerSupplySerialDevice(serialDevice):
                     break
             
             #On first pass or reset, show user the set points are recorded
-            print "\tVSET1=",self.params['set_voltage'],"\tISET1=",self.params['set_current']
+            if not self.quiet:
+                print "\tVSET1=",self.params['set_voltage'],"\tISET1=",self.params['set_current']
         
         # Get values
         self.lastValue=[]
