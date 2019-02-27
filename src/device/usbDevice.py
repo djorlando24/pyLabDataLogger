@@ -48,8 +48,8 @@ usb_device_table = [
     
     # Multiple devices with same VID and PID are seperated by the serial number as a unique descriptor.
     {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'name':'Thorlabs APT motor driver (generic)'},
-    {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'serial_number':27501777, 'name':'Thorlabs APT motor driver (X)'},
-    {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'serial_number':27250971, 'name':'Thorlabs APT motor driver (Y)'},
+    {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'serial':27501777, 'name':'Thorlabs APT motor driver (X)'},
+    {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'serial':27250971, 'name':'Thorlabs APT motor driver (Y)'},
         
     # Serial-over-USB devices with fixed VID and PID
     {'vid':0x0416, 'pid':0x5011, 'driver':'tenmaserial/722710', 'name':'Tenma 72-2710 Power Supply'},
@@ -96,7 +96,7 @@ def match_device(dev):
         if (dev.idVendor == match['vid']) and (dev.idProduct == match['pid']):
             matching=True
             # Match optionals
-            for key in ['bcdDevice','serial_number','manufacturer']:
+            for key in ['bcdDevice','serial_number','serial','manufacturer']:
                 if key in match.keys():
                     if match[key] != get_property(dev,key): matching=False
                     elif match[key] is None: matching=True
