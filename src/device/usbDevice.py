@@ -145,7 +145,7 @@ def search_for_usb_devices(debugMode=False):
             def checkEqualIvo(lst):
                 return not lst or lst.count(lst[0]) == len(lst)
             if checkEqualIvo([ d['driver'] for d in found_devices ]):
-                found_devices = found_devices[nattrs.index(nattrs.max())]
+                found_devices = [found_devices[nattrs.index(max(nattrs))]]
 
         if len(found_devices) == 0: table_entry = None
         elif len(found_devices) == 1: table_entry = found_devices[0]

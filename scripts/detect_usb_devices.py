@@ -23,19 +23,3 @@ from pyLabDataLogger.device import usbDevice
 if __name__ == '__main__':
     usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=True)
     print len(usbDevicesFound),'recognised devices found'
-    
-    '''
-    from sigrokUsbDevice import srdevice
-    from serialDevice import *
-    from tenmaSerialDevice import *
-    for usbDeviceEntry in usbDevicesFound:
-        if usbDeviceEntry['driver'].split('/')[0] == 'sigrok':
-            dev = srdevice(usbDeviceEntry)
-        elif usbDeviceEntry['driver'] == 'serial/arduino':
-            #usbDeviceEntry['port']='/dev/tty.usbmodem331571'  # TESTING
-            dev = arduinoSerialDevice(usbDeviceEntry)
-        elif usbDeviceEntry['driver'] == 'serial/tenma722710':
-            #usbDeviceEntry['port']='/dev/tty.usbmodem1411'    # TESTING
-            dev = tenmaPowerSupplySerialDevice(usbDeviceEntry)
-    '''
-
