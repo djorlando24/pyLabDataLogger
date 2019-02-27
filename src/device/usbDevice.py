@@ -98,7 +98,7 @@ def match_device(dev):
             # Match optionals
             for key in ['bcdDevice','serial_number','manufacturer']:
                 if key in match.keys():
-                    if match[key] != get_property(dev,key):
+                    if match[key].strip() != get_property(dev,key).strip():
                         matching=False
                         print match[key], get_property(dev,key)
                     elif match[key] is None: matching=True
