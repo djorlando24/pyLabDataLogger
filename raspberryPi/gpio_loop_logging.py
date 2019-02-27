@@ -142,7 +142,7 @@ try:
                 d.log(logfilename)
                 if verbose:
                     print d.name
-                    d.pprint()
+                    d.pprint(lead=' ') # Just one space indenting before the data
                     #print ''
                 
             # Turn off the 'busy' indicator
@@ -154,7 +154,7 @@ try:
             # Tell the user in the terminal that we are ready for the next trigger.
             if verbose:
                 print('='*79)
-                print("Loop counter = %i\nWaiting for trigger" % loop_counter)
+                print("Loop counter = %i\tWaiting for trigger" % loop_counter)
 
         #break
 
