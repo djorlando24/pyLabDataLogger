@@ -29,7 +29,7 @@ import h5py
 import numpy as np
 
 # Define log file
-logfilename='logfile_%s.hdf5' %  datetime.datetime.now().strftime('%d-%m-%y_%Hh%Mm%Ss')
+logfilename='/home/pi/logfile_%s.hdf5' %  datetime.datetime.now().strftime('%d-%m-%y_%Hh%Mm%Ss')
 
 # GPIO pins and timings for the control/triggering loop.
 PL1  = 0.5 # solenoid pulse length
@@ -38,12 +38,13 @@ DT1  = 2.0 # delay from solenoid rising edge to TTL out2
 
 trigger_pin   = 16
 output_pins   = [25    , 12   , 13   , 22      , 21      ]
-output_name   = ["Sol1","TTL1","TTL2","Grn LED","Yel LED"]
-output_delays = [DT0   , 0    , DT1  , 2e-3    , 2e-3    ]
+output_name   = ["Sol1","TTL1","TTL2","TRG LED","ARM LED"]
+output_delays = [DT0   , 0    , DT1  , 1e-3    , 6e-2    ]
 output_plen   = [PL1   , 5e-2 , 5e-2 , DT1     , DT1     ]
 output_invert = [0     , 0    , 0    , 0       , 1       ] 
 debounce_delay = 1.0 # min. time between triggers allowed
-busy_indicator_pin = 21 # this pin will be high while the logger is working, ie for a "busy" status LED.
+busy_indicator_pin = 21 # this pin will be low while the logger is working, ie for a "busy" status LED.
+busy_indicator_inv = 1   # is the busy indicator high or low while working
 
 # Device setup special initialization settings
 special_args={'debugMode':False, 'init_tc08_config':['K','K','K','T','T','T','X','X'], 'quiet':True,\
@@ -66,7 +67,7 @@ if os.path.isfile(logfilename): raise IOError("Log file already exists!")
 print "Saving to %s" % logfilename
 with h5py.File(logfilename,'w') as F: # force new file.
     D=F.create_group('GPIO Timing Loop')
-    for v in ['trigger_pin','debounce_delay','busy_indicator_pin']:
+    for v in ['trigger_pin','debounce_delay','busy_indicator_inv','busy_indicator_pin']:
         D.attrs[v]=eval(v)
     for a in ['output_pins','output_name','output_delays','output_plen','output_invert']:
         D.create_dataset(a,data=eval(a))
@@ -99,7 +100,7 @@ for pin, val in zip(output_pins, output_invert):
 	GPIO.setup(pin, GPIO.OUT)
 	GPIO.output(pin, val)
 GPIO.setup(busy_indicator_pin, GPIO.OUT)
-GPIO.output(busy_indicator_pin, 0)
+GPIO.output(busy_indicator_pin, busy_indicator_inv)
 
 
 #####################################################################################################################
@@ -121,7 +122,7 @@ try:
                 if dt>0: time.sleep(dt)
 
             # Now update all the logging devices
-            GPIO.output(busy_indicator_pin, 1)
+            GPIO.output(busy_indicator_pin, 1-busy_indicator_inv)
             for d in devices:
                 d.query()
 
@@ -131,7 +132,7 @@ try:
                 print d.name
                 d.pprint()
                 print ''
-            GPIO.output(busy_indicator_pin, 0)
+            GPIO.output(busy_indicator_pin, busy_indicator_inv)
         
         #break
 
