@@ -40,6 +40,12 @@ class tenmaPowerSupplySerialDevice(serialDevice):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
+        if '/' in self.params['driver']:
+            self.driver = self.params['driver'].split('/')[1:]
+            self.subdriver = self.driver[0].lower()
+        else:
+            self.driver = self.params['driver']
+            self.subdriver = 'None'
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
         self.Serial = None
