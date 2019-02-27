@@ -25,24 +25,25 @@
 import RPi.GPIO as GPIO
 from pyLabDataLogger.device import usbDevice, i2cDevice
 import time,datetime
+import h5py
 import numpy as np
 
 # Define log file
 logfilename='logfile_%s.hdf5' %  datetime.datetime.now().strftime('%d-%m-%y_%Hh%Mm%Ss')
-print "Saving to %s" % logfilename
 
 # GPIO pins and timings for the control/triggering loop.
-PL1 = 0.5 # solenoid pulse length
-DT  = 1.5 # delay from solenoid rising edge to TTL out2
+PL1  = 0.5 # solenoid pulse length
+DT0  = 0.5 # delay from TTL out1 to solenoid rising edge
+DT1  = 2.0 # delay from solenoid rising edge to TTL out2
 
 trigger_pin   = 16
 output_pins   = [25    , 12   , 13   , 22      , 21      ]
 output_name   = ["Sol1","TTL1","TTL2","Grn LED","Yel LED"]
-output_delays = [0     , 0    , DT   , 2e-3    , 2e-3    ]
-output_plen   = [PL1   , 5e-2 , 5e-2 , DT      , DT      ]
+output_delays = [DT0   , 0    , DT1  , 2e-3    , 2e-3    ]
+output_plen   = [PL1   , 5e-2 , 5e-2 , DT1     , DT1     ]
 output_invert = [0     , 0    , 0    , 0       , 1       ] 
 debounce_delay = 1.0 # min. time between triggers allowed
-busy_indicator_pin = 22 # this pin will be high while the logger is working, ie for a "busy" status LED.
+busy_indicator_pin = 21 # this pin will be high while the logger is working, ie for a "busy" status LED.
 
 # Device setup special initialization settings
 special_args={'debugMode':False, 'init_tc08_config':['K','K','K','T','T','T','X','X'], 'quiet':True,\
@@ -52,13 +53,23 @@ special_args={'debugMode':False, 'init_tc08_config':['K','K','K','T','T','T','X'
 
 
 #####################################################################################################################
-# Detect USB devices.
+# Detect USB devices for datalogging.
 usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=False)
 devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
 
-# Detect I2C devices
+# Detect I2C devices for datalogging.
 i2CDevicesFound = i2cDevice.scan_for_devices()
 if len(i2CDevicesFound)>0: devices.extend(i2cDevice.load_i2c_devices(i2CDevicesFound, **special_args)) 
+
+# Store the delay settings above into the logfile for posterity.
+if os.path.isfile(logfilename): raise IOError("Log file already exists!")
+print "Saving to %s" % logfilename
+with h5py.File(logfilename,'w') as F: # force new file.
+    D=F.create_dataset('GPIO Timing Loop')
+    for v in ['trigger_pin','debounce_delay','busy_indicator_pin']:
+        D.attrs[v]=eval(v)
+    for a in ['output_pins','output_name','output_delays','output_plen','output_invert']:
+        D.create_dataset(a,data=eval(a))
 
 #####################################################################################################################
 # GPIO timing loop setup:
