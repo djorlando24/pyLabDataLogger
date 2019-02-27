@@ -86,11 +86,11 @@ class serialDevice(device):
                     if 'VID:PID' in serialport[-1]: # tuple or list
                         thename = serialport[0]
                         # Sometimes serialport[-1] will contain "USB VID:PID=0x0000:0x0000" and
-                        # sometimes extra data will follow after, i.e. "USB VID:PID=0x0000:0x0000 SERIAL=99999".
+                        # sometimes extra data will follow after, i.e. "USB VID:PID=1234:5678 SERIAL=90ab".
                         if not self.quiet: print '\t',serialport[-1] # report to terminal, useful for debugging.
-                        vididx = serialport[-1].index('PID')
+                        vididx = serialport[-1].upper().index('PID')
                         if vididx <= 0: raise IndexError("Can't interpret USB VID:PID information!")
-                        vidpid = serialport[-1][vididx+4:vididx+17] # take 4th to 17th chars after 'PID='
+                        vidpid = serialport[-1][vididx+1:vididx+13] # take fixed set of chars after 'PID='
                         thevid,thepid = [ int(val,16) for val in vidpid.split(':')]
                         if thevid==self.params['vid'] and thepid==self.params['pid']:
                             if not self.quiet: print '\t',serialport
