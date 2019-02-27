@@ -112,7 +112,10 @@ print("Press CTRL+C to exit")
 try:
     t0=time.time()-debounce_delay
     loop_counter=0
-    print("Loop counter = %i\nWaiting for trigger" % loop_counter)
+    if verbose:
+        print('='*79)
+        print("Loop counter = %i\nWaiting for trigger" % loop_counter)
+    
     while 1:
     
         # trigger when input pin goes LOW (it's an inverted pullup input) and debounce delay passed
@@ -145,12 +148,14 @@ try:
             # Turn off the 'busy' indicator
             GPIO.output(busy_indicator_pin, busy_indicator_inv)
             
+            # Increment loop counter
+            loop_counter+=1
+            
             # Tell the user in the terminal that we are ready for the next trigger.
             if verbose:
-                print('='*40)
+                print('='*79)
                 print("Loop counter = %i\nWaiting for trigger" % loop_counter)
 
-        loop_counter+=1
         #break
 
 except KeyboardInterrupt:
