@@ -24,7 +24,7 @@
 
 import RPi.GPIO as GPIO
 from pyLabDataLogger.device import usbDevice, i2cDevice
-import time,datetime
+import os,time,datetime
 import h5py
 import numpy as np
 
@@ -65,7 +65,7 @@ if len(i2CDevicesFound)>0: devices.extend(i2cDevice.load_i2c_devices(i2CDevicesF
 if os.path.isfile(logfilename): raise IOError("Log file already exists!")
 print "Saving to %s" % logfilename
 with h5py.File(logfilename,'w') as F: # force new file.
-    D=F.create_dataset('GPIO Timing Loop')
+    D=F.create_group('GPIO Timing Loop')
     for v in ['trigger_pin','debounce_delay','busy_indicator_pin']:
         D.attrs[v]=eval(v)
     for a in ['output_pins','output_name','output_delays','output_plen','output_invert']:
