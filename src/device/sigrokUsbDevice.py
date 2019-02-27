@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 08/01/2019
+    @date 27/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -146,6 +146,7 @@ class srdevice(device):
         self.params['raw_units'] = []
         self.srdev.open()
         self.driverConnected = True
+        self.sessionReady = 0 # Zero when session not yet created, 1 when created by callback not setup, 2 when good to go.
         self.has_digital_input = False
                 
         if not self.quiet: print "\t%s - %s with %d channels: %s" % (self.srdev.driver.name, str.join(' ',\
@@ -232,12 +233,16 @@ class srdevice(device):
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self):
         
-        self.srsession = self.srcontext.create_session()
-        self.srsession.add_device(self.srdev)
-        self.srsession.start()
-        if self.has_digital_input:
-            self.srdoutput = self.srcontext.output_formats['bits'].create_output(self.srdev)
-        self.sraoutput = self.srcontext.output_formats['analog'].create_output(self.srdev)
+        if self.sessionReady<1:
+            self.srsession = self.srcontext.create_session()
+            self.srsession.add_device(self.srdev)
+            self.srsession.start()
+        
+            if self.has_digital_input:
+                self.srdoutput = self.srcontext.output_formats['bits'].create_output(self.srdev)
+            self.sraoutput = self.srcontext.output_formats['analog'].create_output(self.srdev)
+
+            self.sessionReady = 1
 
         assert self.sraoutput, self.srsession
         if self.has_digital_input: assert self.srdoutput
@@ -248,7 +253,9 @@ class srdevice(device):
             return None
         
         try:
-            self.srsession.add_datafeed_callback(datafeed_in)
+            if self.sessionReady < 2:
+                self.srsession.add_datafeed_callback(datafeed_in)
+                self.sessionReady = 2
             
             # Sample
             self.data_buffer = ['', '']  
