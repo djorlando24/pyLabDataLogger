@@ -184,7 +184,7 @@ class srdevice(device):
                
         # Run one set of samples to update raw_units and check connection is good.
         self.query()
-        self.pprint()
+        if not self.quiet: self.pprint()
         
         return
 
