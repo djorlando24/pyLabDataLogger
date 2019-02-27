@@ -47,11 +47,14 @@ class alsaDevice(device):
         self.name = "uninitialized"
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
+        
         if 'card' in kwargs.keys(): self.alsacard = kwargs['card']
         elif 'card' in params.keys(): self.alsacard = self.params['card']
+        else: self.alsacard=None
+        
         if 'quiet' in kwargs: self.quiet = kwargs['quiet']
         else: self.quiet=quiet
-        else: self.alsacard=None
+        
         if params is not {}: self.scan(quiet=self.quiet)
         
         return
