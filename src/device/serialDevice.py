@@ -85,6 +85,7 @@ class serialDevice(device):
 
                     if 'VID:PID' in serialport[-1]: # tuple or list
                         thename = serialport[0]
+                        if not self.quiet: print '\t',serialport[-1]
                         thevid,thepid = [ int(val,16) for val in serialport[-1].split('=')[-1].split(':')]
                         if thevid==self.params['vid'] and thepid==self.params['pid']:
                             if not self.quiet: print '\t',serialport
