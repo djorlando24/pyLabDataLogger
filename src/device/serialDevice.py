@@ -574,7 +574,7 @@ class serialDevice(device):
                 else: 
                     print "\t!! Unknown device mode string in serial response"
                     raise ValueError
-                if len(rawData)<6: raise ValueError # Short/corrupted responses.
+                if len(rawData[0])<6: raise ValueError # Short/corrupted responses.
                 decoded=rawData[0][2:] # Everything after the mode string is T&H data
                 humidity = np.nan; temperature = np.nan # Default to NaN
                 time_min = np.nan; time_sec = np.nan
