@@ -18,7 +18,6 @@
     Monash University, Australia
 """
 
-from pyLabDataLogger.device import usbDevice
 import time
 
 if __name__ == '__main__':
