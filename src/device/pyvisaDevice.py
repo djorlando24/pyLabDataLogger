@@ -221,12 +221,13 @@ class pyvisaDevice(device):
             
             # Find out which channels are turned on, just acquire those.
             self.serialQuery=[]
+            self.postQuery=':RUN'
             self.params['Active channels']=[]
             for nch in range(1,self.params['n_channels']+1):
                 channel_active = self.instrumentQuery(":CHAN%1i:DISP?")
                 self.params['Active channels'].append(channel_active)
                 if channel_active == 1:
-                    self.serialQuery.append(":WAV:SOUR %i,:WAV:DATA?" % nch)
+                    self.serialQuery.append(":STOP,:WAV:SOUR %i,:WAV:DATA?" % nch)
                 else:
                     self.serialQuery.append(None)
             
@@ -311,6 +312,8 @@ class pyvisaDevice(device):
                         else: data.append(d)
                 except:
                     data.append(None)
+                    
+            
         
         # Fill with None
         if len(data)<self.params['n_channels']:
@@ -359,6 +362,10 @@ class pyvisaDevice(device):
 
         # Read values        
         self.get_values()
+
+        # Run postQuery if exists (ie put the device in mode ready to accept next trigger/data)
+        if hasattr(self, postQuery):
+            self.instrumentWrite(self.postQuery)
 
         # Generate scaled values. Convert non-numerics to NaNs
         lastValueSanitized = []
