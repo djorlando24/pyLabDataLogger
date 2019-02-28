@@ -136,8 +136,26 @@ class pyvisaDevice(device):
     # SCPI command :CHAN<n.:CMD
     def scope_channel_params(self,cmd):
         assert(self.inst)
-        return np.array([self.inst.query(":CHAN%1i:%s?" % (n,cmd)) for n in range(self.params['n_channels'])])
+        return np.array([self.instrumentQuery(":CHAN%1i:%s?" % (n,cmd)) for n in range(self.params['n_channels'])])
 
+    # Send a query to the instrument and get a response back.
+    def instrumentQuery(q, *args, **kwargs):
+        assert(self.inst)
+        if self.quiet: return self.inst.query(q,*args,**kwargs)
+        else:
+            sys.stdout.write('\t'+q+'\t')
+            sys.stdout.flush()
+            response = self.inst.query(q,*args,**kwargs)
+            sys.stdout.write(repr(response)+'\n')
+            return response
+            
+    # Send a query to the instrument - no response.
+    def instrumentWrite(q, *args, **kwargs):
+        assert(self.inst)
+        if not self.quiet: print '\t%s' % q
+        self.inst.write(q,*args,**kwargs)
+        return
+            
     # Configure device settings based on subdriver choice
     def configure_device(self):
         if self.subdriver=='dg1000z':
@@ -163,8 +181,8 @@ class pyvisaDevice(device):
             self.inst.timeout=None # infinite
             
             # Tell the scope to write waveforms in a known format
-            self.inst.write(":WAV:MODE RAW") # return what's in memory
-            self.inst.write(":WAV:FORM BYTE") # one byte per 8bit sample
+            self.instrumentWrite(":WAV:MODE RAW") # return what's in memory
+            self.instrumentWrite(":WAV:FORM BYTE") # one byte per 8bit sample
             
             self.config['channel_names']=['Ch1','Ch2','Ch3','Ch4']
             self.params['raw_units']=['V','V','V','V']
@@ -175,8 +193,8 @@ class pyvisaDevice(device):
             self.serialQuery=[':WAV:SOUR 1,:WAV:DATA?',':WAV:SOUR 2,:WAV:DATA?',':WAV:SOUR 3,:WAV:DATA?',':WAV:SOUR 4,:WAV:DATA?']
         
             # Get some parameters that don't change often
-            self.params['Samples_per_sec'] = self.inst.query(":ACQ:SRAT?")
-            self.params['Seconds_per_div'] = self.inst.query(":TIM:SCAL?")
+            self.params['Samples_per_sec'] = self.instrumentQuery(":ACQ:SRAT?")
+            self.params['Seconds_per_div'] = self.instrumentQuery(":TIM:SCAL?")
             self.params['Bandwidth Limit'] = self.scope_channel_params("BWL")
             self.params['Coupling'] = self.scope_channel_params("COUP")
             self.params['Voltage Scale'] = self.scope_channel_params("SCAL")
@@ -187,14 +205,14 @@ class pyvisaDevice(device):
         
             # Get some waveform parameters
             for n in range(self.params['n_channels']):
-                self.inst.write(":WAV:SOUR %1i" % n)
+                self.instrumentWrite(":WAV:SOUR %1i" % n)
                 time.sleep(0.01)
-                self.params['Ch%i Waveform Parameters' % n] = self.inst.query(":WAV:PRE?").split(',')
+                self.params['Ch%i Waveform Parameters' % n] = self.instrumentQuery(":WAV:PRE?").split(',')
                 time.sleep(0.01)
 
             # First let's put the device in SINGLE SHOT mode
-            #self.inst.write(":SING")
-            # self.inst.write(":RUN")
+            #self.instrumentWrite(":SING")
+            #self.instrumentWrite(":RUN")
 
         else:
             raise KeyError("Unknown device subdriver for pyvisa-py")
@@ -215,7 +233,7 @@ class pyvisaDevice(device):
         data=[]
         for q in self.serialQuery:
             try:
-                d=self.inst.query(q).strip().strip('\"').strip('\'') # remove newlines, quotes, etc.
+                d=self.instrumentQuery(q).strip().strip('\"').strip('\'') # remove newlines, quotes, etc.
                 if delimiter in d: data.extend(d.split(delimiter)) # try to split on delimiter.
                 else: data.append(d)
             except:
@@ -261,7 +279,7 @@ class pyvisaDevice(device):
         if not 'raw_units' in self.params.keys() or reset:
             
             # Set up device
-            self.params['name']=self.inst.query("*IDN?").replace(',',' ')
+            self.params['name']=self.instrumentQuery("*IDN?").replace(',',' ')
             if self.driver in self.name: self.name="%s %s" % (self.params['name'],self.params['resource'])
             self.configure_device()
         
