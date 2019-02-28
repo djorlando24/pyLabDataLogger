@@ -288,7 +288,7 @@ class pyvisaDevice(device):
     # Convert incoming value, which might be a string, to either a numpy array or a float
     def convert_to_array(self,data):
         if self.subdriver=='ds1000z':
-            return np.array( struct.unpack(data,'<b'), dtype=np.uint8 ) # unpack scope waveform
+            return np.array( struct.unpack('<b',data), dtype=np.uint8 ) # unpack scope waveform
             #return np.array(data) # simple list-to-array conversion
         else:
             return float(data)
