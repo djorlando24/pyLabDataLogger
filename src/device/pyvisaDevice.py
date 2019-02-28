@@ -154,7 +154,7 @@ class pyvisaDevice(device):
     # SCPI command :CHAN<n.:CMD
     def scope_channel_params(self,cmd):
         assert(self.inst)
-        return np.array([self.instrumentQuery(":CHAN%1i:%s?" % (n,cmd)) for n in range(self.params['n_channels'])])
+        return np.array([self.instrumentQuery(":CHAN%1i:%s?" % (n,cmd)) for n in range(1,self.params['n_channels']+1)])
 
     # Send a query to the instrument and get a response back.
     def instrumentQuery(self,q, *args, **kwargs):
@@ -212,7 +212,7 @@ class pyvisaDevice(device):
             # Get some parameters that don't change often
             self.params['Samples_per_sec'] = self.instrumentQuery(":ACQ:SRAT?")
             self.params['Seconds_per_div'] = self.instrumentQuery(":TIM:SCAL?")
-            #self.params['Bandwidth Limit'] = self.scope_channel_params("BWL") # this seems to cause it to freeze up in Normal mode
+            self.params['Bandwidth Limit'] = self.scope_channel_params("BWL")
             self.params['Coupling'] = self.scope_channel_params("COUP")
             self.params['Voltage Scale'] = self.scope_channel_params("SCAL")
             self.params['Active channels'] = self.scope_channel_params("DISP")

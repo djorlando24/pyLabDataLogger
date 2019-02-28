@@ -201,7 +201,7 @@ class usbtmcDevice(device):
     # For oscilloscopes, sweep the channels for a certain parameter stored under
     # SCPI command :CHAN<n.:CMD
     def scope_channel_params(self,cmd):
-        return np.array([self.ask(":CHAN%1i:%s?" % (n,cmd)) for n in range(self.params['n_channels'])])
+        return np.array([self.ask(":CHAN%1i:%s?" % (n,cmd)) for n in range(1,self.params['n_channels']+1)])
 
     # Configure device based on what sub-driver is being used.
     # This is done when self.query(reset=True) is called, as at
