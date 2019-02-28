@@ -364,7 +364,7 @@ class pyvisaDevice(device):
         self.get_values()
 
         # Run postQuery if exists (ie put the device in mode ready to accept next trigger/data)
-        if hasattr(self, postQuery):
+        if hasattr('self', 'postQuery'):
             self.instrumentWrite(self.postQuery)
 
         # Generate scaled values. Convert non-numerics to NaNs
