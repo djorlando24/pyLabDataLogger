@@ -124,7 +124,7 @@ class pyvisaDevice(device):
                 self.serialQuery=[]
                 self.params['Active channels']=[]
                 for nch in range(1,self.params['n_channels']+1):
-                    channel_active = self.instrumentQuery(":CHAN%1i:DISP?")
+                    channel_active = self.instrumentQuery(":CHAN%1i:DISP?" % nch)
                     self.params['Active channels'].append(channel_active)
                     if channel_active == 1:
                         self.serialQuery.append(":WAV:SOUR %i,:WAV:DATA?" % nch)
