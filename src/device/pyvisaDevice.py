@@ -32,9 +32,9 @@ except ImportError:
 class pyvisaDevice(device):
     """ Class providing support for pyVISA-py devices.
     
-        This class is primarily for accessing VISA devices over TCP/IP but can also be used for USB VISA devices.
-        However pyLabDataLogger supports a range of USB devices by other means such as usbtmc and you should check those
-        first.
+        This class was written primarily for driverless VISA device access over TCP/IP, but can also theoretically be used
+        for USB VISA devices. However, pyLabDataLogger supports a range of USB devices by other means such as usbtmc and you
+        should check those first.
     
         This class supports two main drivers, 'pyvisa' and 'nivisa' depending on which backed you want to use. 'pyvisa' should
         be the default, as it uses a pure python open source implementation. 'nivisa' requires a seperate install of the
@@ -43,6 +43,7 @@ class pyvisaDevice(device):
         The following subdriver modules are supported through either 'pyvisa' or 'nivisa':
             'pyvisa/dg1000z' : Rigol DG1000Z programmable delay/function generator
             'pyvisa/ds1000z' : Rigol DS1000Z oscilloscope
+            'pyvisa/33220a'  : Agilent 33220A programmable delay/function generator
     """
 
     def __init__(self,params={},quiet=True,**kwargs):
@@ -115,11 +116,16 @@ class pyvisaDevice(device):
                 # currently no writeable options supported.
                 # in future could alter the DG settings from here.
                 pass
-            if self.subdriver=='ds1000z':
+            elif self.subdriver=='ds1000z':
                 # currently no writeable options supported.
                 # in future could alter the time/voltage range/acq settings from here.
                 pass
+            elif self.subdriver=='33220a':
+                # currently no writeable options supported.
+                # in future could alter the DG settings from here.
+                pass
             else:
+                print self.__doc__
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
         
         except ValueError:
@@ -206,7 +212,7 @@ class pyvisaDevice(device):
             # Get some parameters that don't change often
             self.params['Samples_per_sec'] = self.instrumentQuery(":ACQ:SRAT?")
             self.params['Seconds_per_div'] = self.instrumentQuery(":TIM:SCAL?")
-            self.params['Bandwidth Limit'] = self.scope_channel_params("BWL")
+            #self.params['Bandwidth Limit'] = self.scope_channel_params("BWL") # this seems to cause it to freeze up in Normal mode
             self.params['Coupling'] = self.scope_channel_params("COUP")
             self.params['Voltage Scale'] = self.scope_channel_params("SCAL")
             self.params['Active channels'] = self.scope_channel_params("DISP")
@@ -221,16 +227,38 @@ class pyvisaDevice(device):
                 self.params['Ch%i Waveform Parameters' % n] = self.instrumentQuery(":WAV:PRE?").split(',')
                 time.sleep(0.01)
 
-            # First let's put the device in SINGLE SHOT mode
-            #self.instrumentWrite(":SING")
-            #self.instrumentWrite(":RUN")
+        elif self.subdriver == '33220a':
+            
+            self.instrumentWrite("SYST:BEEP") # beep the interface
+            self.params['mode'] = self.ask('FUNC?') # Check the mode
+            self.config['channel_names']=['frequency','amplitude','offset','duty cycle','pulse width']
+            self.params['raw_units']=['Hz','V','V','','s']
+            self.config['eng_units']=['Hz','V','V','','s']
+            self.config['scale']=[1.,1.,1.,1.,1.]
+            self.config['offset']=[0.,0.,0.,0.,0.]
+            self.params['n_channels']=len(self.config['channel_names'])
+            if 'PULS' in self.params['mode']:
+                self.serialQuery=['FREQ?','VOLT?','VOLT:OFFS?','FUNC:PULS:DCYC?', 'FUNC:PULS:WIDT?']
+            elif 'SQU' in self.params['mode']:
+                self.serialQuery=['FREQ?','VOLT?','VOLT:OFFS?','FUNC:SQU:DCYC?', None]
+            else:
+                self.serialQuery=['FREQ?','VOLT?','VOLT:OFFS?',None, None]
+            
+            # Now try to set the units more specifically
+            self.params['raw_units'][1] = self.instrumentQuery("VOLT:UNIT?")
+            self.config['eng_units'][1] = self.params['raw_units'][1]
+            #self.params['raw_units'][4] = self.ask("UNIT:ANGL?")
+            #self.config['eng_units'][4] = self.params['raw_units'][4]
+            
+            # Get some other parameters that won't change often.
+            self.params['Trigger source'] = self.instrumentQuery("TRIG:SOUR?")
 
         else:
             print self.__doc__
             raise KeyError("Unknown device subdriver for pyvisa-py")
             return
 
-    # Convert incoming data stream to numpy array
+    # Convert incoming data stream to numpy array or float
     def convert_to_array(self,data):
         if self.subdriver=='ds1000z':
             return np.array( struct.unpack(data,'<b'), dtype=np.uint8 ) # unpack scope waveform
@@ -244,12 +272,15 @@ class pyvisaDevice(device):
         assert(self.inst)
         data=[]
         for q in self.serialQuery:
-            try:
-                d=self.instrumentQuery(q).strip().strip('\"').strip('\'') # remove newlines, quotes, etc.
-                if delimiter in d: data.extend(d.split(delimiter)) # try to split on delimiter.
-                else: data.append(d)
-            except:
-                self.lastValue.append(None)
+            if (q is None) or (q==''):
+                self.lastValue.append(None) # No query, empty response, i.e. for a disabled option
+            else:
+                try:
+                    d=self.instrumentQuery(q).strip().strip('\"').strip('\'') # remove newlines, quotes, etc.
+                    if delimiter in d: data.extend(d.split(delimiter)) # try to split on delimiter.
+                    else: data.append(d)
+                except:
+                    self.lastValue.append(None)
         
         # Fill with None
         if len(data)<self.params['n_channels']:
