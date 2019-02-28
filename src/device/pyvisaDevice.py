@@ -20,7 +20,7 @@
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
-import datetime, time
+import datetime, time, sys
 
 try:
     import visa
@@ -33,7 +33,7 @@ class pyvisaDevice(device):
     """ Class providing support for pyVISA-py devices.
     """
 
-    def __init__(self,params={},quiet=False,**kwargs):
+    def __init__(self,params={},quiet=True,**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
@@ -139,7 +139,7 @@ class pyvisaDevice(device):
         return np.array([self.instrumentQuery(":CHAN%1i:%s?" % (n,cmd)) for n in range(self.params['n_channels'])])
 
     # Send a query to the instrument and get a response back.
-    def instrumentQuery(q, *args, **kwargs):
+    def instrumentQuery(self,q, *args, **kwargs):
         assert(self.inst)
         if self.quiet: return self.inst.query(q,*args,**kwargs)
         else:
@@ -150,7 +150,7 @@ class pyvisaDevice(device):
             return response
             
     # Send a query to the instrument - no response.
-    def instrumentWrite(q, *args, **kwargs):
+    def instrumentWrite(self,q, *args, **kwargs):
         assert(self.inst)
         if not self.quiet: print '\t%s' % q
         self.inst.write(q,*args,**kwargs)
@@ -178,7 +178,7 @@ class pyvisaDevice(device):
                                 ':SOUR2:APPL?',':SOUR2FUNC:PULS:WIDT?',':SOUR2:BURS:STAT?',':SOUR2:BURS:TDEL?',':SOUR2:BURS:SOUR?']
         
         elif self.subdriver=='ds1000z':
-            self.inst.timeout=None # infinite
+            self.inst.timeout=30000 # 30 seconds
             
             # Tell the scope to write waveforms in a known format
             self.instrumentWrite(":WAV:MODE RAW") # return what's in memory
