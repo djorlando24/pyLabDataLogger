@@ -289,8 +289,8 @@ class pyvisaDevice(device):
     def convert_to_array(self,data):
         if self.subdriver=='ds1000z':
             if not self.quiet:
-                print data
-            return np.array( struct.unpack('<b',data), dtype=np.uint8 ) # unpack scope waveform
+                print '\t',len(data),'bytes recieved'
+            return np.array( struct.unpack('<%ib' % len(data),data), dtype=np.uint8 ) # unpack scope waveform
             #return np.array(data) # simple list-to-array conversion
         else:
             return float(data)
