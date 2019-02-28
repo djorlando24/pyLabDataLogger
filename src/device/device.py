@@ -100,26 +100,36 @@ class device:
         if self.driverConnected: self.activate()
         else: print "Error resetting %s: device is not detected" % self.name
 
-    ################################################################################################################################################################
-    # Print values with units
+    ###########################################################################################################################################
+    # Print values with units in a nice readable format.
     def pprint(self,lead='\t'):
         show_scaled = ('eng_units' in self.config) and ('scale' in self.config) and\
                       ('offset' in self.config) and ('eng_units' in self.config) and\
                       not (np.all(np.array(self.config['scale'])==1.) and  np.all(np.array(self.config['offset'])==0.))
                                             
-        # Scalars.
+        # Print scalar variables with units where present.
         if (not isinstance( self.lastValue[0], list)) and (not isinstance(self.lastValue[0], np.ndarray)):
             if 'raw_units' in self.params:
                 sys.stdout.write(lead+'Raw values: ')
                 for n in range(self.params['n_channels']):
 
-                    if self.params['raw_units'][n] == '':
-                        sys.stdout.write(u'%s = %g' % (self.config['channel_names'][n],\
+                    if isinstance(self.lastValue[n],basestring):
+                        if self.params['raw_units'][n] == '':
+                        sys.stdout.write(u'%s = %s' % (self.config['channel_names'][n],\
                                                             self.lastValue[n]))
                     else:
-                        sys.stdout.write(u'%s = %g %s' % (self.config['channel_names'][n],\
+                        sys.stdout.write(u'%s = %s %s' % (self.config['channel_names'][n],\
                                                             self.lastValue[n],\
                                                             self.params['raw_units'][n].decode('utf-8')))
+                                                            
+                    else: # If numeric, use %g which will format big/smaller numbers in exp. notation.
+                        if self.params['raw_units'][n] == '':
+                            sys.stdout.write(u'%s = %g' % (self.config['channel_names'][n],\
+                                                                self.lastValue[n]))
+                        else:
+                            sys.stdout.write(u'%s = %g %s' % (self.config['channel_names'][n],\
+                                                                self.lastValue[n],\
+                                                                self.params['raw_units'][n].decode('utf-8')))
 
                     # Spacing between variables.
                     # New line every 4 vars, commas between them 
