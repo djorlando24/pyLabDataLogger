@@ -383,7 +383,11 @@ class pyvisaDevice(device):
             if v is None: lastValueSanitized.append(np.nan)
             elif isinstance(v,basestring): lastValueSanitized.append(np.nan)
             else: lastValueSanitized.append(v)
-        self.lastScaled = np.array(lastValueSanitized) * self.config['scale'] + self.config['offset']
+
+        self.lastScaled = []
+        for n in range(self.params['n_channels']):
+            self.lastScaled.append( lastValueSanitized[n] * self.config['scale'][n] + self.config['offset'][n] )
+        
         self.updateTimestamp()
         return self.lastValue
 
