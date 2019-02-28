@@ -34,6 +34,7 @@ if __name__ == '__main__':
     try:
         while True:
             for d in devices:
+                print '-'*79
                 print d.name
                 d.query()
                 d.pprint()

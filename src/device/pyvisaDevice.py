@@ -57,7 +57,7 @@ class pyvisaDevice(device):
         
         if 'pyvisa' in self.driver:
             self.rm = visa.ResourceManager('@py') # Open source pure-python pyVISA backend
-        if 'nivisa' in self.driver:
+        elif 'nivisa' in self.driver:
             self.rm = visa.ResourceManager('@ni') # National instruments closed source backend, if required!
         else:
             raise ValueError("Unknown backend driver. Choices are pyvisa or nivisa.")
@@ -190,6 +190,14 @@ class pyvisaDevice(device):
             raise KeyError("Unknown device subdriver for pyvisa-py")
             return
 
+    # Convert incoming data stream to numpy array
+    def convert_to_array(self,data):
+        if self.subdriver=='ds1000z':
+            return np.array( struct.unpack(data,'<b'), dtype=np.uint8 ) # unpack scope waveform
+        else:
+            return float(data)
+        return None
+
     # Get values from device.
     # Standard query syntax is for comma-delimited return lists or single values, these are all concatenated.
     def get_values(self,delimiter=','):
@@ -207,7 +215,8 @@ class pyvisaDevice(device):
         if len(data)<self.params['n_channels']:
             data.extend([None]*(self.params['n_channels']-len(data)))
 
-        # Parse data, convert any floats or ints into numeric types
+        # Parse data, convert any floats or ints into numeric types.
+        # convert array data to NumPy formatted float arrays.
         # Break out units into raw_units and eng_units
         self.lastValue=[]
         n=0
@@ -219,7 +228,7 @@ class pyvisaDevice(device):
                 else:
                     d0=data[n]
                     d1=''
-                self.lastValue.append(float(d0))
+                self.lastValue.append(self.convert_to_array(d0))
                 self.params['raw_units'][n]=d1
                 if self.config['eng_units'][n]=='':
                     self.config['eng_units'][n]=d1
