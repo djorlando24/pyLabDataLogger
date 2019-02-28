@@ -170,8 +170,8 @@ class pyvisaDevice(device):
             self.serialQuery=[':WAV:SOUR 1,:WAV:DATA?',':WAV:SOUR 2,:WAV:DATA?',':WAV:SOUR 3,:WAV:DATA?',':WAV:SOUR 4,:WAV:DATA?']
         
             # Get some parameters that don't change often
-            self.params['Samples_per_sec'] = self.ask(":ACQ:SRAT?")
-            self.params['Seconds_per_div'] = self.ask(":TIM:SCAL?")
+            self.params['Samples_per_sec'] = self.inst.query(":ACQ:SRAT?")
+            self.params['Seconds_per_div'] = self.inst.query(":TIM:SCAL?")
             self.params['Bandwidth Limit'] = self.scope_channel_params("BWL")
             self.params['Coupling'] = self.scope_channel_params("COUP")
             self.params['Voltage Scale'] = self.scope_channel_params("SCAL")
