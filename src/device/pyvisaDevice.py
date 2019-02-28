@@ -202,7 +202,7 @@ class pyvisaDevice(device):
             
             # Set up device
             self.params['name']=self.inst.query("*IDN?")
-            if self.driver in self.name: "pyVISA-py device %s" % self.params['name']
+            if self.driver in self.name: self.name="pyVISA-py device %s" % self.params['name']
             self.configure_device()
         
 
