@@ -258,10 +258,11 @@ class pyvisaDevice(device):
             raise KeyError("Unknown device subdriver for pyvisa-py")
             return
 
-    # Convert incoming data stream to numpy array or float
+    # Convert incoming value, which might be a string, to either a numpy array or a float
     def convert_to_array(self,data):
         if self.subdriver=='ds1000z':
-            return np.array( struct.unpack(data,'<b'), dtype=np.uint8 ) # unpack scope waveform
+            #return np.array( struct.unpack(data,'<b'), dtype=np.uint8 ) # unpack scope waveform
+            return np.array(data)
         else:
             return float(data)
         return None
@@ -276,9 +277,17 @@ class pyvisaDevice(device):
                 data.append(None) # No query, empty response, i.e. for a disabled option
             else:
                 try:
-                    d=self.instrumentQuery(q).strip().strip('\"').strip('\'') # remove newlines, quotes, etc.
-                    if delimiter in d: data.extend(d.split(delimiter)) # try to split on delimiter.
-                    else: data.append(d)
+                    if self.subdriver=='ds1000z':
+                        # Waveforms from scope
+                        if not self.quiet: print '\t%s (raw data query)' % q
+                        for qq in q.split(','):
+                            if not '?' in qq: self.instrumentWrite(qq)
+                            else: data.append(self.inst.query_binary_values(q,datatype='b',is_big_endian=False))
+                    else:
+                        # Other simple data, floats and strings etc.
+                        d=self.instrumentQuery(q).strip().strip('\"').strip('\'') # remove newlines, quotes, etc.
+                        if delimiter in d: data.extend(d.split(delimiter)) # try to split on delimiter.
+                        else: data.append(d)
                 except:
                     data.append(None)
         
