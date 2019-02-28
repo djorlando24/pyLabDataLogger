@@ -273,14 +273,14 @@ class pyvisaDevice(device):
         data=[]
         for q in self.serialQuery:
             if (q is None) or (q==''):
-                self.lastValue.append(None) # No query, empty response, i.e. for a disabled option
+                data.append(None) # No query, empty response, i.e. for a disabled option
             else:
                 try:
                     d=self.instrumentQuery(q).strip().strip('\"').strip('\'') # remove newlines, quotes, etc.
                     if delimiter in d: data.extend(d.split(delimiter)) # try to split on delimiter.
                     else: data.append(d)
                 except:
-                    self.lastValue.append(None)
+                    data.append(None)
         
         # Fill with None
         if len(data)<self.params['n_channels']:
