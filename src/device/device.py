@@ -107,7 +107,7 @@ class device:
                       ('offset' in self.config) and ('eng_units' in self.config) and\
                       not (np.all(np.array(self.config['scale'])==1.) and  np.all(np.array(self.config['offset'])==0.))
                                             
-        # Print scalar variables with units where present.
+        # Print scalar variables with units where present. ################################################
         if (not isinstance( self.lastValue[0], list)) and (not isinstance(self.lastValue[0], np.ndarray)):
             if 'raw_units' in self.params:
                 sys.stdout.write(lead+'Raw values: ')
@@ -115,17 +115,15 @@ class device:
 
                     if isinstance(self.lastValue[n],basestring):
                         if self.params['raw_units'][n] == '':
-                        sys.stdout.write(u'%s = %s' % (self.config['channel_names'][n],\
-                                                            self.lastValue[n]))
-                    else:
-                        sys.stdout.write(u'%s = %s %s' % (self.config['channel_names'][n],\
-                                                            self.lastValue[n],\
-                                                            self.params['raw_units'][n].decode('utf-8')))
-                                                            
+                            sys.stdout.write(u'%s = %s' % (self.config['channel_names'][n],self.lastValue[n]))
+                        else:
+                            sys.stdout.write(u'%s = %s %s' % (self.config['channel_names'][n],\
+                                                                self.lastValue[n],\
+                                                                self.params['raw_units'][n].decode('utf-8')))
+                    
                     else: # If numeric, use %g which will format big/smaller numbers in exp. notation.
                         if self.params['raw_units'][n] == '':
-                            sys.stdout.write(u'%s = %g' % (self.config['channel_names'][n],\
-                                                                self.lastValue[n]))
+                            sys.stdout.write(u'%s = %g' % (self.config['channel_names'][n],self.lastValue[n]))
                         else:
                             sys.stdout.write(u'%s = %g %s' % (self.config['channel_names'][n],\
                                                                 self.lastValue[n],\
@@ -137,15 +135,17 @@ class device:
                     elif (n<self.params['n_channels']-1): sys.stdout.write(', ')
 
                 sys.stdout.write('\n')
-            else:
+                
+            else: # I have no idea what is in self.lastValue, print verbatim!
                 print lead+'Raw values:',self.lastValue
+            
             # Only show the scaled units if they exist.
             if show_scaled:
                 for n in range(self.params['n_channels']):
                     sys.stdout.write(u'%f %s, ' % (self.lastScaled[n],self.params['eng_units'][n].decode('utf-8'))) 
                 sys.stdout.write('\n')
     
-        # Vectors
+        # Vectors (i.e. timeseries data) with units added to the end where present. ####################################
         else:
             for n in range(self.params['n_channels']):
                 if ~show_scaled: print lead+u'%i: %s = %s %s' % (n,self.config['channel_names'][n],\
