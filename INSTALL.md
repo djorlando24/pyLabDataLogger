@@ -1,5 +1,27 @@
 # INSTALLATION INSTRUCTIONS
 
+## building on Linux
+
+The software has been tested extensively on Ubuntu and Debian Linux. 
+You'll need to install software from package repository (ie apt or dpkg or yum).
+See below sections as to what modules are needed for which drivers.
+
+To install without superuser privileges :
+
+	python setup.py install --user
+
+To install as root, which you may need to do on raspberry Pis etc:
+
+	sudo python setup.py install
+
+## building on MacOS
+
+To compile the mcclibusb drivers, you need libusb installed. On MacOS you can get this
+from Homebrew. Once you've done "brew install libusb" you may then need to tell python
+where the headers are. On my machine, I used:
+
+    CFLAGS="-I/usr/local/Cellar/libusb/1.0.22/include" python setup.py install --user
+
 ## Required python modules
 
 pyLabDataLogger depends on the following non-core python packages.
