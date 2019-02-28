@@ -333,6 +333,7 @@ class pyvisaDevice(device):
         self.lastValue=[]
         n=0
         for n in range(len(data)):
+            if data[n] is None: continue
             try:
                 if (' ' in data[n]) and (self.subdriver!='ds1000z'):
                     d0=''.join(data[n].split(' ')[:-1])
