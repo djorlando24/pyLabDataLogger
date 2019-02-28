@@ -7,7 +7,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 27/02/2019
+    @date 28/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -142,8 +142,8 @@ class pyvisaDevice(device):
             self.config['eng_units']=['']*self.params['n_channels']
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
-            self.query = [':SOUR1:APPL?',':SOUR1FUNC:PULS:WIDT?',':SOUR1:BURS:STAT?',':SOUR1:BURS:TDEL?',':SOUR1:BURS:SOUR?',\
-                          ':SOUR2:APPL?',':SOUR2FUNC:PULS:WIDT?',':SOUR2:BURS:STAT?',':SOUR2:BURS:TDEL?',':SOUR2:BURS:SOUR?']
+            self.serialQuery = [':SOUR1:APPL?',':SOUR1FUNC:PULS:WIDT?',':SOUR1:BURS:STAT?',':SOUR1:BURS:TDEL?',':SOUR1:BURS:SOUR?',\
+                                ':SOUR2:APPL?',':SOUR2FUNC:PULS:WIDT?',':SOUR2:BURS:STAT?',':SOUR2:BURS:TDEL?',':SOUR2:BURS:SOUR?']
         else:
             raise KeyError("Unknown device subdriver for pyvisa-py")
             return
@@ -153,10 +153,10 @@ class pyvisaDevice(device):
     def get_values(self,delimiter=','):
         assert(self.inst)
         data=[]
-        for q in self.query:
+        for q in self.serialQuery:
             try:
-                d=self.inst.query(q).strip()
-                if delimiter in d: data.extend(d.split(delimiter))
+                d=self.inst.query(q).strip().strip('\"').strip('\'') # remove newlines, quotes, etc.
+                if delimiter in d: data.extend(d.split(delimiter)) # try to split on delimiter.
                 else: data.append(d)
             except:
                 self.lastValue.append(None)
