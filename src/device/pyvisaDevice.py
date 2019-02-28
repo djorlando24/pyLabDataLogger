@@ -160,6 +160,8 @@ class pyvisaDevice(device):
                                 ':SOUR2:APPL?',':SOUR2FUNC:PULS:WIDT?',':SOUR2:BURS:STAT?',':SOUR2:BURS:TDEL?',':SOUR2:BURS:SOUR?']
         
         elif self.subdriver=='ds1000z':
+            self.inst.timeout=None # infinite
+            
             # First let's put the device in SINGLE SHOT mode
             self.inst.write(":SING")
             # Now tell the scope to write waveforms in a known format
