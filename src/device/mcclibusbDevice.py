@@ -6,7 +6,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 27/02/2019
+    @date 28/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -49,9 +49,14 @@ class pyudev_t(ctypes.Structure):
 class mcclibusbDevice(device):
     """ Class providing support for Measurement Computing USB devices
         based on the mcc-libusb driver by Warren J. Jasper
+        
+        Current supported devices:
+            'mcc-libusb/mccusb1608G' : MCC USB-1608G series
+            
+        Future devices will be supported if access to hardware is possible!
     """
 
-    def __init__(self,params={},quiet=False,**kwargs):
+    def __init__(self,params={},quiet=True,**kwargs):
 
         # Add more here when more devices are supported!
         self.supported_devices = ['mccusb1608G']

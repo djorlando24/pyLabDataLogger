@@ -8,7 +8,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 29/11/2018
+    @date 28/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -39,9 +39,14 @@ except ImportError:
 class usbtmcDevice(device):
     """
         USBTMC device support.
+        
+        The usbtmc driver provides the following subdriver modules:
+            'usbtmc/thorlabs-tsp01' : Thorlabs TSP01 temperature and humidity probe
+            'usbtmc/33220a'         : Agilent 33220A function generator via USB
+            'usbtmc/rigol-ds'       : Rigol DS series oscilloscopes. Not reliable, suggest using sigrok or pyvisa drivers instead.
     """
 
-    def __init__(self,params={},quiet=False,**kwargs):
+    def __init__(self,params={},quiet=True,**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
@@ -136,8 +141,8 @@ class usbtmcDevice(device):
             if self.subdriver=='rigol-ds':
                 # Currently this is a read-only device. In future we could set the sample rates etc.
                 pass
-            if subdriver=='?':
-                #...
+            if subdriver=='thorlabs-tsp01':
+                # Read only device
                 pass
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -277,6 +282,7 @@ class usbtmcDevice(device):
             self.tmcQuery=['SENS3:TEMP:DATA?','SENS4:TEMP:DATA?','SENS1:TEMP:DATA?','SENS2:HUM:DATA?']
 
         else:
+            print self.__doc__
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         return
 

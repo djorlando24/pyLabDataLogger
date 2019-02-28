@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 27/02/2019
+    @date 28/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -48,7 +48,7 @@ class device:
     """ Main class defining a device in pyPiDataLogger.
         This class is inherited by more specific sub-categories of devices i.e. USB. """
 
-    def __init__(self, quiet=False, **kwargs):
+    def __init__(self, quiet=True, **kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = {} # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds

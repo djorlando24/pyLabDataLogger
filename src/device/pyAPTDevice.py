@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 29/11/2018
+    @date 28/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -36,10 +36,13 @@ except ImportError:
 ########################################################################################################################
 class pyAPTDevice(device):
     """
-        Class providing interface to pyAPT. Presently reads the position but does not move the motor.
+        Class providing interface to pyAPT for APT protocol stepper/servo motors.
+        Presently reads the position but does not move the motor.
+        
+        Specify 'serial_number' in the params dict at initialization to choose which motor to drive if you have multiple. 
     """
 
-    def __init__(self,params={},quiet=False,**kwargs):
+    def __init__(self,params={},quiet=True,**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
@@ -47,6 +50,8 @@ class pyAPTDevice(device):
         self.lastValueTimestamp = None # Time when last value was obtained
         self.serial_number = params['serial_number']
         self.name = params['name']
+        self.driver = 'pyapt'
+        self.subdriver = 'None'
         if 'quiet' in kwargs: self.quiet = kwargs['quiet']
         else: self.quiet=quiet
         if params is not {}: self.scan(quiet=self.quiet)

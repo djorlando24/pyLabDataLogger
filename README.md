@@ -8,7 +8,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 27/02/2019
+    @date 28/02/2019
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -36,12 +36,13 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 
 - NI-VISA over Ethernet devices that use SCPI command set
     - Rigol DG1000Z series delay generators
+    - Rigol DS1000Z series oscilloscopes
 
 - Microcontrollers using FTDI or CP2102 serial over USB chips
        that push strings with format "VARNAME=VALUE, VARNAME=..."
        (i.e. Arduinos, RS-232 and RS-485 to serial adapters)
 
-- pyAPT devices (ie Thorlabs translation stages)
+- pyAPT devices (ie Thorlabs K-cube motor drivers)
 
 - Measurement Computing devices via mcc-libusb
     - MCC-USB-1608G confirmed working
@@ -69,16 +70,15 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 
 ## Soon to be supported hardware
 
-- VISA over Ethernet support for devices already supported by USB
-   - Rigol DS series scopes (port the code over from the usbtmc driver)
-   - Agilent 33220A
+- Fluke thermometers with USB interface.
+
+- VISA over Ethernet support for Agilent 33220A
 
 - more I2C bus devices (ie time of flight sensors)
 - PicoScope headless oscilloscopes
 - NI-VISA over USB devices, such as
     - Thorlabs PM16-120 power meter
     - NI USB DAQ boards ie 6212-series
-- Fluke thermometers with USB interface.
 
 ## Notes
 - Most devices require additional python modules or third party open source

@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 27/02/2019
+    @date 28/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -36,9 +36,100 @@ except ImportError:
 class srdevice(device):
     """ Class defining a USB device that communicates via sigrok
         (which must be seperately installed).
+        
+        The driver is specified by 'sigrok/device' where 'device' is the name of the sigrok driver for the specific hardware.
+        You can find out what sigrok supports by running
+        
+            sigrok-cli -L
+            
+        
+        These are continually being added to as time progresses. As of Feb 2019 the following devices & protocols are suppored:
+          ac97                 Audio Codec '97
+          ade77xx              Analog Devices ADE77xx
+          adf435x              Analog Devices ADF4350/1
+          adns5020             Avago ADNS-5020 optical mouse sensor
+          am230x               Aosong AM230x/DHTxx/RHTxx
+          arm_etmv3            ARM Embedded Trace Macroblock
+          arm_itm              ARM Instrumentation Trace Macroblock
+          arm_tpiu             ARM Trace Port Interface Unit
+          aud                  Advanced User Debugger
+          avr_isp              AVR In-System Programming
+          avr_pdi              Atmel Program and Debug Interface
+          can                  Controller Area Network
+          counter              Edge counter
+          dali                 Digital Addressable Lighting Interface
+          dcf77                DCF77 time protocol
+          dmx512               Digital MultipleX 512
+          ds1307               Dallas DS1307
+          ds243x               Maxim DS2432/2433
+          ds28ea00             Maxim DS28EA00 1-Wire digital thermometer
+          dsi                  Digital Serial Interface
+          edid                 Extended Display Identification Data
+          eeprom24xx           24xx I²C EEPROM
+          eeprom93xx           93xx Microwire EEPROM
+          em4100               RFID EM4100
+          em4305               RFID EM4205/EM4305
+          gpib                 General Purpose Interface Bus
+          graycode             Gray code and rotary encoder
+          guess_bitrate        Guess bitrate/baudrate
+          i2c                  Inter-Integrated Circuit
+          i2cdemux             I²C demultiplexer
+          i2cfilter            I²C filter
+          i2s                  Integrated Interchip Sound
+          iec                  Commodore bus
+          ir_nec               IR NEC
+          ir_rc5               IR RC-5
+          jitter               Timing jitter calculation
+          jtag                 Joint Test Action Group (IEEE 1149.1)
+          jtag_stm32           Joint Test Action Group / ST STM32
+          lm75                 National LM75
+          lpc                  Low-Pin-Count
+          maple_bus            SEGA Maple bus
+          max7219              Maxim MAX7219/MAX7221
+          mdio                 Management Data Input/Output
+          microwire            Microwire
+          midi                 Musical Instrument Digital Interface
+          mlx90614             Melexis MLX90614
+          modbus               Modbus RTU over RS232/RS485
+          morse                Morse code
+          mrf24j40             Microchip MRF24J40
+          mxc6225xu            MEMSIC MXC6225XU
+          nrf24l01             Nordic Semiconductor nRF24L01/nRF24L01+
+          nunchuk              Nintendo Wii Nunchuk
+          onewire_link         1-Wire serial communication bus (link layer)
+          onewire_network      1-Wire serial communication bus (network layer)
+          pan1321              Panasonic PAN1321
+          parallel             Parallel sync bus
+          ps2                  PS/2
+          pwm                  Pulse-width modulation
+          qi                   Qi charger protocol
+          rfm12                RFM12 control protocol
+          rgb_led_spi          RGB LED string decoder (SPI)
+          rgb_led_ws281x       RGB LED string decoder (WS281x)
+          rtc8564              Epson RTC-8564 JE/NB
+          sdcard_sd            Secure Digital card (SD mode)
+          sdcard_spi           Secure Digital card (SPI mode)
+          spdif                Sony/Philips Digital Interface Format
+          spi                  Serial Peripheral Interface
+          spiflash             SPI flash chips
+          ssi32                Synchronous Serial Interface (32bit)
+          stepper_motor        Stepper motor position / speed
+          swd                  Serial Wire Debug
+          t55xx                RFID T55xx
+          tca6408a             Texas Instruments TCA6408A
+          timing               Timing calculation with frequency and averaging
+          tlc5620              Texas Instruments TLC5620
+          uart                 Universal Asynchronous Receiver/Transmitter
+          usb_packet           Universal Serial Bus (LS/FS) packet
+          usb_power_delivery   USB Power Delivery
+          usb_request          Universal Serial Bus (LS/FS) transaction/request
+          usb_signalling       Universal Serial Bus (LS/FS) signalling
+          wiegand              Wiegand interface
+          xfp                  10 Gigabit Small Form Factor Pluggable Module (XFP)
+          z80                  Zilog Z80 CPU
     """
 
-    def __init__(self,params={},quiet=False,**kwargs):
+    def __init__(self,params={},quiet=True,**kwargs):
         
         # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.config = {}

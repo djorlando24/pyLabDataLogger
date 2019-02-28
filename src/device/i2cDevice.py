@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 27/02/2019
+    @date 28/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -36,7 +36,13 @@ def scan_for_devices(bus=1):
 
 """ Load devices based on a-priori knowledge of what addresses on the bus
     correspond to what supported hardware. This won't work for devices that
-    share addresses. """
+    share addresses.
+    
+    Supported devices:
+        Adafruit ads1x15 ADCs
+        Adafriut BMP085 and BMP150 pressure sensors
+    
+    """
 def load_i2c_devices(devices=None,bus=1,**kwargs):
     if devices is None: devices=scan_for_devices(bus)
     device_list=[]
@@ -49,6 +55,7 @@ def load_i2c_devices(devices=None,bus=1,**kwargs):
             device_list.append(bmpDevice.bmpDevice(params={'address':address, 'bus':bus},**kwargs))
         else:
             print "I don't know what to do with I2C device at address",address
+            print load_i2c_devices.__doc__
     return device_list
 
 
@@ -58,7 +65,7 @@ class i2cDevice(device):
     """ Class providing support for I2C devices. This class should not be used directly, it provides
         common functions for specific i2c devices. """
 
-    def __init__(self,params={},quiet=False,**kwargs):
+    def __init__(self,params={},quiet=True,**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds

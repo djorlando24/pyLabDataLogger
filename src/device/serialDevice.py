@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 06/02/2019
+    @date 28/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -34,10 +34,19 @@ class serialDevice(device):
         By default we assume that the ttys can be found in /dev (*nix OS)
         However this can be overridden by passing 'port' or 'tty' directly
         in the params dict.
+        
+        The 'serial' driver supports the following hardware:
+            'serial/tds220gpib'        : Tektronix TDS22x series oscilloscopes via the RS-232 port
+            'serial/omega-ir-usb'      : Omega IR-USB temperature probe with built in USB to Serial converter
+            'serial/ohaus7k'           : OHAUS 7000 series scientific scales via RS232
+            'serial/center310'         : CENTER 310 Temperature and Humidity meter
+            'serial/tc08rs232'         : Pico TC08 RS-232 thermocouple datalogger (USB version has a seperate driver 'picotc08')
+            'serial/omega-iseries/232' : Omega iSeries Process Controller via RS232 transciever
+            'serial/omega-iseries/485' : Omega iSeries Process Controller via RS485 transciever
     """
 
 
-    def __init__(self,params={},tty_prefix='/dev/',quiet=False,**kwargs):
+    def __init__(self,params={},tty_prefix='/dev/',quiet=True,**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
@@ -208,8 +217,9 @@ class serialDevice(device):
                 # set points.
                 pass
             elif subdriver=='tc08rs232':
-                raise RuntimeError("Need to implement selection of thermocouple types!")
+                raise RuntimeError("Need to implement selection of thermocouple types! Contact the developer.")
             else:
+                print self.__doc__
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
     
         except ValueError:

@@ -31,6 +31,18 @@ except ImportError:
 ########################################################################################################################
 class pyvisaDevice(device):
     """ Class providing support for pyVISA-py devices.
+    
+        This class is primarily for accessing VISA devices over TCP/IP but can also be used for USB VISA devices.
+        However pyLabDataLogger supports a range of USB devices by other means such as usbtmc and you should check those
+        first.
+    
+        This class supports two main drivers, 'pyvisa' and 'nivisa' depending on which backed you want to use. 'pyvisa' should
+        be the default, as it uses a pure python open source implementation. 'nivisa' requires a seperate install of the
+        NI-VISA dynamic libraries, which pyLabDataLogger does not provide.
+        
+        The following subdriver modules are supported through either 'pyvisa' or 'nivisa':
+            'pyvisa/dg1000z' : Rigol DG1000Z programmable delay/function generator
+            'pyvisa/ds1000z' : Rigol DS1000Z oscilloscope
     """
 
     def __init__(self,params={},quiet=True,**kwargs):
@@ -215,6 +227,7 @@ class pyvisaDevice(device):
             #self.instrumentWrite(":RUN")
 
         else:
+            print self.__doc__
             raise KeyError("Unknown device subdriver for pyvisa-py")
             return
 

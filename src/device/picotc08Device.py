@@ -7,7 +7,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 09/01/2019
+    @date 28/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -489,16 +489,25 @@ class usbtc08_logger():
 ##############################################################################################################################
 ##############################################################################################################################
 class usbtc08Device(device):
-    """ Class providing support for Pico TC-08 thermocouple dataloggers.
-        There are RS-232 & USB versions, so far only the USB version is tested.
+    """ Class providing support for Pico TC-08 thermocouple dataloggers over USB.
+        The 'serial' module provides support for older RS-232 models.
+        
+        You can specify the following keys through 'params' at run time:
+            init_tc08_config  : list[8], indicates thermocouple type for each channel (not incl. cold junction)
+                                i.e. ['K','J','K','T','T','T','X','X']
+                                n.b. 'X' is a millivolt or 4-20mA input channel.
+        
+            init_tc08_chnames : list[9], each entry is the channel name.  The first is the cold junction.
     """
 
-    def __init__(self,params={}, quiet=False, debugMode=False, init_tc08_config=['K','K','K','T','T','T','X','X'],
+    def __init__(self,params={}, quiet=True, debugMode=False, init_tc08_config=['K','K','K','T','T','T','X','X'],
                  init_tc08_chnames =['Cold Junction','1','2','3','4','5','6','7','8'], init_unit='C',**kwargs ):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. self.units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device self.units)
         self.driverConnected = False # Goes to True when scan method succeeds
         self.debugMode = debugMode
+        self.driver='usbtc08'
+        self.subdriver='None'
         self.name = "Pico TC-08 Thermocouple Logger"
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
@@ -595,7 +604,6 @@ class usbtc08Device(device):
 
     # Apply configuration changes to the driver
     def apply_config(self):
-        #subdriver = self.params['driver'].split('/')[1:]
         try:
             assert(self.dev)
             if self.dev is None: raise pyLabDataLoggerIOError("Could not access the device")
