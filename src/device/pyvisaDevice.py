@@ -54,6 +54,7 @@ class pyvisaDevice(device):
         self.name = "pyVISA-py device %s" % self.driver
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
+        self.postQuery=None
         if 'quiet' in kwargs: self.quiet = kwargs['quiet']
         else: self.quiet=quiet
         
@@ -254,6 +255,9 @@ class pyvisaDevice(device):
                 self.params['Ch%i Waveform Parameters' % n] = self.instrumentQuery(":WAV:PRE?").split(',')
                 time.sleep(0.01)
 
+            # Arm the scope in single shot mode
+            self.instrumentWrite(":SING"); self.instrumentWrite(":RUN")
+
         elif self.subdriver == '33220a':
             
             self.instrumentWrite("SYST:BEEP") # beep the interface
@@ -376,7 +380,7 @@ class pyvisaDevice(device):
         self.get_values()
 
         # Run postQuery if exists (ie put the device in mode ready to accept next trigger/data)
-        if hasattr('self', 'postQuery'):
+        if self.postQuery is not None:
             self.instrumentWrite(self.postQuery)
 
         # Generate scaled values. Convert non-numerics to NaNs

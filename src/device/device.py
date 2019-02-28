@@ -204,7 +204,11 @@ class device:
 
                 # Loop over raw values and scaled values
                 for data, desc, units in [(self.lastValue, "Raw values", self.params['raw_units'][i]),(self.lastScaled, "Scaled values", self.config['eng_units'][i])]:
-                     
+
+                    # h5py doesn't like unicode strings and nonetypes
+                    if isinstance(data[i],unicode): data[i] = data[i].encode('ascii')
+                    if data[i] is None: data[i]="None"
+                                       
                     if desc in cg:  # Add more
                         dset = cg[desc]
                         ds = list(dset.shape)
