@@ -37,12 +37,13 @@ class pyvisaDevice(device):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
-        self.name = "unknown pyVISA-py device"
+        self.driver = self.params['driver']
+        self.name = "pyVISA-py device %s" % self.driver
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
         if 'quiet' in kwargs: self.quiet = kwargs['quiet']
         else: self.quiet=quiet
-        self.driver = self.params['driver']
+        
         self.subdriver = ''.join(self.params['driver'].split('/')[1:])
         
         if params is not {}: self.scan(quiet=quiet)
@@ -201,6 +202,7 @@ class pyvisaDevice(device):
             
             # Set up device
             self.params['name']=self.inst.query("*IDN?")
+            if self.driver in self.name: "pyVISA-py device %s" % self.params['name']
             self.configure_device()
         
 
