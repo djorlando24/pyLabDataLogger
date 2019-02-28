@@ -27,7 +27,8 @@ import time
 if __name__ == '__main__':
     
     devices = [pyvisaDevice.pyvisaDevice({'resource':'TCPIP0::192.168.0.123::INSTR','driver':'pyvisa/dg1000z'}),\
-               pyvisaDevice.pyvisaDevice({'resource':'TCPIP0::192.168.0.124::INSTR','driver':'pyvisa/ds1000z'},quiet=False)]
+               pyvisaDevice.pyvisaDevice({'resource':'TCPIP0::192.168.0.124::INSTR','driver':'pyvisa/ds1000z'},quiet=False),\
+               pyvisaDevice.pyvisaDevice({'resource':'TCPIP0::192.168.0.125::INSTR','driver':'pyvisa/33220a' },quiet=False)]
 
     if len(devices) == 0: exit()
    
