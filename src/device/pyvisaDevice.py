@@ -56,9 +56,11 @@ class pyvisaDevice(device):
         if override_params is not None: self.params = override_params
         
         if 'pyvisa' in self.driver:
-            self.rm = visa.ResourceManager('@py')
+            self.rm = visa.ResourceManager('@py') # Open source pure-python pyVISA backend
+        if 'nivisa' in self.driver:
+            self.rm = visa.ResourceManager('@ni') # National instruments closed source backend, if required!
         else:
-            raise ValueError("Unknown Driver. Use 'pyvisa/X' for device X.")
+            raise ValueError("Unknown backend driver. Choices are pyvisa or nivisa.")
 
         assert(self.rm)
         
@@ -100,6 +102,10 @@ class pyvisaDevice(device):
             if self.subdriver=='dg1000z':
                 # currently no writeable options supported.
                 # in future could alter the DG settings from here.
+                pass
+            if self.subdriver=='ds1000z':
+                # currently no writeable options supported.
+                # in future could alter the time/voltage range/acq settings from here.
                 pass
             else:
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -146,6 +152,40 @@ class pyvisaDevice(device):
             self.config['offset']=[0.]*self.params['n_channels']
             self.serialQuery = [':SOUR1:APPL?',':SOUR1FUNC:PULS:WIDT?',':SOUR1:BURS:STAT?',':SOUR1:BURS:TDEL?',':SOUR1:BURS:SOUR?',\
                                 ':SOUR2:APPL?',':SOUR2FUNC:PULS:WIDT?',':SOUR2:BURS:STAT?',':SOUR2:BURS:TDEL?',':SOUR2:BURS:SOUR?']
+        
+        elif self.subdriver=='ds1000z':
+            # First let's put the device in SINGLE SHOT mode
+            self.inst.write(":SING")
+            # Now tell the scope to write waveforms in a known format
+            self.inst.write(":WAV:MODE RAW") # return what's in memory
+            self.inst.write(":WAV:FORM BYTE") # one byte per 8bit sample
+            # self.inst.write(":RUN")
+            
+            self.config['channel_names']=['Ch1','Ch2','Ch3','Ch4']
+            self.params['raw_units']=['V','V','V','V']
+            self.config['eng_units']=['V','V','V','V']
+            self.config['scale']=[1.,1.,1.,1.]
+            self.config['offset']=[0.,0.,0.,0.]
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.serialQuery=[':WAV:SOUR 1,:WAV:DATA?',':WAV:SOUR 2,:WAV:DATA?',':WAV:SOUR 3,:WAV:DATA?',':WAV:SOUR 4,:WAV:DATA?']
+        
+            # Get some parameters that don't change often
+            self.params['Samples_per_sec'] = self.ask(":ACQ:SRAT?")
+            self.params['Seconds_per_div'] = self.ask(":TIM:SCAL?")
+            self.params['Bandwidth Limit'] = self.scope_channel_params("BWL")
+            self.params['Coupling'] = self.scope_channel_params("COUP")
+            self.params['Voltage Scale'] = self.scope_channel_params("SCAL")
+            self.params['Active channels'] = self.scope_channel_params("DISP")
+            self.params['Inverted'] = self.scope_channel_params("INV")
+            self.params['Vertical Offset'] = self.scope_channel_params("OFFS")
+            self.params['Vertical Range'] = self.scope_channel_params("RANG")
+        
+            # Get some waveform parameters
+            for n in range(self.params['n_channels']):
+                self.inst.write(":WAV:SOUR %1i" % n)
+                time.sleep(0.01)
+                self.params['Ch%i Waveform Parameters' % n] = self.inst.query(":WAV:PRE?").split(',')
+                time.sleep(0.01)
         else:
             raise KeyError("Unknown device subdriver for pyvisa-py")
             return
