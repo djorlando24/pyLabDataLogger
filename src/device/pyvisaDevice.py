@@ -162,12 +162,9 @@ class pyvisaDevice(device):
         elif self.subdriver=='ds1000z':
             self.inst.timeout=None # infinite
             
-            # First let's put the device in SINGLE SHOT mode
-            self.inst.write(":SING")
-            # Now tell the scope to write waveforms in a known format
+            # Tell the scope to write waveforms in a known format
             self.inst.write(":WAV:MODE RAW") # return what's in memory
             self.inst.write(":WAV:FORM BYTE") # one byte per 8bit sample
-            # self.inst.write(":RUN")
             
             self.config['channel_names']=['Ch1','Ch2','Ch3','Ch4']
             self.params['raw_units']=['V','V','V','V']
@@ -194,6 +191,11 @@ class pyvisaDevice(device):
                 time.sleep(0.01)
                 self.params['Ch%i Waveform Parameters' % n] = self.inst.query(":WAV:PRE?").split(',')
                 time.sleep(0.01)
+
+            # First let's put the device in SINGLE SHOT mode
+            #self.inst.write(":SING")
+            # self.inst.write(":RUN")
+
         else:
             raise KeyError("Unknown device subdriver for pyvisa-py")
             return
