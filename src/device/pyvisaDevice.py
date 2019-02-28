@@ -132,6 +132,12 @@ class pyvisaDevice(device):
         if self.driverConnected: self.activate()
         else: print "Error resetting %s: device is not detected" % self.name
 
+    # For oscilloscopes, sweep the channels for a certain parameter stored under
+    # SCPI command :CHAN<n.:CMD
+    def scope_channel_params(self,cmd):
+        assert(self.inst)
+        return np.array([self.inst.query(":CHAN%1i:%s?" % (n,cmd)) for n in range(self.params['n_channels'])])
+
     # Configure device settings based on subdriver choice
     def configure_device(self):
         if self.subdriver=='dg1000z':
