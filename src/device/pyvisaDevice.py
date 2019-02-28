@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
     pyVISA-py device class
     
@@ -41,7 +43,7 @@ class pyvisaDevice(device):
         if 'quiet' in kwargs: self.quiet = kwargs['quiet']
         else: self.quiet=quiet
         self.driver = self.params['driver']
-        self.subdriver = self.params['driver'].split('/')[1:]
+        self.subdriver = ''.join(self.params['driver'].split('/')[1:])
         
         if params is not {}: self.scan(quiet=quiet)
         
@@ -53,13 +55,15 @@ class pyvisaDevice(device):
         if override_params is not None: self.params = override_params
         
         if 'pyvisa' in self.driver:
-            rm = visa.ResourceManager('@py')
+            self.rm = visa.ResourceManager('@py')
         else:
             raise ValueError("Unknown Driver. Use 'pyvisa/X' for device X.")
+
+        assert(self.rm)
         
         if not 'resource' in self.params:
             print "pyVISA-py: Please specify a resource. Possible resources include but not limited to:"
-            print rm.list_resources()
+            print self.rm.list_resources()
             return
         
         self.activate(quiet=quiet)
@@ -68,7 +72,7 @@ class pyvisaDevice(device):
     # Establish connection to device (ie open serial port)
     def activate(self,quiet=False):
     
-        self.inst = rm.open_resource(self.params['resource'])
+        self.inst = self.rm.open_resource(self.params['resource'])
         self.driverConnected=True
         
         # Make first query to get units, description, etc.
@@ -134,8 +138,8 @@ class pyvisaDevice(device):
                                                                     'CH%i_burst_delay' % n,\
                                                                     'CH%i_burst_source' % n])
             self.params['n_channels']=len(self.config['channel_names'])
-            self.params['raw_units']=[None]*self.params['n_channels']
-            self.config['eng_units']=[None]*self.params['n_channels']
+            self.params['raw_units']=['']*self.params['n_channels']
+            self.config['eng_units']=['']*self.params['n_channels']
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
             self.query = [':SOUR1:APPL?',':SOUR1FUNC:PULS:WIDT?',':SOUR1:BURS:STAT?',':SOUR1:BURS:TDEL?',':SOUR1:BURS:SOUR?',\
@@ -162,11 +166,23 @@ class pyvisaDevice(device):
             data.extend([None]*(self.params['n_channels']-len(data)))
 
         # Parse data, convert any floats or ints into numeric types
-        for d in data:
+        # Break out units into raw_units and eng_units
+        self.lastValue=[]
+        n=0
+        for n in range(len(data)):
             try:
-                self.lastValue.append(float(d)):
+                if ' ' in data[n]:
+                    d0=''.join(data[n].split(' ')[:-1])
+                    d1=data[n].split(' ')[-1]
+                else:
+                    d0=data[n]
+                    d1=''
+                self.lastValue.append(float(d0))
+                self.params['raw_units'][n]=d1
+                if self.config['eng_units'][n]=='':
+                    self.config['eng_units'][n]=d1
             except ValueError:
-                self.lastValue.append(d)
+                self.lastValue.append(d0)
 
         return
 
