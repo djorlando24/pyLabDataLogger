@@ -298,9 +298,11 @@ class pyvisaDevice(device):
             else:
                 try:
                     if self.subdriver=='ds1000z':
-                        if self.params['']
-                        # Waveforms from scope. Expect multiple setup commands with commas ie :STOP before the run
-                        for qq in q.split(','): self.instrumentWrite(qq)
+                        # Waveforms from scope.
+                        if ',' in q: # Multiple commands ie setup or channel select
+                            for qq in q.split(','): self.instrumentWrite(qq)
+                        else:
+                            self.instrumentWrite(q)
                         data.append(self.inst.read_raw())
                     else:
                         # Other simple data, floats and strings etc.
