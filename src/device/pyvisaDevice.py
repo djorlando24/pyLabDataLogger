@@ -20,7 +20,7 @@
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
-import datetime, time, sys
+import datetime, time, sys, struct
 
 try:
     import visa
@@ -117,9 +117,20 @@ class pyvisaDevice(device):
                 # in future could alter the DG settings from here.
                 pass
             elif self.subdriver=='ds1000z':
-                # currently no writeable options supported.
                 # in future could alter the time/voltage range/acq settings from here.
-                pass
+                
+                # Check to see if any new channels were activated/deactivated!
+                # Find out which channels are turned on, just acquire those.
+                self.serialQuery=[]
+                self.params['Active channels']=[]
+                for nch in range(1,self.params['n_channels']+1):
+                    channel_active = self.instrumentQuery(":CHAN%1i:DISP?")
+                    self.params['Active channels'].append(channel_active)
+                    if channel_active == 1:
+                        self.serialQuery.append(":WAV:SOUR %i,:WAV:DATA?" % nch)
+                    else:
+                        self.serialQuery.append(None)
+                
             elif self.subdriver=='33220a':
                 # currently no writeable options supported.
                 # in future could alter the DG settings from here.
@@ -207,15 +218,24 @@ class pyvisaDevice(device):
             self.config['scale']=[1.,1.,1.,1.]
             self.config['offset']=[0.,0.,0.,0.]
             self.params['n_channels']=len(self.config['channel_names'])
-            self.serialQuery=[':WAV:SOUR 1,:WAV:DATA?',':WAV:SOUR 2,:WAV:DATA?',':WAV:SOUR 3,:WAV:DATA?',':WAV:SOUR 4,:WAV:DATA?']
-        
+            
+            # Find out which channels are turned on, just acquire those.
+            self.serialQuery=[]
+            self.params['Active channels']=[]
+            for nch in range(1,self.params['n_channels']+1):
+                channel_active = self.instrumentQuery(":CHAN%1i:DISP?")
+                self.params['Active channels'].append(channel_active)
+                if channel_active == 1:
+                    self.serialQuery.append(":WAV:SOUR %i,:WAV:DATA?" % nch)
+                else:
+                    self.serialQuery.append(None)
+            
             # Get some parameters that don't change often
             self.params['Samples_per_sec'] = self.instrumentQuery(":ACQ:SRAT?")
             self.params['Seconds_per_div'] = self.instrumentQuery(":TIM:SCAL?")
             self.params['Bandwidth Limit'] = self.scope_channel_params("BWL")
             self.params['Coupling'] = self.scope_channel_params("COUP")
             self.params['Voltage Scale'] = self.scope_channel_params("SCAL")
-            self.params['Active channels'] = self.scope_channel_params("DISP")
             self.params['Inverted'] = self.scope_channel_params("INV")
             self.params['Vertical Offset'] = self.scope_channel_params("OFFS")
             self.params['Vertical Range'] = self.scope_channel_params("RANG")
@@ -278,6 +298,7 @@ class pyvisaDevice(device):
             else:
                 try:
                     if self.subdriver=='ds1000z':
+                        if self.params['']
                         # Waveforms from scope. Expect multiple setup commands with commas ie :STOP before the run
                         for qq in q.split(','): self.instrumentWrite(qq)
                         data.append(self.inst.read_raw())
