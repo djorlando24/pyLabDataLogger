@@ -65,6 +65,7 @@ class pyvisaDevice(device):
         if not 'resource' in self.params:
             print "pyVISA-py: Please specify a resource. Possible resources include but not limited to:"
             print self.rm.list_resources()
+            print "Network device resources can usually be determined by browsing to the device's IP address or checking the Network Settings control panel on the device."
             return
         
         self.activate(quiet=quiet)
@@ -201,8 +202,8 @@ class pyvisaDevice(device):
         if not 'raw_units' in self.params.keys() or reset:
             
             # Set up device
-            self.params['name']=self.inst.query("*IDN?")
-            if self.driver in self.name: self.name="pyVISA-py device %s" % self.params['name']
+            self.params['name']=self.inst.query("*IDN?").replace(',',' ')
+            if self.driver in self.name: self.name="%s %s" % (self.params['name'],self.params['resource'])
             self.configure_device()
         
 
