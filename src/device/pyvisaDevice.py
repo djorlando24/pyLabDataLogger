@@ -290,7 +290,8 @@ class pyvisaDevice(device):
         if self.subdriver=='ds1000z':
             if not self.quiet:
                 print '\t',len(data),'bytes recieved'
-            return np.array( struct.unpack('<%ib' % len(data),data), dtype=np.uint8 ) # unpack scope waveform
+                # unpack scope waveform as 8-bit vector.
+            return np.array( struct.unpack('<%ib' % len(data),data), dtype=np.uint8 ).ravel()
             #return np.array(data) # simple list-to-array conversion
         else:
             return float(data)
