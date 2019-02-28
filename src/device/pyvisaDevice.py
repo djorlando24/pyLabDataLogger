@@ -203,15 +203,15 @@ class pyvisaDevice(device):
                                                                     'CH%i_phase' % n,\
                                                                     'CH%i_pulse_width' % n,\
                                                                     'CH%i_burst' % n,\
-                                                                    'CH%i_burst_delay' % n,\
-                                                                    'CH%i_burst_source' % n])
+                                                                    'CH%i_burst_delay' % n])
             self.params['n_channels']=len(self.config['channel_names'])
             self.params['raw_units']=['']*self.params['n_channels']
             self.config['eng_units']=['']*self.params['n_channels']
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
-            self.serialQuery = [':SOUR1:APPL?',':SOUR1FUNC:PULS:WIDT?',':SOUR1:BURS:STAT?',':SOUR1:BURS:TDEL?',':SOUR1:BURS:SOUR?',\
-                                ':SOUR2:APPL?',':SOUR2FUNC:PULS:WIDT?',':SOUR2:BURS:STAT?',':SOUR2:BURS:TDEL?',':SOUR2:BURS:SOUR?']
+            # :SOURx:APPL? will return type, frequency, amplitude, offset and phase in one string.
+            self.serialQuery = [':SOUR1:APPL?',':SOUR1FUNC:PULS:WIDT?',':SOUR1:BURS:STAT?',':SOUR1:BURS:TDEL?',\
+                                ':SOUR2:APPL?',':SOUR2FUNC:PULS:WIDT?',':SOUR2:BURS:STAT?',':SOUR2:BURS:TDEL?']
         
         elif self.subdriver=='ds1000z':
             
