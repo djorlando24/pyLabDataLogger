@@ -334,20 +334,22 @@ class pyvisaDevice(device):
         self.lastValue=[]
         n=0
         for n in range(len(data)):
-            if data[n] is None: continue
-            try:
-                if (' ' in data[n]) and (self.subdriver!='ds1000z'):
-                    d0=''.join(data[n].split(' ')[:-1])
-                    d1=data[n].split(' ')[-1]
-                else:
-                    d0=data[n]
-                    d1=''
-                self.lastValue.append(self.convert_to_array(d0))
-                self.params['raw_units'][n]=d1
-                if self.config['eng_units'][n]=='':
-                    self.config['eng_units'][n]=d1
-            except ValueError:
-                self.lastValue.append(d0)
+            if data[n] is None:
+                self.lastValue.append(None)
+            else:
+                try:
+                    if (' ' in data[n]) and (self.subdriver!='ds1000z'):
+                        d0=''.join(data[n].split(' ')[:-1])
+                        d1=data[n].split(' ')[-1]
+                    else:
+                        d0=data[n]
+                        d1=''
+                    self.lastValue.append(self.convert_to_array(d0))
+                    self.params['raw_units'][n]=d1
+                    if self.config['eng_units'][n]=='':
+                        self.config['eng_units'][n]=d1
+                except ValueError:
+                    self.lastValue.append(d0)
 
         return
 
@@ -387,7 +389,7 @@ class pyvisaDevice(device):
         self.lastScaled = []
         for n in range(self.params['n_channels']):
             self.lastScaled.append( lastValueSanitized[n] * self.config['scale'][n] + self.config['offset'][n] )
-        
+
         self.updateTimestamp()
         return self.lastValue
 
