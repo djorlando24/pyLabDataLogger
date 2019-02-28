@@ -257,7 +257,7 @@ class pyvisaDevice(device):
         elif self.subdriver == '33220a':
             
             self.instrumentWrite("SYST:BEEP") # beep the interface
-            self.params['mode'] = self.ask('FUNC?') # Check the mode
+            self.params['mode'] = self.instrumentQuery('FUNC?') # Check the mode
             self.config['channel_names']=['frequency','amplitude','offset','duty cycle','pulse width']
             self.params['raw_units']=['Hz','V','V','','s']
             self.config['eng_units']=['Hz','V','V','','s']
@@ -274,7 +274,7 @@ class pyvisaDevice(device):
             # Now try to set the units more specifically
             self.params['raw_units'][1] = self.instrumentQuery("VOLT:UNIT?")
             self.config['eng_units'][1] = self.params['raw_units'][1]
-            #self.params['raw_units'][4] = self.ask("UNIT:ANGL?")
+            #self.params['raw_units'][4] = self.instrumentQuery("UNIT:ANGL?")
             #self.config['eng_units'][4] = self.params['raw_units'][4]
             
             # Get some other parameters that won't change often.
