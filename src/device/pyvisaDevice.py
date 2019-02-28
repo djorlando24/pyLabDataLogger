@@ -124,7 +124,7 @@ class pyvisaDevice(device):
                 self.serialQuery=[]
                 self.params['Active channels']=[]
                 for nch in range(1,self.params['n_channels']+1):
-                    channel_active = self.instrumentQuery(":CHAN%1i:DISP?" % nch)
+                    channel_active = int(self.instrumentQuery(":CHAN%1i:DISP?" % nch).strip())
                     self.params['Active channels'].append(channel_active)
                     if channel_active == 1:
                         self.serialQuery.append(":WAV:SOUR %i,:WAV:DATA?" % nch)
@@ -165,7 +165,13 @@ class pyvisaDevice(device):
     # SCPI command :CHAN<n.:CMD
     def scope_channel_params(self,cmd):
         assert(self.inst)
-        return np.array([self.instrumentQuery(":CHAN%1i:%s?" % (n,cmd)) for n in range(1,self.params['n_channels']+1)])
+        l=[]
+        for n in range(1,self.params['n_channels']+1):
+            v=self.instrumentQuery(":CHAN%1i:%s?" % (n,cmd)).strip()
+            try: v=float(v)
+            except: pass
+            l.append(v)
+        return np.array(l)
 
     # Send a query to the instrument and get a response back.
     def instrumentQuery(self,q, *args, **kwargs):
@@ -224,7 +230,7 @@ class pyvisaDevice(device):
             self.postQuery=':RUN'
             self.params['Active channels']=[]
             for nch in range(1,self.params['n_channels']+1):
-                channel_active = self.instrumentQuery(":CHAN%1i:DISP?" % nch)
+                channel_active = int(self.instrumentQuery(":CHAN%1i:DISP?" % nch).strip())
                 self.params['Active channels'].append(channel_active)
                 if channel_active == 1:
                     self.serialQuery.append(":STOP,:WAV:SOUR %i,:WAV:DATA?" % nch)
