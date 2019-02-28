@@ -65,8 +65,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 - Single board computer (Raspberry Pi, Beaglebone) I2C, SPI & GPIO
     - Adafruit ADS1x15 12-bit ADCs via I2C
     - Adafruit BMP085/BMP150 barometer/altimeter via I2C
-
-- Raspberry Pi GPIO pins
+    - Raspberry Pi low speed GPIO
 
 ## Soon to be supported hardware
 
@@ -90,5 +89,8 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
   you can run scripts/reset-WCH.CN.sh. These devices also have generic USB-to
   -serial adapters than can easily be confused. It may be necessary to specify
   the driver manually when the device is detected.
+
+- MacOS doesn't allow userspace drivers to access USB HID devices for security
+  reasons, so devices that use USB HID like sigrok's UNI-T drivers don't work.
 
 See Hardware.md for more detailed information.

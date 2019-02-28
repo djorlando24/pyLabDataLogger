@@ -88,7 +88,7 @@ class pyvisaDevice(device):
     # Establish connection to device (ie open serial port)
     def activate(self,quiet=False):
     
-        self.inst = self.rm.open_resource(self.params['resource'])
+        self.inst = self.rm.open_resource(self.params['resource'],timeout=30000)
         self.driverConnected=True
         
         # Make first query to get units, description, etc.
@@ -190,7 +190,6 @@ class pyvisaDevice(device):
                                 ':SOUR2:APPL?',':SOUR2FUNC:PULS:WIDT?',':SOUR2:BURS:STAT?',':SOUR2:BURS:TDEL?',':SOUR2:BURS:SOUR?']
         
         elif self.subdriver=='ds1000z':
-            self.inst.timeout=30000 # 30 seconds
             
             # Tell the scope to write waveforms in a known format
             self.instrumentWrite(":WAV:MODE RAW") # return what's in memory

@@ -18,6 +18,9 @@ The iSeries process controllers need to be set in the following mode. How to do 
 ## Tenma thermometer and multimeters via Sigrok driver
 - Support for Tenma thermometers and multimeters via sigrok's UNI-T drivers using the UNI-T D04 USB to serial cables with the WCH.CN ships can require a bus reset on Linux before they'll work. To get around this you can run scripts/reset-WCH.CN.sh. 
 
+- Modern MacOS doesn't allow userspace drivers to access USB HID devices for security
+  reasons, so devices that use USB HID like sigrok's UNI-T drivers don't work.
+
 - The generic HID serial adapters are easily confused as their VID/PID are the same. Information that might be useful to identify them doesn't always read the same on every machine (MacOS sees they have unique bcdDevice strings but Linux kernel doesn't). If pyLabDataLogger sees one of these generic HID adapters it will ask you what device it corresponds to, if not sure. You can enforce selection by specifying the bus & address variables of the device. Beware that these change every time you unplug & plug the USB device.
 
 - In order to get these Tenma thermometers and multimeters to work they have to be put into SEND mode (there will be a button for it on the front panel). You will see "USB" or "SEND" on the LCD display.

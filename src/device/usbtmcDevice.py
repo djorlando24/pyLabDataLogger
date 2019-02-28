@@ -238,11 +238,11 @@ class usbtmcDevice(device):
         elif self.subdriver=='rigol-ds':
         
             # First let's put the device in SINGLE SHOT mode
-            self.write(":SING")
+            #self.write(":SING")
             # Now tell the scope to write waveforms in a known format
             self.write(":WAV:MODE RAW") # return what's in memory
             self.write(":WAV:FORM BYTE") # one byte per 8bit sample
-            # self.ask(":RUN")
+            #self.ask(":RUN")
         
             self.name = "Rigol DS Oscilloscope - %s" % self.params['IDN']
             self.config['channel_names']=['Ch1','Ch2','Ch3','Ch4']
