@@ -261,8 +261,8 @@ class pyvisaDevice(device):
     # Convert incoming value, which might be a string, to either a numpy array or a float
     def convert_to_array(self,data):
         if self.subdriver=='ds1000z':
-            #return np.array( struct.unpack(data,'<b'), dtype=np.uint8 ) # unpack scope waveform
-            return np.array(data)
+            return np.array( struct.unpack(data,'<b'), dtype=np.uint8 ) # unpack scope waveform
+            #return np.array(data) # simple list-to-array conversion
         else:
             return float(data)
         return None
@@ -278,11 +278,9 @@ class pyvisaDevice(device):
             else:
                 try:
                     if self.subdriver=='ds1000z':
-                        # Waveforms from scope
-                        if not self.quiet: print '\t%s (raw data query)' % q
-                        for qq in q.split(','):
-                            if not '?' in qq: self.instrumentWrite(qq)
-                            else: data.append(self.inst.query_binary_values(q,datatype='b',is_big_endian=False))
+                        # Waveforms from scope. Expect multiple setup commands with commas ie :STOP before the run
+                        for qq in q.split(','): self.instrumentWrite(qq)
+                        data.append(self.inst.read_raw())
                     else:
                         # Other simple data, floats and strings etc.
                         d=self.instrumentQuery(q).strip().strip('\"').strip('\'') # remove newlines, quotes, etc.
