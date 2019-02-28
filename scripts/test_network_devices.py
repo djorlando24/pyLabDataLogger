@@ -30,8 +30,6 @@ if __name__ == '__main__':
                pyvisaDevice.pyvisaDevice({'resource':'TCPIP0::192.168.0.124::INSTR','driver':'pyvisa/ds1000z'},quiet=False),\
                pyvisaDevice.pyvisaDevice({'resource':'TCPIP0::192.168.0.125::INSTR','driver':'pyvisa/33220a' },quiet=False)]
 
-    devices=[devices[2],devices[1]]
-
     if len(devices) == 0: exit()
    
     try:

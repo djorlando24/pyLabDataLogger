@@ -221,7 +221,7 @@ class pyvisaDevice(device):
             self.params['Vertical Range'] = self.scope_channel_params("RANG")
         
             # Get some waveform parameters
-            for n in range(self.params['n_channels']):
+            for n in range(1,self.params['n_channels']+1):
                 self.instrumentWrite(":WAV:SOUR %1i" % n)
                 time.sleep(0.01)
                 self.params['Ch%i Waveform Parameters' % n] = self.instrumentQuery(":WAV:PRE?").split(',')
