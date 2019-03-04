@@ -70,6 +70,8 @@ b=(
 
 import struct, binascii, sys
 
+"""
+# Put gaps where the data changes
 idx = [i for i in xrange(len(a[1])) if a[1][i] != a[0][i]]
 idx.insert(0,0)
 for n in range(len(a)):
@@ -77,11 +79,17 @@ for n in range(len(a)):
         sys.stdout.write( a[n][idx[i]:idx[i+1]] )
         sys.stdout.write( ' ' )
     print ""
-exit()
+"""
 
-for x in a:
-    #y=binascii.hexlify(x)
-    print  binascii.hexlify(x)#.replace('03',' ' )
-
-    #z = struct.unpack('<32q4b',y)
-    #print z
+for a_ in b:
+    r=binascii.hexlify(a_)
+    
+    n=0
+    for i in range(0,len(r)-6,6):
+        d=struct.unpack('>6c',r[i:i+6])
+        sys.stdout.write( ''.join(d) )
+        sys.stdout.write(', ')
+        n+=1
+    
+    print "n=%i\n" % n
+    #print "{0:b}".format(r)
