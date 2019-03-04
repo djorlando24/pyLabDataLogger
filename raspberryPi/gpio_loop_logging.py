@@ -37,7 +37,7 @@ verbose=True
 # GPIO pins and timings for the control/triggering loop.
 PL1  = 0.1 # solenoid pulse length
 DT0  = 0.5 # delay from TTL out1 to solenoid rising edge
-DT1  = 2.0 # delay from solenoid rising edge to TTL out2
+DT1  = 4.5 # delay from solenoid rising edge to TTL out2
 
 trigger_pin   = 16
 output_pins   = [25    , 12   , 13   , 22      , 21      ]
