@@ -37,6 +37,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 - NI-VISA over Ethernet devices that use SCPI command set
     - Rigol DG1000Z series delay generators
     - Rigol DS1000Z series oscilloscopes
+    - Agilent 33220A waveform generator
 
 - Microcontrollers using FTDI or CP2102 serial over USB chips
        that push strings with format "VARNAME=VALUE, VARNAME=..."
@@ -70,9 +71,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 ## Soon to be supported hardware
 
 - Fluke thermometers with USB interface.
-
-- VISA over Ethernet support for Agilent 33220A
-
+- ExTech dataloggers via RS-232
 - more I2C bus devices (ie time of flight sensors)
 - PicoScope headless oscilloscopes
 - NI-VISA over USB devices, such as
