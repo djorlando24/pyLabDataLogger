@@ -27,69 +27,58 @@
 # - difference 
 
 """
-    sample with thermocouple streaming, temp=33.0/32.1degC
+    sample with thermocouple live streaming, IR=29.0, TC=27.2 degC, e=1.00
 """
 a=(
-'0x823035002074a604034220c82c05429304b8586b549ed60805ffff7f3f203c19060042307ca0fd410730e0ef1942207008b904422010fdd80940000001000000',\
-'0x823035002042a504034220cc2c0542b704b5966b549ed60805ffff7f3f20de26060042307ca0fd410730e0ef1942206a08b604422010fdd80940000001000000',\
-'0x8230350020e4a004034220a22c0542ae0481d36b549ed60805ffff7f3f20a02d060042307ca0fd410730e0ef1942202008b404422010fdd80940000001000000',\
-'0x8230350020249c04034220b42c0542d2047e116c549ed60805ffff7f3f20b83b060042307ca0fd410730e0ef1942207808b104422010fdd80940000001000000',\
-'0x8230350020143a04034220c82c0542c9044a4e6c549ed60805ffff7f3f20b241060042307ca0fd410730e0ef1942200008a404422010fdd80940000001000000',\
-'0x82303500205e3804034220e02c0542c004168b6c549ed60805ffff7f3f20ea39060042307ca0fd410730e0ef194220a8089704422010fdd80940000001000000',\
-'0x8230350020f037040342200c2d0542e40413c96c549ed60805ffff7f3f20f838060042307ca0fd410730e0ef19422056088904422010fdd80940000001000000',\
-'0x8230350020a23804034220242d0542db04df056d549ed60805ffff7f3f20a03c060042307ca0fd410730e0ef19422020088004422010fdd80940000001000000',\
-'0x8230350020a03804034220222d0542ff04dc436d549ed60805ffff7f3f20dc39060042307ca0fd410730e0ef194220ac087704422010fdd80940000001000000',\
-'0x8230350020783d04034220282d0542f604a8806d549ed60805ffff7f3f201a32060042307ca0fd410730e0ef194220b8087004422010fdd80940000001000000',\
-'0x8230350020263e040342203e2d05421a04a6be6d549ed60805ffff7f3f20d82f060042307ca0fd410730e0ef194220de086a04422010fdd80940000001000000',\
-'0x8230350020463c040342202c2d0542110472fb6d549ed60805ffff7f3f208032060042307ca0fd410730e0ef194220a4086304422010fdd80940000001000000',\
-'0x8230350020803f04034220642d054235046f396e549ed60805ffff7f3f20fa2d060042307ca0fd410730e0ef1942202c085f04422010fdd80940000001000000',\
-'0x82303500200c3d04034220582d05422c043b766e549ed60805ffff7f3f209222060042307ca0fd410730e0ef1942208e085b04422010fdd80940000001000000')
+'\x8205\x00 \xac3\xe8\x03A  \xec\xdeA@\x04{]Ri\xa1\xd6\x08\x05\xff\xff\x7f? \xc0\x8a\x06\xd9A0p\xf5\xd9A\x070\xb6\x9e\x18B \x1c\x08\xc6\xecA \xf8\x8f.\tA\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 @4\xe8\x03A \xb0\xec\xdeA7\x04G\x9aRi\xa1\xd6\x08\x05\xff\xff\x7f? \x0c\x8d\x06\xd9A0p\xf5\xd9A\x070\xb6\x9e\x18B L\x08?\xecA \xf8\x8f.\tA\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 \xe06\xe8\x03A \xfc\xec\xdeA[\x04D\xd8Ri\xa1\xd6\x08\x05\xff\xff\x7f? \xa8\xa4\x06\xd9A0p\xf5\xd9A\x070\xb6\x9e\x18B x\x08\xc8\xebA \xf8\x8f.\tA\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 (/\xe8\x03A p\xed\xdeAR\x04\x10\x15Si\xa1\xd6\x08\x05\xff\xff\x7f? \x84\xab\x06\xd9A0p\xf5\xd9A\x070\xb6\x9e\x18B |\x08^\xebA \xf8\x8f.\tA\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 ,.\xe8\x03A \xa4\xed\xdeAv\x04\rSSi\xa1\xd6\x08\x05\xff\xff\x7f? \x98\xa8\x06\xd9A0p\xf5\xd9A\x070\xb6\x9e\x18B \x80\x08\x00\xebA \xf8\x8f.\tA\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 \xe8*\xe8\x03A \xe0\xed\xdeAm\x04\xd9\x8fSi\xa1\xd6\x08\x05\xff\xff\x7f? `\xb0\x06\xd9A0p\xf5\xd9A\x070\xb6\x9e\x18B \xa8\x08\x93\xeaA \xf8\x8f.\tA\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 x-\xe8\x03A \x18\xee\xdeA\x91\x04\xd6\xcdSi\xa1\xd6\x08\x05\xff\xff\x7f? \x18\xb5\x06\xd9A0p\xf5\xd9A\x070\xb6\x9e\x18B \xb8\x08L\xeaA \xf8\x8f.\tA\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 \x00/\xe8\x03A x\xee\xdeA\x88\x04\xa2\nTi\xa1\xd6\x08\x05\xff\xff\x7f? \x10\xc3\x06\xd9A0p\xf5\xd9A\x070\xb6\x9e\x18B P\x08\x0e\xeaA \xf8\x8f.\tA\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 \xd0$\xe8\x03A \xcc\xee\xdeA\xac\x04\x9fHTi\xa1\xd6\x08\x05\xff\xff\x7f? \x04\xca\x06\xd9A0p\xf5\xd9A\x070\xb6\x9e\x18B \x8c\x08\xd6\xe9A \xf8\x8f.\tA\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 h\x19\xe8\x03A \x18\xef\xdeA\xa3\x04k\x85Ti\xa1\xd6\x08\x05\xff\xff\x7f? \x14\xd5\x06\xd9A0p\xf5\xd9A\x070\xb6\x9e\x18B x\x08\x94\xe9A \xf8\x8f.\tA\x00\x00\x01\x00\x00\x00')
 
 
 """
-    sample without thermocouple, hold value, 33.3degC all values
+    sample without thermocouple, hold value, Max 27.5, Curr 25.3, Min 24.0, e=1.00, degC, Hold on.
 """
 b=(
-'0x8230350020dc54050342209c3505425804d34490549ed60805ffff7f3f248b4b06844530aa52054207304a58054220f208540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c3505427c04d08290549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c35054273049cbf90549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c350542970499fd90549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c3505428e04653a91549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c350542b204627891549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c350542a9042eb591549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c350542cd042bf391549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c350542c404f72f92549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c350542e804f46d92549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c350542df04c0aa92549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c350542d6048ce792549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c350542fa04892593549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c3505421e04876393549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c350542150453a093549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000',\
-'0x8230350020dc54050342209c3505420c041fdd93549ed60805ffff7f3f248b4b06844530aa52054207304a58054220ee08540542200000b4093b000001000000')
+'\x8205\x00 T^\xca\x03A <\xb2\xdeAH\x040\x05*i\xa1\xd6\x08\x05\xff\xff\x7f?$\x8bK\x06\x84E0L\xee\xbfA\x0708\xa4\xdbA \xa0\x08\xbf\xccA `\xaf]\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 T^\xca\x03A <\xb2\xdeA?\x04\xfcA*i\xa1\xd6\x08\x05\xff\xff\x7f?$\x8bK\x06\x84E0L\xee\xbfA\x0708\xa4\xdbA h\x08y\xccA `\xaf]\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 T^\xca\x03A <\xb2\xdeAc\x04\xf9\x7f*i\xa1\xd6\x08\x05\xff\xff\x7f?$\x8bK\x06\x84E0L\xee\xbfA\x0708\xa4\xdbA 0\x08(\xccA `\xaf]\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 T^\xca\x03A <\xb2\xdeAZ\x04\xc5\xbc*i\xa1\xd6\x08\x05\xff\xff\x7f?$\x8bK\x06\x84E0L\xee\xbfA\x0708\xa4\xdbA l\x08\xf3\xcbA `\xaf]\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 T^\xca\x03A <\xb2\xdeA~\x04\xc2\xfa*i\xa1\xd6\x08\x05\xff\xff\x7f?$\x8bK\x06\x84E0L\xee\xbfA\x0708\xa4\xdbA \xbc\x08\xc4\xcbA `\xaf]\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 T^\xca\x03A <\xb2\xdeAu\x04\x8e7+i\xa1\xd6\x08\x05\xff\xff\x7f?$\x8bK\x06\x84E0L\xee\xbfA\x0708\xa4\xdbA l\x08\x9b\xcbA `\xaf]\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 T^\xca\x03A <\xb2\xdeA\x99\x04\x8bu+i\xa1\xd6\x08\x05\xff\xff\x7f?$\x8bK\x06\x84E0L\xee\xbfA\x0708\xa4\xdbA \xdc\x08v\xcbA `\xaf]\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 T^\xca\x03A <\xb2\xdeA\x90\x04W\xb2+i\xa1\xd6\x08\x05\xff\xff\x7f?$\x8bK\x06\x84E0L\xee\xbfA\x0708\xa4\xdbA \x98\x08L\xcbA `\xaf]\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 T^\xca\x03A <\xb2\xdeA\xb4\x04T\xf0+i\xa1\xd6\x08\x05\xff\xff\x7f?$\x8bK\x06\x84E0L\xee\xbfA\x0708\xa4\xdbA $\x081\xcbA `\xaf]\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00 T^\xca\x03A <\xb2\xdeA\xab\x04 -,i\xa1\xd6\x08\x05\xff\xff\x7f?$\x8bK\x06\x84E0L\xee\xbfA\x0708\xa4\xdbA \xd4\x08\x18\xcbA `\xaf]\t@\x00\x00\x01\x00\x00\x00',\
+'\x04T\xc0"i\xa1\xd6\x08\x05\xff\xff\x7f?!\x8bK\x06\x84E1|/\xe4A\x071hz\xf4A!8\x08s\xf4A!`W\x02\t@\x00\x00\x01\x00\x00\x00\x8205\x00 T^\xca\x03A <\xb2\xdeA\x05\x04)\xcd)i\xa1\xd6\x08\x05\xff\xff\x7f?$\x8bK\x06\x84E0L\xee\xbfA\x0708\xa4\xdbA \x00\x08\x0f\xcdA `\xaf]\t@\x00\x00\x01\x00\x00\x00')
 
+
+"""
+   sample without thermocouple, all readings --- & memory empty
+"""
+c=(
+'\x8205\x00!\x84w\xf4\x03A!\x88^\xc7A[\x04\xc6x\x12i\xa1\xd6\x08\x05\xff\xff\x7f?!\x8bK\x06\x84E1|/\xe4A\x071hz\xf4A!8\x08s\xf4A!`W\x02\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00!\x84w\xf4\x03A!\x88^\xc7AR\x04\x92\xb5\x12i\xa1\xd6\x08\x05\xff\xff\x7f?!\x8bK\x06\x84E1|/\xe4A\x071hz\xf4A!8\x08s\xf4A!`W\x02\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00!\x84w\xf4\x03A!\x88^\xc7Av\x04\x8f\xf3\x12i\xa1\xd6\x08\x05\xff\xff\x7f?!\x8bK\x06\x84E1|/\xe4A\x071hz\xf4A!8\x08s\xf4A!`W\x02\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00!\x84w\xf4\x03A!\x88^\xc7Am\x04[0\x13i\xa1\xd6\x08\x05\xff\xff\x7f?!\x8bK\x06\x84E1|/\xe4A\x071hz\xf4A!8\x08s\xf4A!`W\x02\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00!\x84w\xf4\x03A!\x88^\xc7A\x91\x04Xn\x13i\xa1\xd6\x08\x05\xff\xff\x7f?!\x8bK\x06\x84E1|/\xe4A\x071hz\xf4A!8\x08s\xf4A!`W\x02\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00!\x84w\xf4\x03A!\x88^\xc7A\x88\x04$\xab\x13i\xa1\xd6\x08\x05\xff\xff\x7f?!\x8bK\x06\x84E1|/\xe4A\x071hz\xf4A!8\x08s\xf4A!`W\x02\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00!\x84w\xf4\x03A!\x88^\xc7A\xac\x04!\xe9\x13i\xa1\xd6\x08\x05\xff\xff\x7f?!\x8bK\x06\x84E1|/\xe4A\x071hz\xf4A!8\x08s\xf4A!`W\x02\t@\x00\x00\x01\x00\x00\x00',\
+'\x8205\x00!\x84w\xf4\x03A!\x88^\xc7A\xa3\x04\xed%\x14i\xa1\xd6\x08\x05\xff\xff\x7f?!\x8bK\x06\x84E1|/\xe4A\x071hz\xf4A!8\x08s\xf4A!`W\x02\t@\x00\x00\x01\x00\x00\x00')
 
 import struct, binascii, sys
 
-"""
-# Put gaps where the data changes
-idx = [i for i in xrange(len(a[1])) if a[1][i] != a[0][i]]
-idx.insert(0,0)
-for n in range(len(a)):
-    for i in range(len(idx)-1):
-        sys.stdout.write( a[n][idx[i]:idx[i+1]] )
-        sys.stdout.write( ' ' )
-    print ""
-"""
-
-for a_ in b:
-    r=binascii.hexlify(a_)
+for x in b[:5]:
     
-    n=0
-    for i in range(0,len(r)-6,6):
-        d=struct.unpack('>6c',r[i:i+6])
-        sys.stdout.write( ''.join(d) )
-        sys.stdout.write(', ')
-        n+=1
-    
-    print "n=%i\n" % n
-    #print "{0:b}".format(r)
+    y=x.split(' ')
+    print repr(x)
+    print '\t',repr(y[1]),struct.unpack('>cchc',y[1])
+    print '\t',repr(y[2]),struct.unpack('<cc8Ic',y[2])
+    print '\t',repr(y[3]),struct.unpack('<Ic',y[3])
+    print '\t',repr(y[4]),struct.unpack('<11c',y[4])

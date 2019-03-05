@@ -135,8 +135,8 @@ while True:
 
 
     # Show the contents
-    print binascii.hexlify(s)
-    #print repr(s)
+    #print binascii.hexlify(s)
+    print repr(s)#.replace('\\x',' 0x')
     
     time.sleep(.1)
 
