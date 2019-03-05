@@ -90,7 +90,11 @@ class pyvisaDevice(device):
     # Establish connection to device (ie open serial port)
     def activate(self,quiet=False):
     
-        self.inst = self.rm.open_resource(self.params['resource'],timeout=30000)
+        try:
+            self.inst = self.rm.open_resource(self.params['resource'],timeout=30000)
+        except:
+            raise pyLabDataLoggerIOError("Could not connect to VISA resource %s" % self.params['resource'])
+        
         self.driverConnected=True
         
         # Make first query to get units, description, etc.
