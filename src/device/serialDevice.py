@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 05/03/2019
+    @date 06/03/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -371,6 +371,7 @@ class serialDevice(device):
             unit='?'
             unit=self.blockingSerialRequest('PU\r\n','\r')
             if unit is None: unit='?'
+            elif unit == 'N': unit = 'Net' # not Newtons!
             # Fixed settings.
             self.name = "OHAUS Valor 7000 Scale"
             self.config['channel_names']=['weight']
