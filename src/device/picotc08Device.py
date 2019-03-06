@@ -512,6 +512,7 @@ class usbtc08Device(device):
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
         if not 'deskew' in params.keys(): self.config['deskew']=True
+        if not 'MILLIAMP_SCALING_FACTOR' in params.keys(): self.params['MILLIAMP_SCALING_FACTOR'] = 2.366
         else: self.config['deskew']=self.params['deskew']
         if not 'mains' in params.keys(): self.config['mains']=50 #Hz
         else: self.config['mains']=self.params['mains']
@@ -666,6 +667,12 @@ class usbtc08Device(device):
         # Read values        
         self.dev.get_single()
      	self.lastValue=[ self.dev.channelbuffer[i] for i in range(0, self.params['n_channels']) ]
+      
+        # Apply scaling correction to raw values for mA channels.
+        for i in range(self.params['n_channels']):
+            if 'X' in self.params['channel_config'][i]:
+                self.lastValue[i] /= self.params['MILLIAMP_SCALING_FACTOR']
+        
         '''
         for i in self.dev.channel_config:
             if self.dev.channel_config.get(i) == ' ':
