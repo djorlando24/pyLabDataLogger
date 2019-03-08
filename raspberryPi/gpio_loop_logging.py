@@ -24,7 +24,7 @@
 
 import RPi.GPIO as GPIO
 from pyLabDataLogger.device import usbDevice, i2cDevice, pyvisaDevice
-import os,time,datetime
+import sys,os,time,datetime
 import h5py
 import numpy as np
 
@@ -53,8 +53,9 @@ busy_indicator_inv = 1   # is the busy indicator high or low while working
 special_args={'debugMode':False, 'init_tc08_config':['K','K','K','T','T','T','X','X'], 'quiet':True,\
              'init_tc08_chnames':['Cold Junction','K1','K2','K3','T4','T5','T6','420mA_P1','420mA_P2']}
 
-
-
+# Loop counter can be set from the command line, otherwise zero
+if len(sys.argv) < 2: loop_counter=0
+else: loop_counter=int(sys.argv[1])
 
 #####################################################################################################################
 # Detect USB devices for datalogging.
@@ -114,7 +115,6 @@ GPIO.output(busy_indicator_pin, busy_indicator_inv)
 print("Press CTRL+C to exit")
 try:
     t0=time.time()-debounce_delay
-    loop_counter=0
     if verbose:
         print('='*79)
         print("Loop counter = %i\nWaiting for trigger" % loop_counter)
