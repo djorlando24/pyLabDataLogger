@@ -78,6 +78,18 @@ with h5py.File(logfilename,'w') as F: # force new file.
         D.attrs[v]=eval(v)
     for a in ['output_pins','output_name','output_delays','output_plen','output_invert']:
         D.create_dataset(a,data=eval(a))
+    D.create_dataset('Loop counter',shape=(0,),maxshape=(1024,))
+
+# This will run when we want to add the current loop counter value
+def write_loop_counter(n):
+    with h5py.File(logfilename,'a') as F:
+        D=F['GPIO Timing Loop/Loop counter']
+        l=list(D.shape)
+        l[0] += 1
+        D.resize(l)
+        D[l[0]-1]=n
+    return
+
 
 #####################################################################################################################
 # GPIO timing loop setup:
@@ -148,6 +160,9 @@ try:
                     d.pprint(lead=' ') # Just one space indenting before the data
                     #print ''
                 
+            # Update the loop counter in the log file
+            write_loop_counter(loop_counter)
+            
             # Turn off the 'busy' indicator
             GPIO.output(busy_indicator_pin, busy_indicator_inv)
             
