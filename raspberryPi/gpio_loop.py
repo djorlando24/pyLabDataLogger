@@ -31,8 +31,8 @@ import numpy as np
 # TTL inputs = [5,6]
 # TTL outputs = [12,13]
 
-PL1 = 0.2 # solenoid pulse length
-DT  = 3.0 # delay from solenoid rising edge to TTL out2
+PL1 = 0.5 # solenoid pulse length
+DT  = 1.0 # delay from solenoid rising edge to TTL out2
 
 trigger_pin   = 16
 output_pins   = [25    , 12   , 13   , 22      , 21      ]
