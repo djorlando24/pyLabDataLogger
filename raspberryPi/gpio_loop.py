@@ -8,7 +8,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 20/10/2018
+    @date 08/03/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -31,8 +31,8 @@ import numpy as np
 # TTL inputs = [5,6]
 # TTL outputs = [12,13]
 
-PL1 = 0.5 # solenoid pulse length
-DT  = 1.5 # delay from solenoid rising edge to TTL out2
+PL1 = 0.2 # solenoid pulse length
+DT  = 3.0 # delay from solenoid rising edge to TTL out2
 
 trigger_pin   = 16
 output_pins   = [25    , 12   , 13   , 22      , 21      ]

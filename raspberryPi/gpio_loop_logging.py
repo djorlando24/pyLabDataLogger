@@ -11,7 +11,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 01/03/2019
+    @date 08/03/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -37,7 +37,7 @@ verbose=True
 # GPIO pins and timings for the control/triggering loop.
 PL1  = 0.1 # solenoid pulse length
 DT0  = 0.5 # delay from TTL out1 to solenoid rising edge
-DT1  = 4.5 # delay from solenoid rising edge to TTL out2
+DT1  = 2.5 # delay from solenoid rising edge to TTL out2
 
 trigger_pin   = 16
 output_pins   = [25    , 12   , 13   , 22      , 21      ]
@@ -65,7 +65,7 @@ devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
 i2CDevicesFound = i2cDevice.scan_for_devices()
 if len(i2CDevicesFound)>0: devices.extend(i2cDevice.load_i2c_devices(i2CDevicesFound, **special_args)) 
 
-# detect TCPIP VISA devides for datalogging.
+# detect TCPIP VISA devides for datalogging. (Delay Generator)
 devices.extend([pyvisaDevice.pyvisaDevice({'resource':'TCPIP0::192.168.0.123::INSTR','driver':'pyvisa/dg1000z'})])
 
 # Store the delay settings above into the logfile for posterity.
