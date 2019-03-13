@@ -88,10 +88,17 @@ class serialDevice(device):
             from serial.tools import list_ports
             for serialport in list_ports.comports(): # scan all serial ports the OS can see
 		
-                if len(serialport)>1: # if the returned device is a list, tuple or dictionary with >1 value in it
+                if isinstance(serialport,serial.tools.list_ports_common.ListPortInfo):
+                    # if serialport is a ListPortInfo object
+                    thevid = serialport.vid
+                    thepid = serialport.pid
+                    if thevid==self.params['vid'] and thepid==self.params['pid']:
+                        self.params['tty']=serialport.device
+                        self.port=serialport.device
+            
+                elif len(serialport)>1: # if the returned device is a list, tuple or dictionary
 
-		    # Some versions return a dictionary, some return a tuple with the VID:PID in the last string.
-
+		            # Some versions return a dictionary, some return a tuple with the VID:PID in the last string.
                     if 'VID:PID' in serialport[-1]: # tuple or list
                         thename = serialport[0]
                         # Sometimes serialport[-1] will contain "USB VID:PID=0x0000:0x0000" and
@@ -148,6 +155,9 @@ class serialDevice(device):
         elif self.subdriver=='tds220gpib':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=460800
             if not 'gpib-address' in self.params.keys(): self.params['gpib-address']=1 # default GPIB address is 1
+        elif self.subdriver=='sd700':
+            if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=True
+            if not 'timeout' in self.params.keys(): self.params['timeout']=5
         
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -216,6 +226,9 @@ class serialDevice(device):
                 # No settings can be modified at present. In future we could allow changing of
                 # set points.
                 pass
+            elif subdriver=='sd700':
+                # No settings can be modified.
+                pass
             elif subdriver=='tc08rs232':
                 raise RuntimeError("Need to implement selection of thermocouple types! Contact the developer.")
             else:
@@ -255,10 +268,11 @@ class serialDevice(device):
         try:
             s=''
             response=None
-            if not self.quiet:
-                sys.stdout.write('\t'+self.port+':'+repr(request)+'\t')
-                sys.stdout.flush()
-            self.Serial.write(request)
+            if len(request)>0:
+                if not self.quiet:
+                    sys.stdout.write('\t'+self.port+':'+repr(request)+'\t')
+                    sys.stdout.flush()
+                self.Serial.write(request)
             t_=time.time()
             time.sleep(sleeptime)
             while len(s)<maxlen:
@@ -282,7 +296,7 @@ class serialDevice(device):
     def blockingRawSerialRequest(self,request,terminationChar='\r',maxlen=1024,min_response_length=0,sleeptime=0.01):
         try:
             #print repr(request) # debugging
-            self.Serial.write(request)
+            if len(request)>0: self.Serial.write(request)
             t_=time.time()
             time.sleep(sleeptime)
             data=''
@@ -483,6 +497,22 @@ class serialDevice(device):
                 if self.params['version'][0] == 'V': break
                 time.sleep(.5)
             print '\tTC08 version =',self.params['version']
+            
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='sd700':
+            # 9600 8N1 XonXoff active
+            # Mode 2 switch selected
+            self.name = "Extech SD700 Barometric PTH Datalogger"
+            self.config['channel_names']=['humidity','temperature','pressure']
+            self.params['raw_units']=['%','degC','hPa'] # temp units will be determined when query runs
+            self.config['eng_units']=['%','degC','hPa']
+            self.config['scale']=[1.,1.,1.]
+            self.config['offset']=[0.,0.,0.]
+            self.params['n_channels']=3
+            self.serialQuery=['','',''] # The device streams data regardless of TX signal.
+            self.queryTerminator=''
+            self.responseTerminator='\r'
+            self.params['min_response_length']=8 # bytes
         
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -715,6 +745,14 @@ class serialDevice(device):
                         
                         raise KeyError("I don't know how to decode this serial command")
 
+                return vals
+            # ----------------------------------------------------------------------------------------
+            if subdriver=='sd700':
+                vals = []
+                for i in range(len(rawData)):
+                    strdata= struct.unpack('15c',rawData[i])
+                    vals.append(float(''.join(strdata[-8:]))*0.1)
+                    print repr(''.join(strdata[:9])) # this bit probably indicates -ve sign, units, etc.
                 return vals
 
             else:

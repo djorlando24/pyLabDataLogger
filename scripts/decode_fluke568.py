@@ -82,7 +82,7 @@ for x in l:
     #print y[0]
     #print '\t',repr(y[1]), struct.unpack('<fc',y[1])
     if len(y[2])>0:
-        n= (len(y[2])-2)/4
-        print '\t',struct.unpack(('<cc%i' % n) + 'f',y[2])
+        n= (len(y[2])-2)/2
+        print '\t',struct.unpack(('<cc%i' % n) + 'h',y[2])
     #print '\t',repr(y[3]),struct.unpack('<Ic',y[3])
     #print '\t',repr(y[4]),struct.unpack('<11c',y[4])

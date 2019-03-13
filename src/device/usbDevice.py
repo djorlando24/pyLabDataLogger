@@ -10,7 +10,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 15/01/2019
+    @date 12/03/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -55,6 +55,7 @@ usb_device_table = [
     # Serial-over-USB devices with fixed VID and PID
     {'vid':0x0416, 'pid':0x5011, 'driver':'tenmaserial/722710', 'name':'Tenma 72-2710 Power Supply'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-ir-usb', 'name':'Omega IR-USB', 'manufacturer':'Omega Engineering'},
+    {'vid':0x0403, 'pid':0x6001, 'driver':'serial/sd700', 'name':'Extech SD700 Pressure/Humidity/Temperature Datalogger'},
     {'vid':0x10c4, 'pid':0xea60, 'driver':'serial/center310', 'name':'CENTER 310 Humidity meter', 'manufacturer':'Silicon Labs'},
 
     # Microcontrollers using serial-over-USB

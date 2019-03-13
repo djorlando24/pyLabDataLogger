@@ -8,7 +8,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 28/02/2019
+    @date 13/03/2019
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -62,6 +62,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Omega iSeries temperature process controllers, via RS-485 or RS-232
     - CENTER 310 humidity meter
     - OHAUS digital lab scales via RS232-to-USB
+    - Extech SD700 Barometric pressure/humidity/temperature datalogger
 
 - Single board computer (Raspberry Pi, Beaglebone) I2C, SPI & GPIO
     - Adafruit ADS1x15 12-bit ADCs via I2C
@@ -71,7 +72,6 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 ## Soon to be supported hardware
 
 - Fluke thermometers with USB interface.
-- ExTech dataloggers via RS-232
 - more I2C bus devices (ie time of flight sensors)
 - PicoScope headless oscilloscopes
 - NI-VISA over USB devices, such as
