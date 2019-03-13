@@ -82,7 +82,8 @@ Device Descriptor:
 
 import usb.core
 import usb.util
-import sys, time, binascii, array
+import sys, time, binascii, array, struct
+
 
 # find device
 # Bus 003 Device 014: ID 0f7e:9002 Fluke Corp. 
@@ -115,10 +116,14 @@ print ''
 
 
 # Loop to read streaming data back
+reg=0
 while True:
 
     # Send control bytes
-    request = '\x81\x02\x05\x00\x00\x00\x00\x00'
+    request = '\x81\x02\x05\x00\x00\x00\xFF\xFF'
+    #request = '\x81\x02\x05\x00\x00\x00\x00\x00'
+    
+    print repr(request)
     assert dev.ctrl_transfer(0x21,0x09,0x0200,0x0000,request)==len(request)
     #print "%i bytes sent: %s" % (len(request),repr(request))
 
@@ -127,17 +132,20 @@ while True:
         try:
             buf = array.array('B','')
             buf = dev.read(0x81, 64, timeout=100)
-            s+=buf.tostring()
+            s+=''.join(struct.unpack('%ic' % len(buf),buf)) #buf.tostring()
         except usb.core.USBError as e:
             break    
 
-    # Convert to byte string
+    i=0
+    for ss in s.split(' '):
+        print '\t',ss #repr(ss).replace('\\x',' 0x')
+        #if i==1:
+        #    print '\t',struct.unpack('<HHc',ss)
+        i+=1
 
-
-    # Show the contents
-    #print binascii.hexlify(s)
-    print repr(s)#.replace('\\x',' 0x')
+    print 
     
+    reg+=1
     time.sleep(.1)
 
 """
