@@ -87,8 +87,14 @@ class serialDevice(device):
             
             from serial.tools import list_ports
             for serialport in list_ports.comports(): # scan all serial ports the OS can see
-		
-                if isinstance(serialport,serial.tools.list_ports_common.ListPortInfo):
+
+                # Not all versions of pyserial have the list_ports_common module!		
+                if 'list_ports_common' in dir(serial.tools):
+                    objtype=serial.tools.list_ports_common.ListPortInfo
+                else:
+                    objtype=None
+
+                if objtype is not None and isinstance(serialport,objtype):
                     # if serialport is a ListPortInfo object
                     thevid = serialport.vid
                     thepid = serialport.pid
