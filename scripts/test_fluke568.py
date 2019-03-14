@@ -8,7 +8,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 01/03/2019
+    @date 14/03/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -120,8 +120,7 @@ reg=0
 while True:
 
     # Send control bytes
-    request = '\x81\x02\x05\x00\x00\x00\xFF\xFF'
-    #request = '\x81\x02\x05\x00\x00\x00\x00\x00'
+    request = '\x81\x02\x05\x00\x00\x00\x00\x00'
     
     print repr(request)
     assert dev.ctrl_transfer(0x21,0x09,0x0200,0x0000,request)==len(request)
@@ -138,9 +137,13 @@ while True:
 
     i=0
     for ss in s.split(' '):
-        print '\t',ss #repr(ss).replace('\\x',' 0x')
-        #if i==1:
-        #    print '\t',struct.unpack('<HHc',ss)
+        print ' (%i)'%len(ss),'\t',repr(ss).replace('\\x','')
+        if len(ss)==35:
+            #for n in range(len(ss)-4):
+            #    print n,'\t',struct.unpack('<l',ss[n:n+4])
+            #exit()
+            print '\t',struct.unpack('<f',ss[25:25+4])
+            #print '\t',struct.unpack('<8f',ss[25-6*4:25+2*4])
         i+=1
 
     print 
