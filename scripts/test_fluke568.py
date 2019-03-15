@@ -83,7 +83,7 @@ Device Descriptor:
 import usb.core
 import usb.util
 import sys, time, binascii, array, struct
-
+import numpy as np
 
 # find device
 # Bus 003 Device 014: ID 0f7e:9002 Fluke Corp. 
@@ -116,53 +116,60 @@ print ''
 
 
 # Loop to read streaming data back
-reg=0
+meas_prev=0; meas_num=0
 while True:
 
     # Send control bytes
     request = '\x81\x02\x05\x00\x00\x00\x00\x00'
     
-    print repr(request)
     assert dev.ctrl_transfer(0x21,0x09,0x0200,0x0000,request)==len(request)
-    #print "%i bytes sent: %s" % (len(request),repr(request))
+    print "%i bytes sent: %s" % (len(request),repr(request))
 
     s=''
-    while True:
+    while len(s)<64:
         try:
             buf = array.array('B','')
             buf = dev.read(0x81, 64, timeout=100)
             s+=''.join(struct.unpack('%ic' % len(buf),buf)) #buf.tostring()
         except usb.core.USBError as e:
-            break    
+            break
+    
+    #print repr(s).replace('\\x','')
 
-    i=0
-    for ss in s.split(' '):
-        print ' (%i)'%len(ss),'\t',repr(ss).replace('\\x','')
-        if len(ss)==35:
-            #for n in range(len(ss)-4):
-            #    print n,'\t',struct.unpack('<l',ss[n:n+4])
-            #exit()
-            print '\t',struct.unpack('<f',ss[25:25+4])
-            #print '\t',struct.unpack('<8f',ss[25-6*4:25+2*4])
-        i+=1
+    
+    if len(s)>=64:
+        # Extraction of values. Little endian floats are buried inside the byte string. We'll ignore the checksum for now.
+        dvid = repr(s[:3]).replace('\\x','')
+        emis = struct.unpack('<f',s[25:25+4])[0]
+        tmin = struct.unpack('<f',s[36:36+4])[0]
+        tcur = struct.unpack('<f',s[48:48+4])[0]
+        tmax = struct.unpack('<f',s[42:42+4])[0]
+        delt = struct.unpack('<f',s[54:54+4])[0]
+        meas_id = struct.unpack('<L',s[6:6+4])[0]
+        if s[29]==' ': ttrm = struct.unpack('<f',s[31:31+4])[0]
+        else: ttrm=np.nan
+        flags = struct.unpack('8B',s[56:64])
+        if flags[4] == 1: units = 'degC'
+        elif flags[4] == 2: units = 'degF'
+        else: units = '?'
+        if (emis<0.) | (emis>1.): emis=np.nan
+        if (tmin<-999) | (tmin>999): tmin=np.nan
+        if (tmax<-999) | (tmax>999): tmin=np.nan
+        if (tcur<-999) | (tcur>999): tmin=np.nan
+        print "%i) Dev=%s Tmin = %f, Tcur = %f, Tmax = %f, e = %f, DeltaT = %f, thermocouple = %f, units = %s" % (meas_id,dvid,tmin,tcur,tmax,emis,delt,ttrm,units)
+        
+        '''
+        # Debugging
+        for n in range(len(s)-3):     # Find floats
+            v=struct.unpack('<f',s[n:n+4])[0]
+            if (v>0.01) & (v<500):
+                print n,'\t',v 
+        exit()
+        '''
+        
+    #print repr(s)
 
+    
     print 
     
-    reg+=1
-    time.sleep(.1)
-
-"""
-# get an endpoint instance
-cfg = dev.get_active_configuration()
-intf = cfg[(0,0)]
-
-ep = usb.util.find_descriptor(
-        intf,
-        # match the first OUT endpoint
-        custom_match = \
-        lambda e: \
-            usb.util.endpoint_direction(e.bEndpointAddress) == \
-            usb.util.ENDPOINT_OUT)
-
-assert ep is not None
-"""
+    #time.sleep(.1)
