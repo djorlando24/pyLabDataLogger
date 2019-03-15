@@ -37,8 +37,6 @@ Those which require legacy versions or are hard to find have been stored in the 
 - For *Thorlabs translation stages*, pyAPT for Linux:
   Use the python2 modified version in thirdParty directory, or download from https://gitlab.com/weinshec/pyAPT.git
 
-- *Center 310* hygrometer support is built-in, there are some test utilities in thirdParty/C310
-
 ### External python modules you must install yourself
 
 - numpy (usually comes bundled with Python)
@@ -60,6 +58,9 @@ Those which require legacy versions or are hard to find have been stored in the 
 
 - For ALSA audio devices, pyalsaaudio
   https://github.com/larsimmisch/pyalsaaudio.git
+
+- For Video4Linux support, v4l2capture module
+  https://pypi.org/project/v4l2capture/
 
 - For Picoscope devices, picopython
   https://github.com/colinoflynn/pico-python.git
@@ -87,6 +88,8 @@ pyLabDataLogger also requires the following external software:
       need for root (see https://sigrok.org/wiki/Fx2lafw)
 
 - for audio devices, ALSA and asound2lib (with asound2lib-dev sources)
+
+- For Video4Linux devices, the v4l2 kernel modules must be installed. These tend to come by default, but can be installed with the system package manager.
     
 - For Pico devices, the open source Pico libraries need to be installed.
   These are available from an apt repository for easy installation on Ubuntu.
@@ -105,6 +108,8 @@ pyLabDataLogger also requires the following external software:
   SUBSYSTEMS=="usb", ACTION=="add", ATTRS{idVendor}=="0957", ATTRS{idProduct}=="1755", GROUP="usbtmc", MODE="0660"
   Then save the file, and as root run: udevadm control --reload-rules && udevadm trigger
   You will also need to add yourself to the group usbtmc: sudo groupadd usbtmc && sudo usermod -a -G usbtmc userName
+
+- *Center 310* hygrometer support is built-in, there are some test utilities in thirdParty/C310
 
 ## Install procedure
 
