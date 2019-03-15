@@ -7,7 +7,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 20/10/2018
+    @date 16/03/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -28,9 +28,9 @@ if __name__ == '__main__':
     # kwargs to customise setup of devices
     special_args={'debugMode':True, 'init_tc08_config':['K','K','K','T','T','T','X','X'], 'quiet':False, 'init_tc08_chnames':['Cold Junction','K1','K2','K3','T4','T5','T6','420mA_P1','420mA_P2']}
 
-    devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
+    if len(usbDevicesFound) == 0: exit()
 
-    if len(devices) == 0: exit()
+    devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
    
     try:
         while True:

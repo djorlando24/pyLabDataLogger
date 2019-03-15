@@ -21,11 +21,12 @@
     over a range of communication protocols and logs them to a local file.
     Supported interfaces include:
     - USB via sigrok - i.e. many multimeters, logic analyzers and oscilloscopes
-        - USB serial ports (i.e. Arduino via FTDI, RS-232 and RS-485 to serial adapters)
-        - USB via other proprietary drivers
-        - SPI bus devices
-        - I2C bus devices
-        - GPIO ports
+    - USB serial ports (i.e. Arduino via FTDI, RS-232 and RS-485 to serial adapters)
+    - USB devices via other proprietary drivers
+    - NI-VISA ethernet devices
+    - SPI bus devices
+    - I2C bus devices
+    - GPIO ports
 
     See README.md for further information
 """
