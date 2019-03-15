@@ -10,7 +10,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 12/03/2019
+    @date 15/03/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -39,8 +39,12 @@ usb_device_table = [
     {'vid':0x3923, 'pid':0x7269, 'driver':'visa/ni6212', 'name':'National Instruments USB-6212 BNC'},
     {'vid':0x1313, 'pid':0x807b, 'driver':'visa/pm16', 'name':'Thorlabs PM16 USB power meter'},
                  
-    # Specialty drivers with fixed VID and PID
+    # Video and audio streaming devices    
     {'vid':0x1b3f, 'pid':0x2008, 'driver':'alsa', 'name':'USB sound card'},
+    {'vid':0x1b80, 'pid':0xe302, 'driver':'alsa', 'name':'Video capture card (audio stream)'},
+    {'vid':0x1b80, 'pid':0xe302, 'driver':'v4l2', 'name':'Video capture card (video stream)'},
+
+    # Specialty drivers with fixed VID and PID
     {'vid':0x09db, 'pid':0x0112, 'driver':'mcc-libusb/mccusb1608G', 'name':'MCC USB-1608GX-2AO ADC'},
     {'vid':0x1313, 'pid':0x807b, 'driver':'thorlabs/pm120', 'name':'Thorlabs PM120'},
     {'vid':0x0ce9, 'pid':0x1000, 'driver':'picotc08/usbtc08', 'name':'Picolog USB TC-08 thermocouple datalogger'},
@@ -149,10 +153,11 @@ def search_for_usb_devices(debugMode=False):
             if checkEqualIvo([ d['driver'] for d in found_devices ]):
                 found_devices = [found_devices[nattrs.index(max(nattrs))]]
 
-        if len(found_devices) == 0: table_entry = None
-        elif len(found_devices) == 1: table_entry = found_devices[0]
+        if len(found_devices) == 0: table_entry = None                  # Found nothing
+        elif len(found_devices) == 1: table_entry = found_devices[0]    # Found one device
+        elif (len(found_devices) == 2) & ('v4l2' in [d['driver'] for d in found_devices]): table_entry = found_devices # Video and audio capture type device with two drivers
         else:
-            # Multiple possible matches (generic/common USB adapter)
+            # Handle multiple possible matches (generic/common USB adapter)
             print '\nGeneric USB adapter found at %i.%i. Please choose which hardware you have on this adapter:' % (dev.bus, dev.address)
             print "0) None (don't use this device)"
             n=1; choose_n=-1
@@ -167,17 +172,20 @@ def search_for_usb_devices(debugMode=False):
                 if choose_n == 0: table_entry = None
                 if choose_n <= len(found_devices): table_entry = found_devices[choose_n-1]
             
-        # If matching device found, add to found_entries list
-        if table_entry is not None:
+        # If matching device(s) found, add to found_entries list
+
+        if isinstance(table_entry, list):
+            for n in range(len(table_entry)):
+                table_entry[n]['manufacturer']=manufacturer
+                table_entry[n]['serial_number']=dev._serial_number
+                print '- found %s, driver=%s' % (table_entry[n]['name'],table_entry[n]['driver'])
+            found_entries.extend(table_entry)
+        elif table_entry is not None:
             table_entry['manufacturer']=manufacturer
             table_entry['serial_number']=dev._serial_number
             print '- found %s, driver=%s' % (table_entry['name'],table_entry['driver'])
-            '''
-            if debugMode: 
-                for k in dir(dev):
-                     if not '__' in k: print '--- ',k, get_property(dev,k)
-            '''
             found_entries.append(table_entry)
+        
 
     print 'Detected %i devices.\n' % len(found_entries)
     return found_entries
@@ -217,12 +225,18 @@ def load_usb_devices(devs=None,**kwargs):
         elif driverClass == 'alsa':
             from pyLabDataLogger.device import alsaDevice
             device_list.append(alsaDevice.alsaDevice(params=d,**kwargs))
+        elif driverClass == 'v4l2':
+            from pyLabDataLogger.device import v4l2Device
+            device_list.append(v4l2Device.v4l2Device(params=d,**kwargs))
         elif driverClass == 'usbtmc':
             from pyLabDataLogger.device import usbtmcDevice
             device_list.append(usbtmcDevice.usbtmcDevice(params=d,**kwargs))
         elif driverClass == 'mcc-libusb':
             from pyLabDataLogger.device import mcclibusbDevice
             device_list.append(mcclibusbDevice.mcclibusbDevice(params=d,**kwargs))
+        elif driverClass == 'fluke':
+            from pyLabDataLogger.device import flukeusbDevice
+            device_list.append(flukeusbDevice.flukeusbDevice(params=d,**kwargs))
         
         else:
             print "\tI don't know what to do with this device"
