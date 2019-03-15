@@ -86,7 +86,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
   drivers. See INSTALL notes.
 
 - Support for Tenma thermometers and multimeters via sigrok's UNI-T drivers
-  using the UNI-T D04 USB to serial cables with the WCH.CN ships can require
+  using the UNI-T D04 USB to serial cables with the WCH.CN chips can require
   a bus reset on Linux before they'll work. To get around this
   you can run scripts/reset-WCH.CN.sh. These devices also have generic USB-to
   -serial adapters than can easily be confused. It may be necessary to specify
