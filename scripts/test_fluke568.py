@@ -121,7 +121,6 @@ while True:
 
     # Send control bytes
     request = '\x81\x02\x05\x00\x00\x00\x00\x00'
-    
     assert dev.ctrl_transfer(0x21,0x09,0x0200,0x0000,request)==len(request)
     print "%i bytes sent: %s" % (len(request),repr(request))
 
