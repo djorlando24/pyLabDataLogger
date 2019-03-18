@@ -148,11 +148,18 @@ class device:
         # Vectors (i.e. timeseries data) with units added to the end where present. ####################################
         else:
             for n in range(self.params['n_channels']):
-                if ~show_scaled: print lead+u'%i: %s = %s %s' % (n,self.config['channel_names'][n],\
-                                    self.lastValue[n],self.params['raw_units'][n].decode('utf-8'))
-                else: print lead+u'%i: %s = %s %s \t %s %s' % (n,self.config['channel_names'][n],self.lastValue[n],\
-                        self.params['raw_units'][n].decode('utf-8'),\
-                        self.lastScaled[n],self.config['eng_units'][n].decode('utf-8'))
+                if len(self.lastValue[n].shape) == 1:
+                    if ~show_scaled: print lead+u'%i: %s = %s %s' % (n,self.config['channel_names'][n],\
+                                        self.lastValue[n],self.params['raw_units'][n].decode('utf-8'))
+                    else: print lead+u'%i: %s = %s %s \t %s %s' % (n,self.config['channel_names'][n],self.lastValue[n],\
+                            self.params['raw_units'][n].decode('utf-8'),\
+                            self.lastScaled[n],self.config['eng_units'][n].decode('utf-8'))
+                else:
+                    if ~show_scaled: print lead+u'%i: %s = <array of size %s> %s' % (n,self.config['channel_names'][n],\
+                                        self.lastValue[n].shape,self.params['raw_units'][n].decode('utf-8'))
+                    else: print lead+u'%i: %s = <array of size %s> %s \t <array of size %s> %s' % (n,self.config['channel_names'][n],self.lastValue[n].shape,\
+                            self.params['raw_units'][n].decode('utf-8'),\
+                            self.lastScaled[n].shape,self.config['eng_units'][n].decode('utf-8'))
                     
         return
 

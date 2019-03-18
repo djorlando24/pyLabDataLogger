@@ -88,7 +88,7 @@ class alsaDevice(device):
             elif len(cards)==1:
                 print "\tFound 1 USB ALSA card: [card %02i] %s" % cards[0]
                 self.alsacard = cards[0][0]
-                self.name = cards[0][1]
+                self.name = "ALSA Audio device "+cards[0][1]
             elif len(cards)>1:
                 print "\tFound multiple ALSA cards:"
                 for c in cards: print "\t\t[card %02i] %s" % c

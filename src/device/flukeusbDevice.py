@@ -18,7 +18,7 @@
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
-import datetime, time, struct
+import datetime, time, struct, array
 
 try:
     import usb.core
@@ -42,7 +42,7 @@ class flukeusbDevice(device):
         self.lastValueTimestamp = None # Time when last value was obtained
         
         self.driver = self.params['driver'].split('/')[1:]
-        self.subdriver = driver[0].lower()
+        self.subdriver = self.driver[0].lower()
         
         if params is not {}: self.scan(quiet=quiet)
         
@@ -148,8 +148,8 @@ class flukeusbDevice(device):
             self.config['channel_names']=['IR Temp','IR min','IR max','IR delta','thermocouple','emissivity','measurementNumber']
             self.params['raw_units']=['C','C','C','C','C','','']
             self.config['eng_units']=['C','C','C','C','C','','']
-            self.config['scale']=[1.,1.,1.,1.,1.]
-            self.config['offset']=[0.,0.,0.,0.,0.]
+            self.config['scale']=[1.]*len(self.config['channel_names'])
+            self.config['offset']=[0.]*len(self.config['channel_names'])
             self.params['n_channels']=len(self.config['channel_names'])
             self.params['device ID']=''
             self.params['units code']=1
@@ -170,7 +170,7 @@ class flukeusbDevice(device):
             while len(s)<64:
                 try:
                     buf = array.array('B','')
-                    buf = dev.read(0x81, 64, timeout=100)
+                    buf = self.dev.read(0x81, 64, timeout=100)
                     s+=''.join(struct.unpack('%ic' % len(buf),buf)) #buf.tostring()
                 except usb.core.USBError as e:
                     break
@@ -229,10 +229,10 @@ class flukeusbDevice(device):
 
         # Check
         try:
-            assert(self.deviceClass)
-            if self.deviceClass is None: raise pyLabDataLoggerIOError
+            assert(self.dev)
+            if self.dev is None: raise pyLabDataLoggerIOError
         except:
-            print "Connection to the device is not open."
+            print "\tConnection to the device is not open."
 
         # If first time or reset, get configuration (ie units)
         if not 'raw_units' in self.params.keys() or reset:

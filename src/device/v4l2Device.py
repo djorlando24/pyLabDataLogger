@@ -53,11 +53,18 @@ class v4l2Device(device):
         if override_params is not None: self.params = override_params
         
         # accept params['dev']='/dev/video0' for example
-        if 'dev' in params: self.dev = params['dev']
-        else:
+        if not 'dev' in self.params: 
             # Find /dev/video0 or similar relating to a USB device
+            # get height, width, etc. if defined by driver.
+            self.params['dev'] = '/dev/video0'
             pass
     
+        try:
+            self.dev = self.params['dev']
+            print "\tV4L2 device: %s" % self.dev
+        except KeyError:
+            print "No v4l2 device found."
+            return
         if self.dev is not None: self.activate(quiet=quiet)
         return
 
@@ -74,17 +81,17 @@ class v4l2Device(device):
         else: self.config['n_frames'] = 1
         
         if not quiet:
-            print "Request %i x %i, fourcc = %s, capture %i frames" % (self.params['width'],self.params['height'],\
-                        self.params['fourcc'],self.params['n_frames'])
+            print "\tRequest %i x %i, fourcc = %s, capture %i frames" % (self.config['width'],self.config['height'],\
+                        self.config['fourcc'],self.config['n_frames'])
         
-        if 'uninitialized' in self.name:
+        if 'uninitialized' in self.name:    
             self.name = '%s v4l2 stream' % self.dev
         
         try:
             self.vd = v4l2capture.Video_device(self.dev)
-            size_x, size_y = video.set_format(self.config['width'], self.config['height'], self.config['fourcc'])
+            size_x, size_y = self.vd.set_format(self.config['width'], self.config['height'])#, self.config['fourcc'])
             if not quiet: print "\tv4l2 device chose {0}x{1} res".format(size_x, size_y)
-            self.vd.create_buffers(self.params['n_frames'])
+            self.vd.create_buffers(self.config['n_frames'])
             self.vd.queue_all_buffers()
             self.driverConnected=True
         except:
@@ -151,21 +158,28 @@ class v4l2Device(device):
 
         # First-time configuration
         if not 'raw_units' in self.params.keys() or reset:
-            pass
-            
-            raise RuntimeError("Not yet implemented")
+            self.name = "V4l2 capture device" # Get name !!
+            self.config['channel_names']=['Image']
+            self.params['raw_units']=['Intensity']
+            self.config['eng_units']=['Intensity']
+            self.config['scale']=[1.]
+            self.config['offset']=[0.]
+            self.params['n_channels']=len(self.config['channel_names'])
 
         # Capture frames
         self.vd.start()
         select.select((self.vd,),(),())
-        image_data = self.vd.read_and_queue()
-        self.lastValue = [np.frombuffer(image_data, dtype=np.uint8)] # 8 bit colour
+        try:
+            self.image_data = self.vd.read_and_queue()
+        except:
+            pass
+        self.lastValue = [np.frombuffer(self.image_data, dtype=np.uint8).reshape(self.config['width'],self.config['height'],3)] # 8 bit colour
         self.vd.stop()
-        self.frame_counter += self.params['n_frames']
+        self.frame_counter += self.config['n_frames']
         
-        # Numeric values are empty
-        self.lastValue =
-        self.lastScaled = [np.nan]
+        
+        #self.lastValue = # image frame
+        #self.lastScaled = # scaled image frame
         self.updateTimestamp()
         return self.lastValue
     
