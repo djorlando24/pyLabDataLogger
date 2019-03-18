@@ -98,6 +98,9 @@ pyLabDataLogger also requires the following external software:
 - For Measurement Computing devices, mcclibusb
   see https://github.com/chrismerck/mcc-libusb.git
 
+- For Video4Linux2 capture devices, you will need the v4l kernel drivers (usually installed by default on most Linux distros).
+  To build python's v4l2capture you will need the v4l2 headers (apt-get install libv4l-dev for example)
+
 ## System configuration notes
 
 - You need to be able to write and read hardware serial ports. On linux, run:

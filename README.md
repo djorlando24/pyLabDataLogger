@@ -8,7 +8,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 15/03/2019
+    @date 18/03/2019
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -58,7 +58,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     
 - USB Devices using Linux kernel drivers (not supported on MacOS)
     - USB audio capture devices via ALSA
-    - Video4Linux capture interfaces 
+    - Video4Linux capture interfaces (i.e. video capture cards)
 
 - RS-232 Serial devices via Serial-to-USB adapters
     - Tenma 72-2710 USB programmable bench power supply

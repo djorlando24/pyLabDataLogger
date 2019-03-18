@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 15/03/2019
+    @date 18/03/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -19,6 +19,7 @@
 from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
+import h5py
 
 try:
     import v4l2capture, select
@@ -36,7 +37,6 @@ class v4l2Device(device):
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
         self.name = "uninitialized v4l2 stream"
-        self.dev = "/dev/video0" # default
         self.vd = None
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
@@ -55,10 +55,9 @@ class v4l2Device(device):
         # accept params['dev']='/dev/video0' for example
         if not 'dev' in self.params: 
             # Find /dev/video0 or similar relating to a USB device
-            # get height, width, etc. if defined by driver.
+            # v4l2-ctl --all | grep 'Bus info'  <   returns "	Bus info      : usb-0000:00:14.0-14" for example
+            # we have params['vid'], params['pid'] and can use usb.core to get the bus and address to see if a match in above.
             self.params['dev'] = '/dev/video0'
-            pass
-    
         try:
             self.dev = self.params['dev']
             print "\tV4L2 device: %s" % self.dev
@@ -80,6 +79,7 @@ class v4l2Device(device):
         if 'fourcc' in self.params: self.config['n_frames'] = self.params['n_frames']
         else: self.config['n_frames'] = 1
         
+        # choose input for multi input devices?
         if not quiet:
             print "\tRequest %i x %i, fourcc = %s, capture %i frames" % (self.config['width'],self.config['height'],\
                         self.config['fourcc'],self.config['n_frames'])
@@ -89,8 +89,10 @@ class v4l2Device(device):
         
         try:
             self.vd = v4l2capture.Video_device(self.dev)
-            size_x, size_y = self.vd.set_format(self.config['width'], self.config['height'])#, self.config['fourcc'])
+            size_x, size_y = self.vd.set_format(self.config['width'], self.config['height'])
             if not quiet: print "\tv4l2 device chose {0}x{1} res".format(size_x, size_y)
+            self.config['width']=size_x
+            self.config['height']=size_y
             self.vd.create_buffers(self.config['n_frames'])
             self.vd.queue_all_buffers()
             self.driverConnected=True
@@ -173,9 +175,11 @@ class v4l2Device(device):
             self.image_data = self.vd.read_and_queue()
         except:
             pass
-        self.lastValue = [np.frombuffer(self.image_data, dtype=np.uint8).reshape(self.config['width'],self.config['height'],3)] # 8 bit colour
+        self.lastValue = [np.frombuffer(self.image_data, dtype=np.uint8).reshape(self.config['height'],self.config['width'],3)] # 8 bit colour
         self.vd.stop()
-        self.frame_counter += self.config['n_frames']
+        
+        if reset: self.frame_counter=0
+        else: self.frame_counter += self.config['n_frames']
         
         
         #self.lastValue = # image frame
@@ -217,11 +221,11 @@ class v4l2Device(device):
             # Write images into dg...
             dset=dg.create_dataset('frame_%08i' % self.frame_counter, data=self.lastValue[0], dtype='uint8', chunks=True)
             #Set the image attributes
-            dset.attrs['CLASS'] = 'IMAGE'
-            dset.attrs['IMAGE_VERSION'] = '1.2'
-            dset.attrs['IMAGE_SUBCLASS'] = 'IMAGE_TRUECOLOR'
-            dset.attrs['INTERLACE_MODE'] = 'INTERLACE_PIXEL'
-            dset.attrs['IMAGE_COLORMODEL'] = 'RGB'
+            dset.attrs.create('CLASS', 'IMAGE')
+            dset.attrs.create('IMAGE_VERSION', '1.2')
+            dset.attrs.create('IMAGE_SUBCLASS', 'IMAGE_TRUECOLOR')
+            dset.attrs.create('INTERLACE_MODE', 'INTERLACE_PIXEL')
+            #dset.attrs['IMAGE_COLORMODEL'] = 'RGB'
             
             fh.close()
 
