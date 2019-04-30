@@ -46,3 +46,14 @@ The Extech brand USB to RS232 adapters are multifunction and some have a switch 
 # I2C Devices
 I2C devices that use Adafruit libraries rely on deprecated python libraries which have been copied into thirdParty in case
 the old repositories on Github go away. These devices have been tested on Raspberry pi, but should work on Beaglebones as well.
+
+# Can you add support for my device?
+I can't test and add support for hardware unless I actually have the equipment in my hands to test it, and the time to do so.
+However, you can add support for your own device and then make a merge request to the main branch later.
+- If your device is supported by sigrok, OpenCV or video4Linux it's as simple as adding the USB VID and PID to the table in src/device/usbDevice.py
+- If your device uses RS-232/RS-485, you can add it as a new subdriver to src/device/serialDevice.py following the examples already there.
+- If your device uses SCPI over USB, you can add it as a new subdriver to src/device/usbtmcDevice.py following the examples already there.
+- If your device uses VISA over Ethernet or USB, you can add it as a subdriver to src/device/visaDevice.py following the examples already there.
+- If your device is a variant of an already supported device (i.e. Thorlabs APT or PM-like) you may be able to add it to the USB table
+  in in src/device/usbDevice.py and then edit the specific driver class in src/device to add a subdriver that accepts it.
+- For all other cases you can copy src/device/genericDevice.py and use this as a template to add a new driver class (i.e. new low level driver required).

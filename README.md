@@ -85,6 +85,8 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 - NI-VISA devices, such as
     - NI USB DAQ boards ie 6212-series
     - NI PCI card DAQs
+- Firewire machine vision cameras (libdc1394)
+  https://damien.douxchamps.net/ieee1394/cameras/
 
 ## Notes
 - Most devices require additional python modules or third party open source
