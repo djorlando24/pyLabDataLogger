@@ -8,7 +8,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 18/03/2019
+    @date 30/04/2019
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -67,6 +67,8 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - CENTER 310 humidity meter
     - OHAUS digital lab scales via RS232-to-USB
     - Extech SD700 Barometric pressure/humidity/temperature datalogger
+    - Alicat Scientific M-series mass flow meters via RS232-to-USB dongle
+      (default baud rate 19200, default unit ID 'A')
 
 - Single board computer (Raspberry Pi, Beaglebone) I2C, SPI & GPIO
     - Adafruit ADS1x15 12-bit ADCs via I2C

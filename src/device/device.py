@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 28/02/2019
+    @date 30/04/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -142,7 +142,7 @@ class device:
             # Only show the scaled units if they exist.
             if show_scaled:
                 for n in range(self.params['n_channels']):
-                    sys.stdout.write(u'%f %s, ' % (self.lastScaled[n],self.params['eng_units'][n].decode('utf-8'))) 
+                    sys.stdout.write(u'%f %s, ' % (self.lastScaled[n],self.config['eng_units'][n].decode('utf-8'))) 
                 sys.stdout.write('\n')
     
         # Vectors (i.e. timeseries data) with units added to the end where present. ####################################

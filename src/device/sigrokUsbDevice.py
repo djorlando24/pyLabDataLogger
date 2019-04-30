@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 28/02/2019
+    @date 30/04/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -385,9 +385,9 @@ class srdevice(device):
 
             # Check existence of eng_units
             if not 'eng_units' in self.config:
-                self.params['eng_units'] = self.params['raw_units']
-            if len(self.params['eng_units']) != len(self.params['raw_units']):
-                self.params['eng_units'] = self.params['raw_units']
+                self.config['eng_units'] = self.params['raw_units']
+            if len(self.config['eng_units']) != len(self.params['raw_units']):
+                self.config['eng_units'] = self.params['raw_units']
 
             # Put in NaN if buffer under-full or empty
             if len(delimited_buffer[0]) == 0:

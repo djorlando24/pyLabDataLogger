@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 06/03/2019
+    @date 30/04/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -164,6 +164,9 @@ class serialDevice(device):
         elif self.subdriver=='sd700':
             if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=True
             if not 'timeout' in self.params.keys(): self.params['timeout']=5
+        elif self.subdriver=='alicat':
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=19600
+            if not 'ID' in self.params.keys(): self.params['ID']='A' # default unit ID is 'A'
         
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -234,6 +237,10 @@ class serialDevice(device):
                 pass
             elif subdriver=='sd700':
                 # No settings can be modified.
+                pass
+            elif subdriver=='alicat':
+                # No settings can be modified at present. In future we could set units and gas type
+                # from software.
                 pass
             elif subdriver=='tc08rs232':
                 raise RuntimeError("Need to implement selection of thermocouple types! Contact the developer.")
@@ -519,7 +526,50 @@ class serialDevice(device):
             self.queryTerminator=''
             self.responseTerminator='\r'
             self.params['min_response_length']=8 # bytes
-        
+
+
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='alicat':
+            self.name = "Alicat Scientific M-series mass flow meter" # update w/model number later
+            self.params['n_channels']=5
+            self.config['channel_names']=['','','','',''] # will be obtained by query below
+            self.params['raw_units']=['','','','',''] # will be obtained by query below
+            self.config['eng_units']=['','','','',''] # will be obtained by query below
+            self.config['scale']=[1.,1.,1.,1.,np.nan]
+            self.config['offset']=[0.,0.,0.,0.,np.nan]
+            if not 'ID' in self.params.keys(): self.params['ID']='A' # default unit ID is 'A'
+            self.serialQuery=[self.params['ID']] # one command returns all the variables.
+            self.queryTerminator='\r'
+            self.responseTerminator='\r'
+            self.params['min_response_length']=1 # bytes
+
+            # talk to flowmeter-
+            # get params for model, serial number etc, and add to device name for uniqueness in logfile
+            self.params['model']=self.blockingSerialRequest(self.params['ID']+'??m4'+self.queryTerminator,'\r')
+            self.params['serial']=self.blockingSerialRequest(self.params['ID']+'??m5'+self.queryTerminator,'\r')
+            self.params['cal_date']=self.blockingSerialRequest(self.params['ID']+'??m7'+self.queryTerminator,'\r')
+            self.params['firmware']=self.blockingSerialRequest(self.params['ID']+'??m9'+self.queryTerminator,'\r')
+            try:
+                serialNumInt = int(self.params['serial'].split(' ')[-1])
+                modelString  = self.params['model'].split(' ')[-1]
+                self.name += ' %s %i' % (modelString,serialNumInt)
+            except:
+                # in case serial num etc invalid or empty
+                pass
+
+            # get units & channel names
+            for j in range(2,7):
+                descStr = self.blockingSerialRequest(self.params['ID']+'??d%i' % j +self.queryTerminator,'\r')
+                try:
+                    unitStr = descStr.split(' ')[-1].replace('`','deg')
+                    nameStr = ' '.join(descStr.split(' ')[3:6]).strip()
+                    if j<6: # skip units for 'gas type'
+                        self.params['raw_units'][j-2] = unitStr
+                        self.config['eng_units'][j-2] = unitStr
+                    self.config['channel_names'][j-2]=nameStr
+                except:
+                    raise pyLabDataLoggerIOError("Unable to parse Alicat channel descriptor string")
+            
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         return
@@ -655,7 +705,8 @@ class serialDevice(device):
                     Mode 'R' is MIN
                     Mode 'S' is MAX MIN
                     Mode 'T' is HOLD
-                    Mode '\x10' happens after some period of continuous running, and I'm not sure what this means exactly. It might be related to the auto-off feature or when the auto-off is disabled. Otherwise the device behaves as in 'P' mode.
+                    Mode '\x10' happens after some period of continuous running, and I'm not sure what this means exactly. 
+                    It might be related to the auto-off feature or when the auto-off is disabled. Otherwise the device behaves as in 'P' mode.
                 '''
                 #print '\t0x'+rawData[0].encode('hex') # Debugging
                 hold=0; minmax=0; prefix_data=''
@@ -752,6 +803,7 @@ class serialDevice(device):
                         raise KeyError("I don't know how to decode this serial command")
 
                 return vals
+
             # ----------------------------------------------------------------------------------------
             if subdriver=='sd700':
                 vals = []
@@ -760,6 +812,13 @@ class serialDevice(device):
                     vals.append(float(''.join(strdata[-8:]))*0.1)
                     print repr(''.join(strdata[:9])) # this bit probably indicates -ve sign, units, etc.
                 return vals
+
+            # ----------------------------------------------------------------------------------------
+            if subdriver=='alicat':
+                valStrings= [ s for s in rawData[0].split(' ') if s!='' ]
+                if valStrings[0].upper() != self.params['ID'].upper(): raise pyLabDataLoggerIOError("Alicat Device ID mismatch - wrong serial port?")
+                print self.config['channel_names']
+                return [ float(valStrings[1]), float(valStrings[2]), float(valStrings[3]), float(valStrings[4]), valStrings[5].strip() ]
 
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -820,6 +879,7 @@ class serialDevice(device):
         lastValueSanitized = []
         for v in self.lastValue: 
             if v is None: lastValueSanitized.append(np.nan)
+            elif isinstance(v, basestring): lastValueSanitized.append(np.nan) 
             else: lastValueSanitized.append(v)
         self.lastScaled = np.array(lastValueSanitized) * self.config['scale'] + self.config['offset']
         self.updateTimestamp()
