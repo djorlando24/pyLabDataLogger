@@ -33,6 +33,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 - USBTMC devices that use SCPI command set
     - Agilent 33220A waveform generator,
     - Thorlabs TSP01 temperature & humidity logger
+    - Thorlabs PM16 series power meters
 
 - NI-VISA over Ethernet devices that use SCPI command set
     - Rigol DG1000Z series delay generators
@@ -81,9 +82,9 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 
 - more I2C bus devices (ie time of flight sensors)
 - PicoScope headless oscilloscopes
-- NI-VISA over USB devices, such as
-    - Thorlabs PM16-120 power meter
+- NI-VISA devices, such as
     - NI USB DAQ boards ie 6212-series
+    - NI PCI card DAQs
 
 ## Notes
 - Most devices require additional python modules or third party open source

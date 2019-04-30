@@ -30,14 +30,14 @@ usb_device_table = [
     {'vid':0x1ab1, 'pid':0x04ce, 'driver':'sigrok/rigol-ds', 'name':'Rigol DS Oscilloscope'},
     {'vid':0x08a9, 'pid':0x0014, 'driver':'sigrok/fx2lafw', 'name':'LHT00SU1 logic analyzer'},
                  
-    # USBTMC devices with fixed VID and PID
+    # USBTMC/SCPI devices with fixed VID and PID
     #{'vid':0x1ab1, 'pid':0x04ce, 'driver':'usbtmc/rigol-ds', 'name':'Rigol DS Oscilloscope'}, # not reliable
     {'vid':0x0957, 'pid':0x0407, 'driver':'usbtmc/33220a', 'name':'Agilent 33220A Waveform Generator'},
     {'vid':0x1313, 'pid':0x80f8, 'driver':'usbtmc/thorlabs-tsp01', 'name':'Thorlabs TSP01 Thermometer/Barometer'},
+    {'vid':0x1313, 'pid':0x807b, 'driver':'usbtmc/thorlabs-pm', 'name':'Thorlabs PM16 USB power meter'},
 
     # VISA devices with fixed VID and PID
     {'vid':0x3923, 'pid':0x7269, 'driver':'visa/ni6212', 'name':'National Instruments USB-6212 BNC'},
-    {'vid':0x1313, 'pid':0x807b, 'driver':'thorlabs/pm16', 'name':'Thorlabs PM16 USB power meter'},
                  
     # Video and audio streaming devices    
     {'vid':0x1b3f, 'pid':0x2008, 'driver':'alsa', 'name':'USB sound card'},

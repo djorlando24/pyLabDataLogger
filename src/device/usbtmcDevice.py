@@ -42,6 +42,7 @@ class usbtmcDevice(device):
         
         The usbtmc driver provides the following subdriver modules:
             'usbtmc/thorlabs-tsp01' : Thorlabs TSP01 temperature and humidity probe
+            'usbtmc/thorlabs-pm'  : Thorlabs PM series power meters
             'usbtmc/33220a'         : Agilent 33220A function generator via USB
             'usbtmc/rigol-ds'       : Rigol DS series oscilloscopes. Not reliable, suggest using sigrok or pyvisa drivers instead.
     """
@@ -281,6 +282,29 @@ class usbtmcDevice(device):
             self.params['n_channels']=len(self.config['channel_names'])            
             self.tmcQuery=['SENS3:TEMP:DATA?','SENS4:TEMP:DATA?','SENS1:TEMP:DATA?','SENS2:HUM:DATA?']
 
+        elif self.subdriver=='thorlabs-pm':        
+            self.name = "Thorlabs pm Power Meter - %s" % self.params['IDN']
+            self.config['channel_names']=['Current','Power']
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.params['raw_units']=['A','W']
+            self.config['eng_units']=['uA','mW']
+            self.config['scale']=[1e6,1e3]
+            self.config['offset']=[0.]*self.params['n_channels']
+
+            self.tmcQuery=['CONF:CURR,Read?','CONF:POW,Read?']
+            
+            # Set auto ranging
+            self.write("SENS:POW:RANG:AUTO ON")
+
+            # Get system parameters
+            #self.params['frequency'] = self.ask("MEAS:FREQ?") # PM16 does not support
+            #self.params['attenuation'] = 'SENS:CORR:LOSS:INP:MAGN?' # PM16 does not support
+            self.params['wavelength'] = self.ask("SENS:CORR:WAV?")+' nm'
+            self.params['zero magnitude'] = self.ask("SENS:CORR:COLL:ZERO:MAGN?")
+            self.params['zero state'] = self.ask("SENS:CORR:COLL:ZERO:STAT?")            
+            self.params['photodiode response'] =self.ask("SENS:CORR:POW:PDIOde:RESP?")+' A/W'
+            #self.params['averaging'] = self.ask("SENS:AVER:COUNt?") # PM16 does not support
+            
         else:
             print self.__doc__
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -293,6 +317,8 @@ class usbtmcDevice(device):
         elif self.subdriver=='rigol-ds':
             return np.array( struct.unpack(data,'<b'), dtype=np.uint8 )
         elif self.subdriver=='thorlabs-tsp01':
+            return np.array([float(v) for v in data])
+        elif self.subdriver=='thorlabs-pm':
             return np.array([float(v) for v in data])
         else: raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         return None
@@ -311,7 +337,10 @@ class usbtmcDevice(device):
                     time.sleep(0.01)
                 q = qs[-1]
             try:
-                rawData.append(self.ask(q)) # request data
+                if q != '':
+                    rawData.append(self.ask(q)) # request data
+                else:
+                    rawData.append(self.instr.read()) # expect data
             except KeyboardInterrupt: raise
             except:
                 rawData.append(np.nan) # failed to get data

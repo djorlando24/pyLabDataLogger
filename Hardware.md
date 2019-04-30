@@ -25,9 +25,10 @@ The iSeries process controllers need to be set in the following mode. How to do 
 
 - In order to get these Tenma thermometers and multimeters to work they have to be put into SEND mode (there will be a button for it on the front panel). You will see "USB" or "SEND" on the LCD display.
 
-## Thorlabs TSP01
+## Thorlabs TSP01 and PM16 devices
 Make sure the usbtmc rules are added in /etc/udev/rules.d as per INSTALL.md
 If the device won't communicate, unplug & replug it.
+you will otherwise need to be a superuser to access the device.
 
 ## Rigol DS-series oscilloscopes
 The Rigol DS scopes are working over USB via the sigrok driver, which seems to handle the non standard SCPI frame fsormat that usbtmc can't.
