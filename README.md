@@ -60,6 +60,8 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - USB audio capture devices via ALSA
     - Video4Linux capture interfaces (i.e. video capture cards)
 
+- Generic USB webcams supported by OpenCV
+
 - RS-232 Serial devices via Serial-to-USB adapters
     - Tenma 72-2710 USB programmable bench power supply
     - Pico RS-232 TC-08 thermocouple logger

@@ -65,6 +65,9 @@ Those which require legacy versions or are hard to find have been stored in the 
 - For Picoscope devices, picopython
   https://github.com/colinoflynn/pico-python.git
 
+- For webcam support, OpenCV
+  (check your package manager such as apt/pip or use Homebrew on MacOS)
+
 ## Non-Python dependencies
 
 pyLabDataLogger also requires the following external software:

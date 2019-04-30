@@ -65,6 +65,9 @@ usb_device_table = [
     {'vid':0x2341, 'pid':0x8036, 'driver':'arduino', 'name':'uDuino (Leonardo)'},
     {'vid':0x2341, 'pid':0x0043, 'driver':'arduino', 'name':'Arduino Uno'},
     {'vid':0x16c0, 'pid':0x0483, 'driver':'arduino', 'name':'Teensy uC'},
+
+    # OpenCV-compatible webcams
+    {'vid':0x045e, 'pid':0x00f5, 'driver':'opencv', 'name':'Microsoft Webcam'},
     
     # Devices using generic Serial-to-USB adapters whose VID and PID are not correlated specifically to a piece of hardware
     {'vid':0x0557, 'pid':0x2008, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},
@@ -236,6 +239,9 @@ def load_usb_devices(devs=None,**kwargs):
         elif driverClass == 'fluke':
             from pyLabDataLogger.device import flukeusbDevice
             device_list.append(flukeusbDevice.flukeusbDevice(params=d,**kwargs))
+        elif driverClass == 'opencv':
+            from pyLabDataLogger.device import opencvDevice
+            device_list.append(opencvDevice.opencvDevice(params=d,**kwargs))
         
         else:
             print "\tI don't know what to do with this device"
