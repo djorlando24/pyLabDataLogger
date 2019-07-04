@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 30/04/2019
+    @date 04/07/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -14,6 +14,12 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+
+    Note on implementation of serial commands: 
+     - commas denote a sequence of commands sent as quickly as possible.
+     - a double-comma denotes a pause for data aquisition by the client device,
+       where the delay is set by params['sample_period'].
+
 """
 
 from device import device, pyLabDataLoggerIOError
@@ -38,6 +44,7 @@ class serialDevice(device):
         The 'serial' driver supports the following hardware:
             'serial/tds220gpib'        : Tektronix TDS22x series oscilloscopes via the RS-232 port
             'serial/omega-ir-usb'      : Omega IR-USB temperature probe with built in USB to Serial converter
+            'serial/omega-usbh         : Omega USB-H 'high speed' pressure transducers with built in USB to Serial converter
             'serial/ohaus7k'           : OHAUS 7000 series scientific scales via RS232
             'serial/center310'         : CENTER 310 Temperature and Humidity meter
             'serial/tc08rs232'         : Pico TC08 RS-232 thermocouple datalogger (USB version has a seperate driver 'picotc08')
@@ -68,6 +75,14 @@ class serialDevice(device):
             except ImportError:
                 print "Please install the thermocouples_reference module"
                 raise
+
+        # Apply custom initial configuration settings
+        if 'usbh-rate' in kwargs: self.config['RATE'] = kwargs['usbh-rate']
+        if 'usbh-ifilter' in kwargs: self.config['IFILTER'] = kwargs['usbh-ifilter']
+        if 'usbh-mfilter' in kwargs: self.config['MFILTER'] = kwargs['usbh-mfilter']
+        if 'usbh-avg' in kwargs: self.config['AVG'] = kwargs['usbh-avg']
+        if 'set_emissivity' in kwargs: self.config['set_emissivity'] = kwargs['set_emissivity']
+        
 
         if params is not {}: self.scan()
         return
@@ -167,6 +182,8 @@ class serialDevice(device):
         elif self.subdriver=='alicat':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=19600
             if not 'ID' in self.params.keys(): self.params['ID']='A' # default unit ID is 'A'
+        elif self.subdriver=='omega-usbh':
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=115200
         
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -209,7 +226,7 @@ class serialDevice(device):
     ########################################################################################################################
     # Apply configuration changes to the driver (subdriver-specific)
     def apply_config(self):
-        subdriver = self.params['driver'].split('/')[1:]
+        subdriver=self.subdriver
         try:
             assert(self.Serial)
             if self.Serial is None: raise pyLabDataLoggerIOError("Could not access serial port.")
@@ -223,6 +240,26 @@ class serialDevice(device):
                 e=self.config['set_emissivity']
                 if (e is not None) and (e>0) and (e<=1.): self.Serial.write("E%0.2f\n" % float(e))
                 else: raise ValueError
+            elif subdriver=='omega-usbh':
+                for var in ['IFILTER','MFILTER','AVG','RATE']:
+                    if self.config[var] != self.blockingSerialRequest(var+'\r\n','\r').split('=')[-1]:
+                        self.config[var] = self.blockingSerialRequest('%s %s\r\n' % (var,self.config[var]),'\r',min_response_length=8).split('=')[-1]
+                # Write human readable sample rate
+                if int(self.config['RATE'])==0:   self.config['sample_rate_Hz'] = 5
+                elif int(self.config['RATE'])==1: self.config['sample_rate_Hz'] = 10
+                elif int(self.config['RATE'])==2: self.config['sample_rate_Hz'] = 20
+                elif int(self.config['RATE'])==3: self.config['sample_rate_Hz'] = 40
+                elif int(self.config['RATE'])==4: self.config['sample_rate_Hz'] = 80
+                elif int(self.config['RATE'])==5: self.config['sample_rate_Hz'] = 160
+                elif int(self.config['RATE'])==6: self.config['sample_rate_Hz'] = 320
+                elif int(self.config['RATE'])==7: self.config['sample_rate_Hz'] = 640
+                elif int(self.config['RATE'])==8: self.config['sample_rate_Hz'] = 1000
+                else: raise ValueError("omega-usbh: unknown RATE value %s [valid options are integers 0-8]" % self.config['RATE'])   
+                # update maxlen
+                if not 'sample_period' in self.params: self.params['sample_period']=1.
+                # 6-10 bytes per sample, * sample period, * samples per second, dictates maxlen returned for 'PC'
+                self.maxlen= int(6*(self.params['sample_period']*self.config['sample_rate_Hz']+1))
+
             elif subdriver=='ohaus7k':
                 # No settings can be modified at present. In future we could allow tare/zero or
                 # a change of units.
@@ -249,8 +286,7 @@ class serialDevice(device):
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
     
         except ValueError:
-            print "%s - Invalid set point requested" % self.name
-            print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
+            raise
         
         return
 
@@ -391,6 +427,48 @@ class serialDevice(device):
             self.responseTerminator='\r'
             self.config['set_emissivity']=None
 
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='omega-usbh':
+            self.name = "Omega USB High-Speed Pressure Transducer"
+            self.config['channel_names']=['pressure']
+            self.params['raw_units']=['psia']
+            self.config['eng_units']=['psia']
+            self.config['scale']=[1.]
+            self.config['offset']=[0.]
+            self.params['n_channels']=1
+            self.serialQuery=['PC,,PS']
+            self.queryTerminator='\r\n'
+            self.responseTerminator=''
+            self.serialCommsFunction=self.blockingRawSerialRequest
+            # First ensure that streaming is inactive.
+            self.Serial.write('PS')
+            self.blockingSerialRequest('SNR\r\n','\r') # dummy command to flush buffer
+            # Get unit ID and serial
+            self.params['Info'] = self.blockingSerialRequest('ENQ\r\n','\r',min_response_length=36).replace('\r\n',' ')
+            self.params['ID'] = self.blockingSerialRequest('SNR\r\n','\r').split('=')[-1]
+            if self.params['ID'].strip() != '': self.name += ' '+self.params['ID'].strip()
+            # Get filter settings and sample rate
+            for var in ['IFILTER','MFILTER','AVG','RATE']:
+                if not var in self.config:
+                    self.config[var] = self.blockingSerialRequest(var+'\r\n','\r').split('=')[-1]
+            # Apply user-set filter and sample rate setting to the client device
+            self.apply_config()
+            # Write human readable sample rate
+            if int(self.config['RATE'])==0:   self.config['sample_rate_Hz'] = 5
+            elif int(self.config['RATE'])==1: self.config['sample_rate_Hz'] = 10
+            elif int(self.config['RATE'])==2: self.config['sample_rate_Hz'] = 20
+            elif int(self.config['RATE'])==3: self.config['sample_rate_Hz'] = 40
+            elif int(self.config['RATE'])==4: self.config['sample_rate_Hz'] = 80
+            elif int(self.config['RATE'])==5: self.config['sample_rate_Hz'] = 160
+            elif int(self.config['RATE'])==6: self.config['sample_rate_Hz'] = 320
+            elif int(self.config['RATE'])==7: self.config['sample_rate_Hz'] = 640
+            elif int(self.config['RATE'])==8: self.config['sample_rate_Hz'] = 1000
+            else: raise ValueError("omega-usbh: unknown RATE value %s" % self.config['RATE'])
+            print "\tomega-usbh: Sample rate %i Hz" % self.config['sample_rate_Hz']
+            # Get/set sampling period. Default 1 second.
+            if not 'sample_period' in self.params: self.params['sample_period']=1.
+            # 6-10 bytes per sample, * sample period, * samples per second, dictates maxlen returned for 'PC'
+            self.maxlen= int(6*(self.params['sample_period']*self.config['sample_rate_Hz']+1))
 
         # ----------------------------------------------------------------------------------------
         elif subdriver=='ohaus7k': # Startup config for OHAUS Valor 7000
@@ -686,6 +764,21 @@ class serialDevice(device):
                 return vals
 
             # ----------------------------------------------------------------------------------------
+            elif subdriver=='omega-usbh':
+                vals = []
+                for i in range(len(rawData)):
+                    
+                    # first frame beginning point
+                    offset = rawData[i].index('\xaa')
+                    # Remove 0xAAAA and replace with 0xAA (delete the bit stuff)
+                    rawData[i] = rawData[i].replace('\xaa\xaa','\xaa')
+                    # number of frames to process
+                    n_frames = int(np.floor(len(rawData[i][offset:])/6))                   
+                    vals.append( np.array( struct.unpack('<'+'xxf'*n_frames,rawData[i][offset:offset+n_frames*6]) ) )
+                    
+                return vals
+
+            # ----------------------------------------------------------------------------------------
             elif subdriver=='ohaus7k':
                 vals=rawData[0].split(' ')
                 self.params['raw_units']=[vals[-1].strip()]
@@ -837,15 +930,32 @@ class serialDevice(device):
         rawData=[]
         for n in range(len(self.serialQuery)):
             if ',' in self.serialQuery[n]:
-                # Multiple commands must be sent. They are seperated by commas
-                # The responses will be concatenated
-                cmds=self.serialQuery[n].split(',')
-                resp=''
-                for q in cmds:
-                    r=self.serialCommsFunction(q+self.queryTerminator,self.responseTerminator,self.maxlen,self.params['min_response_length'],self.sleeptime)
-                    if r is not None: resp+=r
-                rawData.append(resp)
+                # Multiple commands must be sent. They are seperated by commas.
 
+                # A double comma denotes a long pause dictated by params['sample_period']
+                # The responses will be concatenated.
+                if ',,' in self.serialQuery[n] and not 'sample_period' in self.params:
+                    self.params['sample_period']=1.
+                    print "sample_period not set for %s, default to 1 second" % self.name
+
+                # Split commands,set default values.
+                cmds=self.serialQuery[n].split(',')
+                resp='' 
+                maxlen = self.maxlen
+                sleeptime = self.sleeptime
+                # Loop commands
+                for i in range(len(cmds)):
+                    if i<len(cmds)-1: 
+                        if cmds[i+1]=='': # ',,' pause will come next
+                            sleeptime = self.params['sample_period'] # set the pause period longer
+
+                    if cmds[i]=='': # ',,' was detected
+                        maxlen=0 # following command is a 'stop' command and no response expected.
+                        sleeptime=self.sleeptime # reset sleeptime
+                    else: # send a command
+                        r=self.serialCommsFunction(cmds[i]+self.queryTerminator,self.responseTerminator,maxlen,self.params['min_response_length'],sleeptime)
+                        if r is not None: resp+=r # append response
+                rawData.append(resp)
             else: 
                 # Only one command sent per value
                 rawData.append(self.serialCommsFunction(self.serialQuery[n]+self.queryTerminator,\

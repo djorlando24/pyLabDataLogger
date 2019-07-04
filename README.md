@@ -8,7 +8,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 30/04/2019
+    @date 04/07/2019
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -54,7 +54,8 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 
 - USB Devices with custom interfaces/drivers
     - Picolog USB-TC-08 thermocouple logger
-    - Omega IR-USB thermometer 
+    - Omega IR-USB thermometer
+    - Omega USB-H 'high speed' pressure transducers 
     - Fluke 568 IR thermometer
     
 - USB Devices using Linux kernel drivers (not supported on MacOS)
@@ -86,7 +87,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - NI USB DAQ boards ie 6212-series
     - NI PCI card DAQs
 - Firewire machine vision cameras (libdc1394)
-  https://damien.douxchamps.net/ieee1394/cameras/
+  [https://damien.douxchamps.net/ieee1394/cameras/]
 
 ## Notes
 - Most devices require additional python modules or third party open source
