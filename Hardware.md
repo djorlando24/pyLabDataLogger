@@ -47,6 +47,9 @@ The Extech brand USB to RS232 adapters are multifunction and some have a switch 
 I2C devices that use Adafruit libraries rely on deprecated python libraries which have been copied into thirdParty in case
 the old repositories on Github go away. These devices have been tested on Raspberry pi, but should work on Beaglebones as well.
 
+# Webcams
+Webcame frame capture requires the OpenCV library. If your webcam is not detected you may need to add its VID and PID to the device table in src/device/usbDevice.py, and specify the 'opencv' driver. Then merge your changes so I can expand the supported deice list!
+
 # Can you add support for my device?
 I can't test and add support for hardware unless I actually have the equipment in my hands to test it, and the time to do so.
 However, you can add support for your own device and then make a merge request to the main branch later.

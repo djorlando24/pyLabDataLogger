@@ -44,6 +44,10 @@ usb_device_table = [
     {'vid':0x1b80, 'pid':0xe302, 'driver':'alsa', 'name':'Video capture card (audio stream)'},
     {'vid':0x1b80, 'pid':0xe302, 'driver':'v4l2', 'name':'Video capture card (video stream)'},
 
+    # OpenCV-compatible webcams
+    {'vid':0x045e, 'pid':0x00f5, 'driver':'opencv', 'name':'Microsoft Webcam'},
+    {'vid':0x1908, 'pid':0x2311, 'driver':'opencv', 'name':'Gembird Webcam'},
+
     # Specialty drivers with fixed VID and PID
     {'vid':0x09db, 'pid':0x0112, 'driver':'mcc-libusb/mccusb1608G', 'name':'MCC USB-1608GX-2AO ADC'},
     {'vid':0x0ce9, 'pid':0x1000, 'driver':'picotc08/usbtc08', 'name':'Picolog USB TC-08 thermocouple datalogger'},
@@ -66,9 +70,6 @@ usb_device_table = [
     {'vid':0x2341, 'pid':0x8036, 'driver':'arduino', 'name':'uDuino (Leonardo)'},
     {'vid':0x2341, 'pid':0x0043, 'driver':'arduino', 'name':'Arduino Uno'},
     {'vid':0x16c0, 'pid':0x0483, 'driver':'arduino', 'name':'Teensy uC'},
-
-    # OpenCV-compatible webcams
-    {'vid':0x045e, 'pid':0x00f5, 'driver':'opencv', 'name':'Microsoft Webcam'},
     
     # Devices using generic Serial-to-USB adapters whose VID and PID are not correlated specifically to a piece of hardware
     {'vid':0x0557, 'pid':0x2008, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},
