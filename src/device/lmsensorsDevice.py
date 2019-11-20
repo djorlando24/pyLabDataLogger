@@ -54,7 +54,7 @@ class lmsensorsDevice(device):
         if override_params is not None: self.params = override_params
         
         # check that sensors binary can be called and some chips exist
-        if len(subprocess.check_output(['which','sensors'])) < 1:
+        if len(subprocess.check_output(['which sensors'])) < 1:
             print "lm-sensors not installed/available on this system"
         elif len(subprocess.check_output(['sensors']).strip()) < 1:
             print "lm-sensors detected no chips, try `sudo sensors-detect`"
