@@ -1,6 +1,8 @@
+#/usr/bin/env python2.7
+# -*- coding: UTF-8 -*-
 """
-    lm-sensors device (monitoring computer temperatures etc.)
-    
+    lm-sensors device (monitoring computer temperatures and fan RPM)
+ 
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
@@ -63,18 +65,32 @@ class lmsensorsDevice(device):
     def activate(self,quiet=False):
 
         # check which chips are present (this might change on a reset)
-        self.lm_sensors_chips = [] 
+        self.config['channel_names']=[]
+        self.params['raw_units']=[]
+        self.config['eng_units']=[]
+
         output = [ line for line in subprocess.check_output(['sensors']).split('\n') if line != '' ]
+
+        # add temperatures
         for j in range(len(output)):
-            if 'Adapter' in output[j] and j>0:
-                self.lm_sensors_chips.append( output[j-1] )
-                if not self.quiet: print '\tDetected chip: %s' % output[j-1]
-        
+            if 'Adapter:' in output[j]: adapter = ''.join(output[j].split(':')[1:])
+            if '°C' in output[j]:
+                self.config['channel_names'].append(adapter + ' ' + output[j].split(':')[0] + ' temp')
+                self.params['raw_units'].append( '°C' )
+                self.config['eng_units'].append( '°C' )
+                if not self.quiet: print '\tDetected: %s' % self.config['channel_names'][-1]
+
+        # add fan RPMs
+        for j in range(len(output)):
+            if 'Adapter:' in output[j]: adapter = ''.join(output[j].split(':')[1:])
+            if 'RPM' in output[j]:
+                self.config['channel_names'].append(adapter + ' ' + output[j].split(':')[0]+ ' RPM')
+                self.params['raw_units'].append( 'RPM' )
+                self.config['eng_units'].append( 'RPM' )
+                if not self.quiet: print '\tDetected: %s' % self.config['channel_names'][-1]
+
         # Set up device
-        self.config['channel_names']=self.lm_sensors_chips
-        self.params['n_channels']=len(self.lm_sensors_chips)
-        self.params['raw_units'] = ['']*self.params['n_channels']
-        self.config['eng_units'] = ['']*self.params['n_channels']
+        self.params['n_channels']=len(self.config['channel_names'])
         self.config['scale']=[1.]*self.params['n_channels']
         self.config['offset']=[0.]*self.params['n_channels']       
         self.driverConnected=True
@@ -127,15 +143,21 @@ class lmsensorsDevice(device):
 
     def get_values(self):
         sensors = subprocess.check_output("sensors")
-        temperatures = {match[0]: float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)°C", sensors, re.MULTILINE)}
+
+        # Temperatures
+        #temperatures = {match[0]: float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)°C", sensors, re.MULTILINE)}
+        temperatures = [float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)°C", sensors, re.MULTILINE)]
+
+        # Fan speeds
+        #rpms = {match[0]: float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)RPM", sensors, re.MULTILINE)}
+        rpms = [float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)RPM", sensors, re.MULTILINE)]
+
+        # SMART hard disks?
         #for d in self.lm_sensors_chips:
         #    output = subprocess.check_output(["smartctl", "-A", d])
         #    temperatures[d] = int(re.search("Temperature.*\s(\d+)\s*(?:\([\d\s]*\)|)$", output, re.MULTILINE).group(1))
 
-
-        print temperatures; exit()
-
-        self.lastValue = temperatures
+        self.lastValue = list(temperatures) + list(rpms)
 
         return
    
@@ -147,8 +169,6 @@ class lmsensorsDevice(device):
         # If first time or reset, get configuration (ie units)
         if not 'raw_units' in self.params.keys() or reset:
             driver = self.params['driver'].split('/')[1:]
-            #self.subdriver = driver[0].lower()
-            # set self.params, self.config...
 
         # Read values        
         self.get_values()

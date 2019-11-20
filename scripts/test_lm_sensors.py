@@ -23,7 +23,7 @@ import time
 
 if __name__ == '__main__':
     
-    devices = [lmsensorsDevice.lmsensorsDevice()]
+    devices = [lmsensorsDevice.lmsensorsDevice(quiet=False)]
 
     if len(devices) == 0: exit()
    
@@ -34,7 +34,7 @@ if __name__ == '__main__':
                 print d.name
                 d.query()
                 d.pprint()
-                #d.log('test_log.hdf5')
+                d.log('lm_sensors_test_log.hdf5')
             time.sleep(2)
     except KeyboardInterrupt:
         print "Stopped."
