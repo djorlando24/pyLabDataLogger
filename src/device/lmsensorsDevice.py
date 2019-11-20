@@ -40,10 +40,17 @@ class lmsensorsDevice(device):
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
         self.name = "lm-sensors"
-        self.lastValue = None # Last known value (for logging)
+        self.lastValue = [0] # Last known value (for logging)
+        self.lastScaled = [0]
         self.lastValueTimestamp = None # Time when last value was obtained
         self.quiet = quiet
         self.params['driver'] = 'lm_sensors'
+        self.params['n_channels']=1
+        self.config['channel_names']=['NULL']
+        self.params['raw_units']=['']
+        self.config['eng_units']=['']
+        self.config['scale']=[1.]
+        self.config['offset']=[0.]
         if params is not {}: self.scan(quiet=quiet)
         
         return
@@ -55,13 +62,13 @@ class lmsensorsDevice(device):
         
         # check that sensors binary can be called and some chips exist
         try:
-            if len(subprocess.check_output(['which sensors'])) < 1:
+            if len(subprocess.check_output(['which','sensors'])) < 1:
                 print "lm-sensors not installed/available on this system"
             elif len(subprocess.check_output(['sensors']).strip()) < 1:
                 print "lm-sensors detected no chips, try `sudo sensors-detect`"
             else: self.activate(quiet=quiet)
-        except OSError:
-            print "lm-sensors is not installed/available on this system"
+        except OSError as e:
+            print "lm-sensors is not installed/available on this system: ",e
         return
 
     # Establish connection to device (ie open serial port)
@@ -71,16 +78,18 @@ class lmsensorsDevice(device):
         self.config['channel_names']=[]
         self.params['raw_units']=[]
         self.config['eng_units']=[]
-
+        self.config['scale']=[]
+        self.config['offset']=[]
+        
         try:
             output = [ line for line in subprocess.check_output(['sensors']).split('\n') if line != '' ]
-        except:
+        except OSError:
             raise pyLabDataLoggerIOError("lm-sensors not available")
         
         # add temperatures
         for j in range(len(output)):
             if 'Adapter:' in output[j]: adapter = ''.join(output[j].split(':')[1:])
-            if '°C' in output[j]:
+            if '°C' in output[j] and ':' in output[j]:
                 self.config['channel_names'].append(adapter + ' ' + output[j].split(':')[0] + ' temp')
                 self.params['raw_units'].append( '°C' )
                 self.config['eng_units'].append( '°C' )
@@ -89,7 +98,7 @@ class lmsensorsDevice(device):
         # add fan RPMs
         for j in range(len(output)):
             if 'Adapter:' in output[j]: adapter = ''.join(output[j].split(':')[1:])
-            if 'RPM' in output[j]:
+            if 'RPM' in output[j] and ':' in output[j]:
                 self.config['channel_names'].append(adapter + ' ' + output[j].split(':')[0]+ ' RPM')
                 self.params['raw_units'].append( 'RPM' )
                 self.config['eng_units'].append( 'RPM' )
@@ -151,6 +160,7 @@ class lmsensorsDevice(device):
         try:
             sensors = subprocess.check_output("sensors")
         except:
+            self.lastValue = [None]*self.params['n_channels']
             raise pyLabDataLoggerIOError("lm-sensors not available")
         
         # Temperatures
@@ -174,7 +184,9 @@ class lmsensorsDevice(device):
     # Handle query for values
     def query(self, reset=False):
 
-        
+        if not self.driverConnected: return pyLabDataLoggerIOError("lm-sensors not available") 
+      
+
         # If first time or reset, get configuration (ie units)
         if not 'raw_units' in self.params.keys() or reset:
             driver = self.params['driver'].split('/')[1:]
