@@ -54,11 +54,14 @@ class lmsensorsDevice(device):
         if override_params is not None: self.params = override_params
         
         # check that sensors binary can be called and some chips exist
-        if len(subprocess.check_output(['which sensors'])) < 1:
-            print "lm-sensors not installed/available on this system"
-        elif len(subprocess.check_output(['sensors']).strip()) < 1:
-            print "lm-sensors detected no chips, try `sudo sensors-detect`"
-        else: self.activate(quiet=quiet)
+        try:
+            if len(subprocess.check_output(['which sensors'])) < 1:
+                print "lm-sensors not installed/available on this system"
+            elif len(subprocess.check_output(['sensors']).strip()) < 1:
+                print "lm-sensors detected no chips, try `sudo sensors-detect`"
+            else: self.activate(quiet=quiet)
+        except OSError:
+            print "lm-sensors is not installed/available on this system"
         return
 
     # Establish connection to device (ie open serial port)
@@ -69,8 +72,11 @@ class lmsensorsDevice(device):
         self.params['raw_units']=[]
         self.config['eng_units']=[]
 
-        output = [ line for line in subprocess.check_output(['sensors']).split('\n') if line != '' ]
-
+        try:
+            output = [ line for line in subprocess.check_output(['sensors']).split('\n') if line != '' ]
+        except:
+            raise pyLabDataLoggerIOError("lm-sensors not available")
+        
         # add temperatures
         for j in range(len(output)):
             if 'Adapter:' in output[j]: adapter = ''.join(output[j].split(':')[1:])
@@ -142,8 +148,11 @@ class lmsensorsDevice(device):
 
 
     def get_values(self):
-        sensors = subprocess.check_output("sensors")
-
+        try:
+            sensors = subprocess.check_output("sensors")
+        except:
+            raise pyLabDataLoggerIOError("lm-sensors not available")
+        
         # Temperatures
         #temperatures = {match[0]: float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)°C", sensors, re.MULTILINE)}
         temperatures = [float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)°C", sensors, re.MULTILINE)]
