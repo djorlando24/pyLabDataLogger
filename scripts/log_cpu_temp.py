@@ -26,13 +26,14 @@ INTERVAL_SECONDS=60
 
 if __name__ == '__main__':
     
-    logfilename='log_%i.hdf5' % (ddmmyy)
+    logfilename='log_%s.hdf5' % (time.strftime("%Y-%m-%d-%H-%M-%S"))
 
     usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=False)
     
     # kwargs to customise setup of devices
     #special_args={'debugMode':True, 'init_tc08_config':['K','K','K','T','T','T','X','X'], 'quiet':False, 'init_tc08_chnames':['Cold Junction','K1','K2','K3','T4','T5','T6','420mA_P1','420mA_P2']}
-
+    special_args={}
+    
     devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
     devices.append(lmsensorsDevice.lmsensorsDevice())
 
