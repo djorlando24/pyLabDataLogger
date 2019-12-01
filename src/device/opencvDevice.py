@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 30/04/2019
+    @date 01/12/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -18,7 +18,7 @@
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
-import datetime, time
+import datetime, time, subprocess, sys
 
 try:
     import cv2
@@ -41,7 +41,13 @@ class opencvDevice(device):
         self.lastValueTimestamp = None # Time when last value was obtained
         self.driver = self.params['driver'].split('/')[1:]
         
-        if not 'ID' in self.params: self.params['ID'] = 0 # default OpenCV camera ID number
+        if not 'live_preview' in self.params:
+            if not 'live_preview' in kwargs:
+                self.live_preview=False
+            else: self.live_preview=kwargs['live_preview']
+        else: self.live_preview=self.params['live_preview']
+            
+        if not 'ID' in self.params: self.params['ID'] = None # default OpenCV camera ID number
         
         if params is not {}: self.scan(quiet=quiet)
         
@@ -64,7 +70,76 @@ class opencvDevice(device):
     # Establish connection to device (ie open serial port)
     def activate(self,quiet=False):
         
+        # begin camera id block
+        self.userChoseStream = False
+        validCamRange = [None, None]
+        
+        if self.params['ID'] is None:
+            # OpenCV 2 can have multiple video capture streams (i.e. from built-in webcams) and
+            # it is not easy to determine which is the right one (this is apparently fixed in
+            # OpenCV 3.
+
+            # We will use a hack to figure this out. First check opencv is not already running capture
+            try:
+                assert(opencvdev)
+                del opencvdev
+            except:
+                pass
+            
+            #Now request to open camera no. 64 which ought to fail and return on stderr the number
+            # of valid streams from the library.  stdout will return opencv version for sanity check.
+            proc = subprocess.Popen([sys.executable,"-c","import cv2; print cv2.__version__; dev=cv2.VideoCapture(63)"],\
+                                    stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            stdout, stderr = proc.communicate()
+            
+            if stdout.strip() == '': raise RuntimeError("OpenCV version returned nothing!")
+            elif not quiet: print "OpenCV Version:",stdout.strip()
+            
+            def user_choose_stream(validCamRange):
+                if not quiet:
+                    print "\tMultiple webcams detected. OpenCV cannot automatically identify them."
+                    print "\t(Your built-in webcam is probably device 0)."
+                self.params['ID']=-1
+                while (self.params['ID']<validCamRange[0]) or (self.params['ID']>validCamRange[1]):
+                    try:
+                        self.params['ID']=int(raw_input("\tPlease select OpenCV device in the range %s: " % str(validCamRange)))
+                        self.userChoseStream = True
+                    except:
+                        pass
+            
+            if "out device of bound" in stderr:
+                # Expect the first line to have (nnn-nnn) string in it.
+                validCamRange = stderr.split('\n')[0].split('(')[1].split(')')[0].split('-')
+                if len(validCamRange) != 2: return
+                validCamRange = [int(n) for n in validCamRange]
+                
+                # only one camera anyway:
+                if validCamRange[0] == validCamRange[1]:
+                    if not quiet: print "Using camera %i (default)" % validCamRange[0]
+                    self.params['ID']=validCamRange[0]
+                else:
+                    user_choose_stream(validCamRange)
+                
+            if not "out device of bound" in stderr:
+                print stderr.strip()
+                if not quiet: print "\tWarning: unable to determine which webcam to use, guessing 0"
+                self.params['ID']=0
+                
+        # End camera id block
+
+        # Try to open camera stream.
+        # This should cause the REC light to come on the camera if it has one.
         self.opencvdev = cv2.VideoCapture(self.params['ID'])
+        
+        # If user chose, check that they are happy with their choice.
+        confirmkb='n'
+        while 'n' in confirmkb:
+            if self.userChoseStream and not quiet:
+                print "\tWebcam is now active, record light should be ON."
+                confirmkb = raw_input("\tIs camera correct? [Y/n] ").lower().strip()
+                if 'n' in confirmkb: user_choose_stream(validCamRange)
+        
+        # Set up configuration for number of frames to capture per query event
         self.driverConnected=True
         if 'n_frames' in self.params: self.config['n_frames'] = self.params['n_frames']
         else: self.config['n_frames'] = 1
@@ -77,8 +152,8 @@ class opencvDevice(device):
 
     # Deactivate connection to device (close serial port)
     def deactivate(self):
-        # ...
         self.driverConnected=False
+        del self.opencvdev
         return
 
     # Apply configuration changes to the driver (subdriver-specific)
@@ -150,6 +225,10 @@ class opencvDevice(device):
             self.frame_counter += 1 # increment counter even if image not returned
             if ret:
                 self.lastValue.append(frame[...])
+                # Set up live preview mode if requested
+                if j==0 and self.live_preview:
+                    cv2.imshow('pyLabDataLogger: %s' % self.params['name'],frame)
+                    if cv2.waitKey(1) & 0xFF == ord('q'): break
             else:
                 self.lastValue.append(np.array((np.nan,)))
                 raise pyLabDataLoggerIOError("OpenCV Webcam capture failed")
