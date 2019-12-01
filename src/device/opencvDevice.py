@@ -74,6 +74,18 @@ class opencvDevice(device):
         self.userChoseStream = False
         validCamRange = [None, None]
         
+        def user_choose_stream(validCamRange):
+            if not quiet:
+                print "\tMultiple webcams detected. OpenCV cannot automatically identify them."
+                print "\t(Your built-in webcam may be one of them)."
+            self.params['ID']=-1
+            while (self.params['ID']<validCamRange[0]) or (self.params['ID']>validCamRange[1]):
+                try:
+                    self.params['ID']=int(raw_input("\tPlease select OpenCV device in the range %s: " % str(validCamRange)))
+                    self.userChoseStream = True
+                except:
+                    pass
+        
         if self.params['ID'] is None:
             # OpenCV 2 can have multiple video capture streams (i.e. from built-in webcams) and
             # it is not easy to determine which is the right one (this is apparently fixed in
@@ -86,6 +98,31 @@ class opencvDevice(device):
             except:
                 pass
             
+            # Now try and open cameras in increasing number until we hit error condition!
+            for cam_num in range(64):
+                proc = subprocess.Popen([sys.executable,"-c",\
+                                        "import cv2; print cv2.__version__; dev=cv2.VideoCapture(%i)" % cam_num],\
+                                        stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                stdout, stderr = proc.communicate()
+                
+                if stdout.strip() == '': raise RuntimeError("OpenCV version returned nothing!")
+                elif not quiet and (cam_num==0): print "\tOpenCV Version:",stdout.strip()
+                if not quiet: print "\t",cam_num,':',stderr.strip()
+
+                if ('out device of bound' in stderr) or ('VIDEOIO ERROR' in stderr):
+                    break
+        
+            validCamRange = [0, cam_num - 1]    
+
+            # only one camera anyway:
+            if validCamRange[0] == validCamRange[1]:
+                if not quiet: print "Using camera %i (default)" % validCamRange[0]
+                self.params['ID']=validCamRange[0]
+            else:
+                user_choose_stream(validCamRange)
+        
+            
+            '''
             #Now request to open camera no. 64 which ought to fail and return on stderr the number
             # of valid streams from the library.  stdout will return opencv version for sanity check.
             proc = subprocess.Popen([sys.executable,"-c","import cv2; print cv2.__version__; dev=cv2.VideoCapture(63)"],\
@@ -94,18 +131,6 @@ class opencvDevice(device):
             
             if stdout.strip() == '': raise RuntimeError("OpenCV version returned nothing!")
             elif not quiet: print "OpenCV Version:",stdout.strip()
-            
-            def user_choose_stream(validCamRange):
-                if not quiet:
-                    print "\tMultiple webcams detected. OpenCV cannot automatically identify them."
-                    print "\t(Your built-in webcam is probably device 0)."
-                self.params['ID']=-1
-                while (self.params['ID']<validCamRange[0]) or (self.params['ID']>validCamRange[1]):
-                    try:
-                        self.params['ID']=int(raw_input("\tPlease select OpenCV device in the range %s: " % str(validCamRange)))
-                        self.userChoseStream = True
-                    except:
-                        pass
             
             if "out device of bound" in stderr:
                 # Expect the first line to have (nnn-nnn) string in it.
@@ -124,7 +149,8 @@ class opencvDevice(device):
                 print stderr.strip()
                 if not quiet: print "\tWarning: unable to determine which webcam to use, guessing 0"
                 self.params['ID']=0
-                
+            '''
+
         # End camera id block
 
         # Try to open camera stream.
