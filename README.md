@@ -8,7 +8,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 17/07/2019
+    @date 01/12/2019
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
