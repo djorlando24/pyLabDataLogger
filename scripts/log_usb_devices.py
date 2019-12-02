@@ -41,7 +41,7 @@ if __name__ == '__main__':
                 d.query()
                 d.pprint()
                 d.log(logfilename)
-            time.sleep(1)
+            time.sleep(5)
     except KeyboardInterrupt:
         print "Stopped."
     except: # all other errors

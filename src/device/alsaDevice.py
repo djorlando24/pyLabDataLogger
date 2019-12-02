@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 28/02/2019
+    @date 01/12/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -54,6 +54,11 @@ class alsaDevice(device):
         
         if 'quiet' in kwargs: self.quiet = kwargs['quiet']
         else: self.quiet=quiet
+
+        # Set attribute defaults to Mono, 44100 Hz
+        if not 'channels' in self.params: self.params['channels']=1
+        if not 'samplerate' in self.params: self.params['samplerate']=44100
+        
         
         if params is not {}: self.scan(quiet=self.quiet)
         
@@ -80,8 +85,17 @@ class alsaDevice(device):
             if not self.alsacard in alsaaudio.card_indexes():
                 raise IndexError("Invalid ALSA card number requested.")
         else:
-            # Scan ALSA devices and find one that matches the USB device found.
-            cards = [ (n, ' '.join(alsaaudio.card_name(n))) for n in alsaaudio.card_indexes() ]
+            
+            # Scan ALSA devices
+            if 'card_indexes' in dir(alsaaudio):
+                cards = [ (n, ' '.join(alsaaudio.card_name(n))) for n in alsaaudio.card_indexes() ]
+            elif 'cards' in dir(alsaaudio):
+                cards = [ (n, alsaaudio.cards()[n]) for n in range(len(alsaaudio.cards())) ]
+            else:
+                raise RuntimeError("Unknown alsaaudio API:\n"+dir(alsaaudio))
+            #if not quiet: print "\tAll ALSA devices:",alsaaudio.cards()
+            
+            #  find one that matches the USB device found.
             cards = [ c for c in cards if 'USB' in c[1] ]
             if len(cards)==0:
                 print "\tUnable to find a USB ALSA device."; return
@@ -104,12 +118,14 @@ class alsaDevice(device):
     # Establish connection to device (ie open serial port)
     def activate(self,quiet=False):
 
-        # Attempt to open the device in non-blocking capture mode        
-        self.pcm = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NONBLOCK, cardindex=self.alsacard)
-       
-        # Set attributes. Default is Mono, 44100 Hz
-        if not 'channels' in self.params: self.params['channels']=1
-        if not 'samplerate' in self.params: self.params['samplerate']=44100
+        # Attempt to open the device in non-blocking capture mode
+        # arguments depends on alsaaudio version.
+        try:
+            self.pcm = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NONBLOCK, cardindex=self.alsacard)
+        except TypeError:
+            self.pcm = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NONBLOCK) # default card
+        
+        # Set up as requested
         self.pcm.setchannels(self.params['channels'])
         self.pcm.setrate(self.params['samplerate'])
 

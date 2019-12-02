@@ -59,7 +59,7 @@ Those which require legacy versions or are hard to find have been stored in the 
 - For ALSA audio devices, pyalsaaudio
   https://github.com/larsimmisch/pyalsaaudio.git
 
-- For Video4Linux support, v4l2capture module
+- For Video4Linux support, v4l2capture module & matplotlib
   https://pypi.org/project/v4l2capture/
 
 - For Picoscope devices, picopython

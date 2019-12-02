@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 18/03/2019
+    @date 01/12/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -23,8 +23,9 @@ import h5py
 
 try:
     import v4l2capture, select
+    import matplotlib.pyplot as plt
 except ImportError:
-    print "Please install v4l2capture"
+    print "Please install v4l2capture, matplotlib"
     raise
 
 ########################################################################################################################
@@ -43,6 +44,14 @@ class v4l2Device(device):
         self.driver = self.params['driver'].split('/')
         self.subdriver = self.driver[1:]
         self.frame_counter = 0
+        self.quiet=quiet
+        if 'quiet' in self.params: self.quiet=self.quiet and self.params['quiet']
+        if 'quiet' in kwargs: self.quiet=self.quiet and kwargs['quiet']
+        if not 'live_preview' in self.params:
+            if not 'live_preview' in kwargs:
+                self.live_preview=False
+            else: self.live_preview=kwargs['live_preview']
+        else: self.live_preview=self.params['live_preview']
         if params is not {}: self.scan(quiet=quiet)
         
         return
@@ -57,7 +66,14 @@ class v4l2Device(device):
             # Find /dev/video0 or similar relating to a USB device
             # v4l2-ctl --all | grep 'Bus info'  <   returns "	Bus info      : usb-0000:00:14.0-14" for example
             # we have params['vid'], params['pid'] and can use usb.core to get the bus and address to see if a match in above.
-            self.params['dev'] = '/dev/video0'
+            video_devices = glob.glob('/dev/video*')
+            n=-1
+            if len(video_devices)>1:
+                print "\tMultiple video streams detected. Please choose one of", video_devices
+                while (n<0) or (n>=len(video_devices)): 
+                    try: n=int(raw_input("Choose video stream [0-%i]: "))
+                    except: pass
+            self.params['dev'] = video_devices[n]
         try:
             self.dev = self.params['dev']
             print "\tV4L2 device: %s" % self.dev
@@ -169,6 +185,16 @@ class v4l2Device(device):
             self.config['offset']=[0.]
             self.params['n_channels']=self.config['n_frames']
 
+            '''
+            if self.live_preview:
+                self.fig = plt.figure()
+                self.ax = self.fig.add_subplot(111)
+                self.ax.axis('off')
+                #plt.ion()
+                plt.show(block=False)
+                #time.sleep(0.01)
+            '''
+
         # Capture frames
         self.vd.start()
         select.select((self.vd,),(),())
@@ -180,12 +206,27 @@ class v4l2Device(device):
         self.lastValue = [np.frombuffer(self.image_data, dtype=np.uint8).reshape(self.config['height'],self.config['width'],3)] # 8 bit colour
         self.vd.stop()
         
+        '''
+        if self.live_preview: # show one frame of set
+            try:
+                assert self.imshow
+                #print "updating"
+                self.imshow.set_data(self.lastValue[-1])
+            except:
+                self.imshow = self.ax.imshow(self.lastValue[-1])
+
+            try:
+                self.fig.canvas.draw()
+                #plt.show(block=False)
+                plt.pause(0.01)
+                #time.sleep(0.1)
+            except:
+                print "\tError updating v4l2 device window"
+        '''
+        
         if reset: self.frame_counter=0
         else: self.frame_counter += self.config['n_frames']
         
-        
-        #self.lastValue = # image frame
-        #self.lastScaled = # scaled image frame
         self.updateTimestamp()
         return self.lastValue
     
@@ -223,7 +264,8 @@ class v4l2Device(device):
             for j in range(len(self.lastValue)):
                 dsname = 'frame_%08i' % (self.frame_counter-len(self.lastValue)+j+1)
                 if dsname in dg:
-                    print "\tOverwriting image %s in HDF5 log file!" % dsname
+                    #print dg.keys()
+                    if not self.quiet: print "\tOverwriting image %s in HDF5 log file!" % dsname
                     del dg[dsname]
                 dset=dg.create_dataset(dsname, data=self.lastValue[j], dtype='uint8', chunks=True)
                 #Set the image attributes
