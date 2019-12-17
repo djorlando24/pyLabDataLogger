@@ -14,6 +14,10 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+
+
+    Note: to get correct resolution I had to run v4l2-ctl --set-fmt-video=width=640,height=480
+    
 """
 
 from device import device, pyLabDataLoggerIOError
