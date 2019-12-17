@@ -16,14 +16,15 @@
     Monash University, Australia
 
 
-    Note: to get correct resolution I had to run v4l2-ctl --set-fmt-video=width=640,height=480
-    
+    Note: to get correct resolution I had to run v4l2-ctl --set-fmt-video=width=720,height=480
+          then I had to used v4l2ucp to check stream works ok
 """
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
 import h5py
+import glob
 
 try:
     import v4l2capture, select
