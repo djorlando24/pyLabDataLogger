@@ -8,7 +8,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 17/07/2019
+    @date 01/12/2019
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -63,6 +63,8 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Video4Linux capture interfaces (i.e. video capture cards)
 
 - Generic USB webcams supported by OpenCV
+    - Note that OpenCV2 can't tell multiple webcams apart, user
+      would be asked which is which.
 
 - RS-232 Serial devices via Serial-to-USB adapters
     - Tenma 72-2710 USB programmable bench power supply

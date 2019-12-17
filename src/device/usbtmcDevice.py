@@ -293,8 +293,9 @@ class usbtmcDevice(device):
 
             self.tmcQuery=['CONF:CURR,Read?','CONF:POW,Read?']
             
-            # Set auto ranging
+            # Set auto ranging by default
             self.write("SENS:POW:RANG:AUTO ON")
+            #self.config['auto ranging'] = self.ask('SENS:CURR:RANGE:AUTO?')
 
             # Get system parameters
             #self.params['frequency'] = self.ask("MEAS:FREQ?") # PM16 does not support

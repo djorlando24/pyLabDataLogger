@@ -43,6 +43,8 @@ usb_device_table = [
     {'vid':0x1b3f, 'pid':0x2008, 'driver':'alsa', 'name':'USB sound card'},
     {'vid':0x1b80, 'pid':0xe302, 'driver':'alsa', 'name':'Video capture card (audio stream)'},
     {'vid':0x1b80, 'pid':0xe302, 'driver':'v4l2', 'name':'Video capture card (video stream)'},
+    {'vid':0x1b80, 'pid':0xe31d, 'driver':'alsa', 'name':'Video capture card hu3180e (audio stream)'},
+    {'vid':0x1b80, 'pid':0xe31d, 'driver':'v4l2', 'name':'Video capture card hu3180e (video stream)'},
 
     # OpenCV-compatible webcams
     {'vid':0x045e, 'pid':0x00f5, 'driver':'opencv', 'name':'Microsoft Webcam'},
