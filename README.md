@@ -66,15 +66,21 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Note that OpenCV2 can't tell multiple webcams apart, user
       would be asked which is which.
 
-- RS-232 Serial devices via Serial-to-USB adapters
+- RS-232 Serial devices via Serial-to-USB adapters. pyLabDataLogger may not be able to auto-identify the USB VID & PID and you might be asked to select from a list of supported devices.
     - Tenma 72-2710 USB programmable bench power supply
-    - Pico RS-232 TC-08 thermocouple logger
-    - Omega iSeries temperature process controllers, via RS-485 or RS-232
-    - CENTER 310 humidity meter
-    - OHAUS digital lab scales via RS232-to-USB
-    - Extech SD700 Barometric pressure/humidity/temperature datalogger
+    - Pico RS-232 TC-08 thermocouple logger via generic RS-232 adpater
+    - CENTER 310 humidity meter via model-specific serial to USB dongle
+    - OHAUS digital lab scales via generic RS-232 adapter
+    - Extech SD700 Barometric pressure/humidity/temperature datalogger via model-specific serial to USB dongle
+      (must set mode switch on dongle to '2')
     - Alicat Scientific M-series mass flow meters via RS232-to-USB dongle
       (default baud rate 19200, default unit ID 'A')
+    - Radwag WTB series digital lab balance/scale via RS232-to-USB UART adapter **
+    - Omega iSeries temperature process controllers, via generic RS-485 or RS-232 adapter **
+
+        ** Double asterisk denotes the need for a TTL-UART type adapter without flow control lines.
+           Testing with generic RS-232 to USB adapters indicated that when the PC attempts to take control of the flow control
+           lines upon initialising the adapter, the device will cease transmitting and it cannot be restarted without disconnecting the serial cable. The simple solution is to wire up a TTL-to-UART adapter cable to an RS232 adapter, connecting only the RX, TX, VCC and GND lines (leaving the CTS/RTS/DTR lines disconnected).
 
 - Single board computer (Raspberry Pi, Beaglebone) I2C, SPI & GPIO
     - Adafruit ADS1x15 12-bit ADCs via I2C
@@ -83,7 +89,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 
 ## Soon to be supported hardware
 
-- more I2C bus devices (ie time of flight sensors)
+- more I2C bus devices on the Raspberry Pi
 - PicoScope headless oscilloscopes
 - NI-VISA devices, such as
     - NI USB DAQ boards ie 6212-series

@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 04/07/2019
+    @date 15/01/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -50,6 +50,8 @@ class serialDevice(device):
             'serial/tc08rs232'         : Pico TC08 RS-232 thermocouple datalogger (USB version has a seperate driver 'picotc08')
             'serial/omega-iseries/232' : Omega iSeries Process Controller via RS232 transciever
             'serial/omega-iseries/485' : Omega iSeries Process Controller via RS485 transciever
+            'serial/alicat'            : Alicat Scientific M-series mass flow meter
+            'serial/wtb'               : Radwag WTB precision balance/scale
     """
 
 
@@ -489,6 +491,20 @@ class serialDevice(device):
             self.queryTerminator='\r\n'
             self.responseTerminator='\r'
 
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='wtb': # Startup config for Radwag WTB scale
+            # Fixed settings.
+            self.name = "Radwag WTB series balance"
+            self.config['channel_names']=['weight']
+            self.params['raw_units']=['?']
+            self.config['eng_units']=['?']
+            self.config['scale']=[1.]
+            self.config['offset']=[0.]
+            self.params['n_channels']=1
+            self.serialQuery=['SUI']
+            self.queryTerminator='\r\n'
+            self.responseTerminator='\r'
+
 
         # ----------------------------------------------------------------------------------------
         elif subdriver=='center310': # Startup config for CENTER 310
@@ -783,6 +799,13 @@ class serialDevice(device):
                 vals=rawData[0].split(' ')
                 self.params['raw_units']=[vals[-1].strip()]
                 return [float(vals[0])]
+
+            # ----------------------------------------------------------------------------------------
+            elif subdriver=='wtb':
+                vals=rawData[0].strip().split(' ')
+                self.params['raw_units']=[vals[-1]]
+                if self.config['eng_units'][0] == '?': self.config['eng_units']=[vals[-1]]
+                return [float(vals[-2])]
 
             # ----------------------------------------------------------------------------------------
             elif subdriver=='center310':
