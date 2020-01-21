@@ -109,7 +109,7 @@ class opencvDevice(device):
                 elif not quiet and (cam_num==0): print "\tOpenCV Version:",stdout.strip()
                 if not quiet: print "\t",cam_num,':',stderr.strip()
 
-                if ('out device of bound' in stderr) or ('VIDEOIO ERROR' in stderr):
+                if ('out device of bound' in stderr) or ('VIDEOIO ERROR' in stderr) or ('HIGHGUI ERROR' in stderr):
                     break
         
             validCamRange = [0, cam_num - 1]    
@@ -118,8 +118,10 @@ class opencvDevice(device):
             if validCamRange[0] == validCamRange[1]:
                 if not quiet: print "Using camera %i (default)" % validCamRange[0]
                 self.params['ID']=validCamRange[0]
+                confirmkb=''
             else:
                 user_choose_stream(validCamRange)
+                confirmkb='n'  
         
             
             '''
@@ -158,7 +160,6 @@ class opencvDevice(device):
         self.opencvdev = cv2.VideoCapture(self.params['ID'])
         
         # If user chose, check that they are happy with their choice.
-        confirmkb='n'
         while 'n' in confirmkb:
             if self.userChoseStream and not quiet:
                 print "\tWebcam is now active, record light should be ON."
