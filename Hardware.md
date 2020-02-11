@@ -50,6 +50,12 @@ the old repositories on Github go away. These devices have been tested on Raspbe
 # Webcams
 Webcame frame capture requires the OpenCV library. If your webcam is not detected you may need to add its VID and PID to the device table in src/device/usbDevice.py, and specify the 'opencv' driver. Then merge your changes so I can expand the supported deice list!
 
+# Video4Linux capture devices
+USB video capture device support depends on v4l2 support. A significant number of PCI and USB capture cards are not supported by Linux, so check https://www.linuxtv.org/downloads/v4l-dvb-apis-new/v4l-drivers/cardlist.html before you buy! Tested devices that work have their USB VID/PID added to usbDevice.py. These include:
+- Roxio video capture USB UB315-E ver3 with EMPIA em2860 chip, uses the em28xx driver
+- NexTech XC4991 USB video capture with SoMagic chip, uses a custom sm2021 driver, install instructions at https://github.com/Manouchehri/smi2021
+
+
 # Can you add support for my device?
 I can't test and add support for hardware unless I actually have the equipment in my hands to test it, and the time to do so.
 However, you can add support for your own device and then make a merge request to the main branch later.

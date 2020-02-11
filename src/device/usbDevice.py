@@ -10,7 +10,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 30/04/2019
+    @date 11/02/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -45,6 +45,7 @@ usb_device_table = [
     {'vid':0x1b80, 'pid':0xe302, 'driver':'v4l2', 'name':'Video capture card (video stream)'},
     {'vid':0x1b80, 'pid':0xe31d, 'driver':'alsa', 'name':'Video capture card hu3180e (audio stream)'},
     {'vid':0x1b80, 'pid':0xe31d, 'driver':'v4l2', 'name':'Video capture card hu3180e (video stream)'},
+    {'vid':0x1c88, 'pid':0x003f, 'driver':'v4l2', 'name':'Video capture card (video stream)'},
 
     # OpenCV-compatible webcams
     {'vid':0x045e, 'pid':0x00f5, 'driver':'opencv', 'name':'Microsoft Webcam'},

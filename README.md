@@ -60,7 +60,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     
 - USB Devices using Linux kernel drivers (not supported on MacOS)
     - USB audio capture devices via ALSA
-    - Video4Linux capture interfaces (i.e. video capture cards)
+    - Video4Linux capture interfaces (i.e. video capture cards, see Hardware.md for details)
 
 - Generic USB webcams supported by OpenCV
     - Note that OpenCV2 can't tell multiple webcams apart, user

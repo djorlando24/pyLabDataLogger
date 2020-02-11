@@ -103,6 +103,7 @@ pyLabDataLogger also requires the following external software:
 
 - For Video4Linux2 capture devices, you will need the v4l kernel drivers (usually installed by default on most Linux distros).
   To build python's v4l2capture you will need the v4l2 headers (apt-get install libv4l-dev for example)
+  You may also need specific device drivers for some USB capture cards (see Hardware.md)
 
 ## System configuration notes
 
