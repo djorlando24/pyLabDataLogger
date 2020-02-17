@@ -11,7 +11,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 08/03/2019
+    @date 17/02/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -40,11 +40,11 @@ DT0  = 0.5 # delay from TTL out1 to solenoid rising edge
 DT1  = 2.5 # delay from solenoid rising edge to TTL out2
 
 trigger_pin   = 16
-output_pins   = [25    , 12   , 13   , 22      , 21      ]
-output_name   = ["Sol1","TTL1","TTL2","TRG LED","ARM LED"]
-output_delays = [DT0   , 0    , DT1  , 1e-3    , 6e-2    ]
-output_plen   = [PL1   , 5e-2 , 5e-2 , DT1     , DT1     ]
-output_invert = [0     , 0    , 0    , 0       , 1       ] 
+output_pins   = [25    , 12   , 13   , 22      , 21      , 19       ]
+output_name   = ["Sol1","TTL1","TTL2","TRG LED","ARM LED","PUMP CUT"]
+output_delays = [DT0   , 0    , DT1  , 1e-3    , 6e-2    , 0        ]
+output_plen   = [PL1   , 5e-2 , 5e-2 , DT1     , DT1     , DT0+DT1  ]
+output_invert = [0     , 0    , 0    , 0       , 1       , 0        ] 
 debounce_delay = 1.0 # min. time between triggers allowed
 busy_indicator_pin = 21 # this pin will be low while the logger is working, ie for a "busy" status LED.
 busy_indicator_inv = 1   # is the busy indicator high or low while working

@@ -1,0 +1,54 @@
+I2C BUS...
+
+Adds.	Description			Chipset
+48	ADC #1 (next to USB port)	ADS1115
+49	ADC #0 (next to display cable)	ADS1115
+68	Real-time clock			PCF8523
+
+29      proximity sensor (var adds)     VL6180X
+29	TSL5291 lux sensor (fixed adds)	TSL2591
+39	APDS-9960 RGB gesture		APDS-9960
+57	Particle sensor			MAX30105
+
+SPI BUS...
+
+CS	Description			Chipset
+CE0	Barometer 			MPL115A1
+CE1	ATTINY (Reset on pin 20!)	ATTINY45/85
+(could also use MAX31856 thermocuople reader on SPI if necessary)
+
+# GPIO 12 = TTL 5V OUT 1
+# GPIO 13 = TTL 5V OUT 2
+
+# GPIO 16 = ARM BUTTON
+# GPIO 17 = TRIGGER BUTTON
+# GPIO 18 = FAULT BUTTON
+# GPIO 19 = AUX GPIO1 - HX - PUMP CUTOUT
+# GPIO 20 = AUX GPIO2 - HX - NC
+# GPIO 21 = ARM LED
+# GPIO 22 = TRG LED
+# GPIO 23 = FAULT LED
+
+# GPIO 24 = 24VDC FET OUT 2
+# GPIO 25 = 24VDC FET OUT 1
+# GPIO 26 = FET OUTPUT 3 (NC)
+# GPIO 27 = FET OUTPUT 4 (NC)
+
+
+GPIO ...
+
+GPIO5	5V TTL OUT (onboard)
+GPIO25  5V TTL OUT (onboard)
+
+Breakout board
+GPIO6   
+GPIO12
+GPIO16
+GPIO19
+GPIO20
+GPIO21
+GPIO26
+
+
+
+BCM PINS avail on GPIO breakout = 6,13,19,26,12,16,20,21
