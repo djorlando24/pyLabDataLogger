@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 15/01/2020
+    @date 17/05/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -24,7 +24,7 @@
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
-import datetime, time, struct, sys
+import datetime, time, struct, sys, os
 import binascii
 
 try:
@@ -184,7 +184,9 @@ class serialDevice(device):
                     self.port = serialport[0]
                     if not self.tty_prefix in self.port: self.port = self.tty_prefix + self.port
                     self.params['tty']=self.port
-                   
+
+                if 'tty' in self.params:
+                    if os.path.exists(self.params['tty']): break
             #####################################################################################################################
         
         if self.port is None:

@@ -10,7 +10,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 11/02/2020
+    @date 17/05/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -178,7 +178,7 @@ def search_for_usb_devices(debugMode=False):
                 except ValueError:
                     choose_n = -1
                 if choose_n == 0: table_entry = None
-                if choose_n <= len(found_devices): table_entry = found_devices[choose_n-1]
+                elif choose_n <= len(found_devices): table_entry = found_devices[choose_n-1]
             
         # If matching device(s) found, add to found_entries list
 
