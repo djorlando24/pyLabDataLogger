@@ -117,7 +117,7 @@ class serialDevice(device):
                     thepid = serialport.pid
                     if thevid==self.params['vid'] and thepid==self.params['pid']:
                         if 'port_numbers' in self.params:
-                            print '.'.join(self.params['port_numbers']), serialport.location
+                            print '.'.join([str(nnn) for nnn in self.params['port_numbers']]), serialport.location
                         self.params['tty']=serialport.device
                         self.port=serialport.device
             
