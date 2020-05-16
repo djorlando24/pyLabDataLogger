@@ -102,8 +102,31 @@ class serialDevice(device):
             self.port = self.params['port']
         elif 'pid' in self.params.keys() and 'vid' in self.params.keys(): # USB serial
             
+            # This will find all serial ports available to pySerial.
+            # We hope the USB device scanned in usbDevice.py can be found here.
+            # We need to find an exact match - there may be multiple generic devices.
             from serial.tools import list_ports
-            for serialport in list_ports.comports(): # scan all serial ports the OS can see
+            
+            # This subroutine will check for matching bus-address locations
+            # to identify a particular device even if VID and PID are generic.
+            def locationMatch(serialport):
+                # Check for bus and port match (for multiple generic serial adapters...)
+                if ('port_numbers' in self.params) and ('bus' in self.params) and ('location' in dir(serialport)):
+                    search_location = self.params['bus']+'.'.join([str(nnn) for nnn in self.params['port_numbers']])
+                    if search_location == serialport.location:
+                        return True
+                    else:
+                        if not self.quiet: print '\tVID:PID match but location %s does not match %s' % (search_location,\
+                                                serialport.location)
+                        return False
+                else:
+                    # If the feature is unsupported, assume first device is the real one! We can't check.
+                    return True
+                    
+            
+            #####################################################################################################################
+            # scan all serial ports the OS can see
+            for serialport in list_ports.comports():
                 
                 # Not all versions of pyserial have the list_ports_common module!		
                 if 'list_ports_common' in dir(serial.tools):
@@ -111,17 +134,17 @@ class serialDevice(device):
                 else:
                     objtype=None
 
+                # if serialport returns a ListPortInfo object
                 if objtype is not None and isinstance(serialport,objtype):
-                    # if serialport is a ListPortInfo object
+                    
                     thevid = serialport.vid
                     thepid = serialport.pid
-                    if thevid==self.params['vid'] and thepid==self.params['pid']:
-                        if 'port_numbers' in self.params:
-                            print '.'.join([str(nnn) for nnn in self.params['port_numbers']]), serialport.location
+                    if thevid==self.params['vid'] and thepid==self.params['pid'] and locationMatch(serialport):
                         self.params['tty']=serialport.device
                         self.port=serialport.device
             
-                elif len(serialport)>1: # if the returned device is a list, tuple or dictionary
+                # if the returned device is a list, tuple or dictionary
+                elif len(serialport)>1:
 
 		            # Some versions return a dictionary, some return a tuple with the VID:PID in the last string.
                     if 'VID:PID' in serialport[-1]: # tuple or list
@@ -133,8 +156,8 @@ class serialDevice(device):
                         if vididx <= 0: raise IndexError("Can't interpret USB VID:PID information!")
                         vidpid = serialport[-1][vididx+4:vididx+13] # take fixed set of chars after 'PID='
                         thevid,thepid = [ int(val,16) for val in vidpid.split(':')]
-                        if thevid==self.params['vid'] and thepid==self.params['pid']:
-                            # Vid/Pid matching
+                        if thevid==self.params['vid'] and thepid==self.params['pid'] and locationMatch(serialport):
+                            
                             if not self.quiet: print '\t',serialport
                             if thename is not None:
                                 self.port = thename # Linux
@@ -144,7 +167,7 @@ class serialDevice(device):
                             self.params['tty']=self.port
 
                     elif 'vid' in dir(serialport): # dictionary
-                        if serialport.vid==self.params['vid'] and serialport.pid==self.params['pid']:
+                        if serialport.vid==self.params['vid'] and serialport.pid==self.params['pid'] and locationMatch(serialport):
                             # Vid/Pid matching
                             if not self.quiet: print '\t',serialport.hwid, serialport.name
                             if serialport.name is not None:
@@ -154,11 +177,14 @@ class serialDevice(device):
                             if not self.tty_prefix in self.port: self.port = self.tty_prefix + self.port
                             self.params['tty']=self.port
 
+                # List or dict with only one entry.
                 elif len(list_ports.comports())==1: # only one found, use as default
                     self.port = serialport[0]
                     if not self.tty_prefix in self.port: self.port = self.tty_prefix + self.port
                     self.params['tty']=self.port
                    
+            #####################################################################################################################
+        
         if self.port is None:
             print "\tUnable to connect to serial port - port unknown."
             print "\tYou may need to install a specific USB-to-Serial driver."
