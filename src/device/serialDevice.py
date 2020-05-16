@@ -104,7 +104,7 @@ class serialDevice(device):
             
             from serial.tools import list_ports
             for serialport in list_ports.comports(): # scan all serial ports the OS can see
-
+                
                 # Not all versions of pyserial have the list_ports_common module!		
                 if 'list_ports_common' in dir(serial.tools):
                     objtype=serial.tools.list_ports_common.ListPortInfo
@@ -116,6 +116,8 @@ class serialDevice(device):
                     thevid = serialport.vid
                     thepid = serialport.pid
                     if thevid==self.params['vid'] and thepid==self.params['pid']:
+                        if 'port_numbers' in self.params:
+                            print '.'.join(self.params['port_numbers']), serialport.location
                         self.params['tty']=serialport.device
                         self.port=serialport.device
             
@@ -132,6 +134,7 @@ class serialDevice(device):
                         vidpid = serialport[-1][vididx+4:vididx+13] # take fixed set of chars after 'PID='
                         thevid,thepid = [ int(val,16) for val in vidpid.split(':')]
                         if thevid==self.params['vid'] and thepid==self.params['pid']:
+                            # Vid/Pid matching
                             if not self.quiet: print '\t',serialport
                             if thename is not None:
                                 self.port = thename # Linux
@@ -142,6 +145,7 @@ class serialDevice(device):
 
                     elif 'vid' in dir(serialport): # dictionary
                         if serialport.vid==self.params['vid'] and serialport.pid==self.params['pid']:
+                            # Vid/Pid matching
                             if not self.quiet: print '\t',serialport.hwid, serialport.name
                             if serialport.name is not None:
                                 self.port = serialport.name # Linux

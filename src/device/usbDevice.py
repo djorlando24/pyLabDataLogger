@@ -49,7 +49,7 @@ usb_device_table = [
 
     # OpenCV-compatible webcams
     {'vid':0x045e, 'pid':0x00f5, 'driver':'opencv', 'name':'Microsoft Webcam'},
-    {'vid':0x1908, 'pid':0x2311, 'driver':'opencv', 'name':'Gembird Webcam'},
+    #{'vid':0x1908, 'pid':0x2311, 'driver':'opencv', 'name':'Gembird Webcam'},
 
     # Specialty drivers with fixed VID and PID
     {'vid':0x09db, 'pid':0x0112, 'driver':'mcc-libusb/mccusb1608G', 'name':'MCC USB-1608GX-2AO ADC'},
@@ -182,15 +182,23 @@ def search_for_usb_devices(debugMode=False):
             
         # If matching device(s) found, add to found_entries list
 
+        # Add multiple devices to list
         if isinstance(table_entry, list):
             for n in range(len(table_entry)):
                 table_entry[n]['manufacturer']=manufacturer
                 table_entry[n]['serial_number']=dev._serial_number
+                table_entry[n]['bus']=dev.bus
+                table_entry[n]['address']=dev.address
+                table_entry[n]['port_numbers']=dev.port_numbers
                 print '- found %s, driver=%s' % (table_entry[n]['name'],table_entry[n]['driver'])
             found_entries.extend(table_entry)
+        # or add one device to list
         elif table_entry is not None:
             table_entry['manufacturer']=manufacturer
             table_entry['serial_number']=dev._serial_number
+            table_entry['bus']=dev.bus
+            table_entry['address']=dev.address
+            table_entry['port_numbers']=dev.port_numbers
             print '- found %s, driver=%s' % (table_entry['name'],table_entry['driver'])
             found_entries.append(table_entry)
         
