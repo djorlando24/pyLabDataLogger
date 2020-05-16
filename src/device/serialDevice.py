@@ -112,8 +112,10 @@ class serialDevice(device):
             def locationMatch(serialport):
                 # Check for bus and port match (for multiple generic serial adapters...)
                 if ('port_numbers' in self.params) and ('bus' in self.params) and ('location' in dir(serialport)):
-                    search_location = self.params['bus']+'.'.join([str(nnn) for nnn in self.params['port_numbers']])
+                    search_location = '%i-%s' % (self.params['bus'],'.'.join(['%i'% nn for nn in self.params['port_numbers']]))
                     if search_location == serialport.location:
+                        if not self.quiet: print '\tVID:PID match- location %s == %s' % (search_location,\
+                                                serialport.location)
                         return True
                     else:
                         if not self.quiet: print '\tVID:PID match but location %s does not match %s' % (search_location,\
@@ -212,7 +214,7 @@ class serialDevice(device):
             if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=True
             if not 'timeout' in self.params.keys(): self.params['timeout']=5
         elif self.subdriver=='alicat':
-            if not 'baudrate' in self.params.keys(): self.params['baudrate']=19600
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=19200
             if not 'ID' in self.params.keys(): self.params['ID']='A' # default unit ID is 'A'
         elif self.subdriver=='omega-usbh':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=115200
