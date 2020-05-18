@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 17/05/2020
+    @date 18/05/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -958,7 +958,15 @@ class serialDevice(device):
             if subdriver=='sd700':
                 vals = []
                 for i in range(len(rawData)):
-                    strdata= struct.unpack('15c',rawData[i])
+
+                    if len(rawData[i])>=15: # \x00\x00 starting
+                        strdata = struct.unpack('15c',rawData[i])
+                    elif len(rawData[i])>=13:
+                        strdata = struct.unpack('13c',rawData[i])
+                        strdata = ['','']+strdata
+                    else:
+                        strdata = struct.unpack('%ic' % len(rawData[i]),rawData[i])
+
                     vals.append(float(''.join(strdata[-8:]))*0.1)
                     print repr(''.join(strdata[:9])) # this bit probably indicates -ve sign, units, etc.
                 return vals
