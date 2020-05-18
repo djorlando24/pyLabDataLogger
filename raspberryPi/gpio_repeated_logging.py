@@ -37,7 +37,7 @@ verbose=True
 num_ensembles = 3
 
 # seconds min. between automated repeated queries.
-logging_period = 0.5
+logging_period = 1.0
 
 # command to play sound when ready for trigger
 sound_cmd = 'speaker-test -c1 -t sine -f 1200 -P 2 -l 1'
@@ -197,8 +197,9 @@ try:
                 # Update the loop counter in the log file
                 write_loop_counter(loop_counter, trigger_counter)
                 
-                # Wait
-                time.sleep(logging_period)
+                # Wait?
+                if (time.time()-t0 < logging_period):
+                    time.sleep(time.time()-t0+logging_period)
                 
                 # Turn off the 'busy' indicator
                 GPIO.output(busy_indicator_pin, busy_indicator_inv)
@@ -208,10 +209,10 @@ try:
             
             # Tell the user in the terminal that we are ready for the next trigger.
             trigger_counter+=1
+            subprocess.call(sound_cmd.split(' '), stdout=open(os.devnull, 'wb'))
             if verbose:
                 print('='*79)
                 print("Loop counter = %i\tWaiting for trigger - Press CTRL+C to exit" % loop_counter)
-                subprocess.call(sound_cmd.split(' '), stdout=open(os.devnull, 'wb'))
 
         #break
 
