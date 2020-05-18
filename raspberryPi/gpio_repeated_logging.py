@@ -34,7 +34,7 @@ logfilename='/home/pi/logfile_%s.hdf5' %  datetime.datetime.now().strftime('%d-%
 verbose=True
 
 # Number of ensemble repeats each time we trigger
-num_ensembles = 3
+num_ensembles = 10
 
 # seconds min. between automated repeated queries.
 logging_period = 1.0
@@ -47,7 +47,7 @@ trigger_pin   = 16
 output_pins   = [12    , 13   , 22            ]
 output_name   = ["TTL1","TTL2","TRG LED"      ]
 output_delays = [0     , 1e-3 , 2e-3          ]
-output_plen   = [5e-2  , 5e-2 , logging_period]
+output_plen   = [5e-2  , 5e-2 , 0.1           ]
 output_invert = [0     , 0    , 0             ]
 debounce_delay = 1.0 # min. time between triggers allowed
 busy_indicator_pin = 21 # this pin will be low while the logger is waiting, ie for a "busy" status LED.
