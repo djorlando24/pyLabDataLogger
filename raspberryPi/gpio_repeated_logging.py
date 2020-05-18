@@ -10,7 +10,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 17/05/2020
+    @date 18/05/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -23,7 +23,7 @@
 
 import RPi.GPIO as GPIO
 from pyLabDataLogger.device import usbDevice, i2cDevice, pyvisaDevice
-import sys,os,time,datetime
+import sys,os,time,datetime,subprocess
 import h5py
 import numpy as np
 
@@ -34,9 +34,13 @@ logfilename='/home/pi/logfile_%s.hdf5' %  datetime.datetime.now().strftime('%d-%
 verbose=True
 
 # Number of ensemble repeats each time we trigger
-num_ensembles = 10
+num_ensembles = 3
+
 # seconds min. between automated repeated queries.
-logging_period = 2.0
+logging_period = 0.5
+
+# command to play sound when ready for trigger
+sound_cmd = 'speaker-test -c1 -t sine -f 1200 -P 2 -l 1'
 
 # GPIO pins and timings for the control/triggering loop.
 trigger_pin   = 16
@@ -56,9 +60,12 @@ special_args={'debugMode':False, 'init_tc08_config':['K','K','K','T','T','T','X'
              'init_tc08_chnames':['Cold Junction','K1','K2','K3','T4','T5','T6','420mA_P1','420mA_P2']}
 
 # Loop counter can be set from the command line, otherwise zero
-if len(sys.argv) < 2: loop_counter=0
-else: loop_counter=int(sys.argv[1])
-
+if len(sys.argv) < 2: 
+    loop_counter=0
+    trigger_counter=0
+else: 
+    loop_counter=int(sys.argv[1])*num_ensembles
+    trigger_counter=int(sys.argv[1])
 #####################################################################################################################
 # Detect USB devices for datalogging.
 usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=False)
@@ -82,15 +89,25 @@ with h5py.File(logfilename,'w') as F: # force new file.
     for a in ['output_pins','output_name','output_delays','output_plen','output_invert']:
         D.create_dataset(a,data=eval(a))
     D.create_dataset('Loop counter',shape=(0,),maxshape=(1024,))
+    D.create_dataset('Trigger counter',shape=(0,),maxshape=(1024,))
 
 # This will run when we want to add the current loop counter value
-def write_loop_counter(n):
+# n is the counter for number of total sampling loops.
+# n2 is the number of manual triggers.
+def write_loop_counter(n,n2):
     with h5py.File(logfilename,'a') as F:
         D=F['GPIO Timing Loop/Loop counter']
         l=list(D.shape)
         l[0] += 1
         D.resize(l)
         D[l[0]-1]=n
+
+        D=F['GPIO Timing Loop/Trigger counter']
+        l=list(D.shape)
+        l[0] += 1
+        D.resize(l)
+        D[l[0]-1]=n2
+
     return
 
 
@@ -178,7 +195,7 @@ try:
                         #print ''
                     
                 # Update the loop counter in the log file
-                write_loop_counter(loop_counter)
+                write_loop_counter(loop_counter, trigger_counter)
                 
                 # Wait
                 time.sleep(logging_period)
@@ -190,9 +207,11 @@ try:
                 loop_counter+=1
             
             # Tell the user in the terminal that we are ready for the next trigger.
+            trigger_counter+=1
             if verbose:
                 print('='*79)
                 print("Loop counter = %i\tWaiting for trigger - Press CTRL+C to exit" % loop_counter)
+                subprocess.call(sound_cmd.split(' '), stdout=open(os.devnull, 'wb'))
 
         #break
 
