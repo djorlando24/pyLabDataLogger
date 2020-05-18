@@ -49,7 +49,7 @@ usb_device_table = [
 
     # OpenCV-compatible webcams
     {'vid':0x045e, 'pid':0x00f5, 'driver':'opencv', 'name':'Microsoft Webcam'},
-    #{'vid':0x1908, 'pid':0x2311, 'driver':'opencv', 'name':'Gembird Webcam'},
+    {'vid':0x1908, 'pid':0x2311, 'driver':'opencv', 'name':'Gembird Webcam'},
 
     # Specialty drivers with fixed VID and PID
     {'vid':0x09db, 'pid':0x0112, 'driver':'mcc-libusb/mccusb1608G', 'name':'MCC USB-1608GX-2AO ADC'},
