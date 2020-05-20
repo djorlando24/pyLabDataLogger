@@ -968,7 +968,8 @@ class serialDevice(device):
                         strdata = struct.unpack('%ic' % len(rawData[i]),rawData[i])
                         if len(strdata)>15: strdata = strdata[-15:]
                     vals.append(float(''.join(strdata[-8:]))*0.1)
-                    print repr(''.join(strdata[:9])) # this bit probably indicates -ve sign, units, etc.
+                    #debugging:
+                    #print repr(''.join(strdata[:9])) # this bit probably indicates -ve sign, units, etc.
                 return vals
 
             # ----------------------------------------------------------------------------------------
