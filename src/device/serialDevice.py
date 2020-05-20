@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 18/05/2020
+    @date 20/05/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -696,7 +696,7 @@ class serialDevice(device):
                         self.config['eng_units'][j-2] = unitStr
                     self.config['channel_names'][j-2]=nameStr
                 except:
-                    raise pyLabDataLoggerIOError("Unable to parse Alicat channel descriptor string")
+                    raise pyLabDataLoggerIOError("Unable to parse Alicat channel descriptor string.\nCheck the baud rate is %i and the device ID is %s" % (self.params['baudrate'],self.params['ID']))
             
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
