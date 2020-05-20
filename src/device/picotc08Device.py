@@ -4,10 +4,10 @@
     (serial TC08 devices are supported by serialDevice.py)
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2020 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 28/02/2019
+    @date 20/05/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -445,7 +445,14 @@ class usbtc08_logger():
     def get_single(self):
         result = usbtc08.usb_tc08_get_single(self.handle, self.channelbuffer, self.flags, self.unit)
         if result == 0:
-            raise usbtc08_error(usbtc08.usb_tc08_get_last_error(self.handle), 'Take single measurement of all channels.')
+            err_code = usbtc08.usb_tc08_get_last_error(self.handle)
+            if err_code == 16:
+                # try again
+                time.sleep(1.)
+                result = usbtc08.usb_tc08_get_single(self.handle, self.channelbuffer, self.flags, self.unit)
+                if result == 0: raise usbtc08_error(err_code, 'Take single measurement of all channels.')
+            else:
+                raise usbtc08_error(err_code, 'Take single measurement of all channels.')
         else:
             if self.debugMode:
                 print '\tTake a single measurement of all channels.'
