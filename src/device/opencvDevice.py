@@ -2,10 +2,10 @@
     OpenCV webcam device class
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2020 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 01/12/2019
+    @date 21/05/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -310,7 +310,9 @@ class opencvDevice(device):
                 if dsname in dg:
                     print "\tOverwriting image %s in HDF5 log file!" % dsname
                     del dg[dsname]
-                dset=dg.create_dataset(dsname, data=self.lastValue[j], dtype='uint8', chunks=True)
+                
+                # Flip colours in dataset - 21/5/20
+                dset=dg.create_dataset(dsname, data=np.flip(self.lastValue[j],axis=2), dtype='uint8', chunks=True)
                 #Set the image attributes
                 dset.attrs.create('CLASS', 'IMAGE')
                 dset.attrs.create('IMAGE_VERSION', '1.2')
