@@ -19,8 +19,7 @@
 """
 
 import h5py
-import sys
-import tqdm
+import sys, os, subprocess, shutil
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
@@ -40,6 +39,8 @@ if __name__ == '__main__':
     dial_min = 0. # minimum value allowed
     radius_ratio = 0.85 # make arc inside any markings
     eng_units = 'kPa'
+    
+    
     
     # smoothing kernel for denoising the interpolated pixel values
     kern = np.hanning(30,)
@@ -117,7 +118,7 @@ if __name__ == '__main__':
     I[I<0]=0 # Mask low intensity regions
     
     ### Find the needle in the haystack #################################################
-    def process_frame(I, original_image, arc_x, arc_y, kern, frame_number):
+    def process_frame(I, original_image, arc_x, arc_y, kern, frame_number, img_path=''):
     
         # Nearest neighbour interpolation onto arc
         arc_I0 = np.array([ I[int(arc_y[i]),int(arc_x[i])] for i in range(len(theta)) ])
@@ -146,15 +147,22 @@ if __name__ == '__main__':
         needle_y = c[0] + np.arange(2*radius)*np.sin(theta_middle)
         needle_x = c[1] + np.arange(2*radius)*np.cos(theta_middle)
         plt.plot(needle_x,needle_y,c='w',lw=2,alpha=.9)
-        plt.savefig('%06i.png' % frame_number)
+        plt.savefig('%s%06i.png' % (img_path,frame_number))
         del fig
         
         #plt.show(); exit() # debug
         return dv
     
+    # Make path to store images
+    img_path = os.path.splitext(sys.argv[1])[0]+'/'
+    try:
+        os.mkdir(img_path)
+    except FileExistsError as e:
+        print("Warning: image directory already exists")
+    
     # run parallel
     values = Parallel(n_jobs=-1, verbose=10)(delayed(process_frame)(I[i,...], all_images[i,...],\
-                                               arc_x, arc_y, kern, i) for i in range(I.shape[0]))
+                                               arc_x, arc_y, kern, i, img_path) for i in range(I.shape[0]))
     
     # write back
     print("Writing to hdf5 file")
@@ -170,15 +178,22 @@ if __name__ == '__main__':
     dd.attrs['dial_min']=dial_min
     dd.attrs['radius_ratio']=radius_ratio
     
+    # Make images to movie
+    movie_file = '%s.mp4' % os.path.splitext(sys.argv[1])[0]
+    subprocess.call(['ffmpeg','-i','%s%%6d.png' % img_path, '-c:v','libx264', '-r','25', '-pix_fmt','yuv420p','-preset','medium', movie_file])
+    if os.path.exists(movie_file):
+        shutil.rmtree(img_path)
+    
     ### Show images #################################################
     
     fig=plt.figure()
     plt.plot(values,marker='o')
+    plt.title(sys.argv[1])
     plt.xlabel('Frame #')
-    plt.ylabel('Measured value')
+    plt.ylabel('Measured value (%s)' % eng_units)
     plt.show()
     
-    #print(all_images.shape)
+    
     
     '''
     fig=plt.figure()
