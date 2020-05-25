@@ -37,7 +37,6 @@ def adjust_calibration(*args):
     print(args)
     return
 
-global CHG_COUNTER
 
 #### This code block will find all valid device groups in the HDF5 file ############
 
@@ -137,36 +136,34 @@ def change_param(filenames, dev_name, channel_idx):
         
         # now apply to all files
         for f in sys.argv[1:]:
-            # Open file
-            H1=h5py.File(f, 'a')
-            h5py_dev = H1[dev_name]
-            # Modify attrs
-            h5py_dev.attrs['scale'] = str(scales).encode('utf-8')
-            h5py_dev.attrs['offset'] = str(offsets).encode('utf-8')
-            h5py_dev.attrs['eng_units'] = str(units).encode('utf-8')
-            h5py_raw_dset = h5py_dev[names[channel_idx]+'/Raw values']
-            h5py_dev[names[channel_idx]+'/Scaled values'].attrs['units']=new_units
-            # Modify scaled values
-            h5py_scaled_dset = h5py_dev[names[channel_idx]+'/Scaled values']
-            h5py_scaled_dset[...] = h5py_raw_dset[...]*new_scale + new_offset
-            # Close file
-            H1.close()
-            CHG_COUNTER += 1
-            
+            try:
+                # Open file
+                H1=h5py.File(f, 'a')
+                h5py_dev = H1[dev_name]
+                # Modify attrs
+                h5py_dev.attrs['scale'] = str(scales).encode('utf-8')
+                h5py_dev.attrs['offset'] = str(offsets).encode('utf-8')
+                h5py_dev.attrs['eng_units'] = str(units).encode('utf-8')
+                h5py_raw_dset = h5py_dev[names[channel_idx]+'/Raw values']
+                h5py_dev[names[channel_idx]+'/Scaled values'].attrs['units']=new_units
+                # Modify scaled values
+                h5py_scaled_dset = h5py_dev[names[channel_idx]+'/Scaled values']
+                h5py_scaled_dset[...] = h5py_raw_dset[...]*new_scale + new_offset
+                # Close file
+                H1.close()
+            except KeyError as e:
+                colored('In file %s:\n\t%s' % (f,e),'red')
+                confirm=getinput("Press ENTER to continue...")
+                
     except KeyboardInterrupt:
-        return
+        pass
+
     
-    except IndexError:
-        exit(1)
-    except KeyError:
-        exit(1)
-    
-    return
+    return CHG_COUNTER
 
 # Make a menu that selects a device & channel #################################################
 def main(filenames):
-    CHG_COUNTER = 0
-    
+
     # Open 1st file for dev/channel selection
     H=h5py.File(filenames[0],'r')
     
@@ -203,7 +200,7 @@ def main(filenames):
                 pass
             else:
                 channel_item = FunctionItem(channel_descriptors[i], change_param,\
-                                                                (filenames, k, i))
+                                                    (filenames, k, i))
                 channel_menu.append_item(channel_item)
         
         # Add channel menu to main device menu
@@ -215,7 +212,7 @@ def main(filenames):
     dev_menu.start()
     dev_menu.join()
 
-    print("Committed %i changes." % CHG_COUNTER)
+    print("Committed changes to %i files." % (len(filenames)))
 
     return
 ###############################################################################################
