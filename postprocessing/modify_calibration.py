@@ -159,7 +159,7 @@ def change_param(filenames, dev_name, channel_idx):
         pass
 
     
-    return CHG_COUNTER
+    return 
 
 # Make a menu that selects a device & channel #################################################
 def main(filenames):
