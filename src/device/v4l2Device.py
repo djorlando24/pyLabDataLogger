@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 01/12/2019
+    @date 13/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -74,9 +74,9 @@ class v4l2Device(device):
             video_devices = glob.glob('/dev/video*')
             n=-1
             if len(video_devices)>1:
-                print "\tMultiple video streams detected. Please choose one of", video_devices
+                print "\tMultiple video streams detected. Please choose one of", ['%i: %s' % (m,video_devices[m]) for m in range(len(video_devices))]
                 while (n<0) or (n>=len(video_devices)): 
-                    try: n=int(raw_input("Choose video stream [0-%i]: "))
+                    try: n=int(raw_input("Choose video stream [0-%i]: " % (len(video_devices)-1)))
                     except: pass
             self.params['dev'] = video_devices[n]
         try:
