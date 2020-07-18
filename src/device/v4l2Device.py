@@ -5,7 +5,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 13/07/2020
+    @date 18/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -100,7 +100,7 @@ class v4l2Device(device):
         if 'fourcc' in self.params: self.config['fourcc'] = self.params['fourcc']
         else: self.config['fourcc'] = 'NTSC'
         if 'n_frames' in self.params: self.config['n_frames'] = self.params['n_frames']
-        else: self.config['n_frames'] = 100
+        else: self.config['n_frames'] = 1
         
         # choose input for multi input devices?
         if not quiet:
@@ -199,15 +199,16 @@ class v4l2Device(device):
                 self.ax.axis('off')
                 #plt.ion()
                 plt.show(block=False)
-                time.sleep(.1)
+                #time.sleep(.1)
+                plt.pause(.1)
             
 
         # Capture frames
         try:
-            self.vd.start()
-            select.select((self.vd,),(),())
+            if reset: self.vd.start()
+            if reset: select.select((self.vd,),(),())
             self.image_data = self.vd.read_and_queue()
-            self.vd.stop()
+            #self.vd.stop()
         except IOError:
             raise    
         except:
