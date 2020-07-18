@@ -40,6 +40,7 @@ class opencvDevice(device):
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
         self.driver = self.params['driver'].split('/')[1:]
+        self.MAX_CAMERAS = 16
         
         if not 'live_preview' in self.params:
             if not 'live_preview' in kwargs:
@@ -48,6 +49,7 @@ class opencvDevice(device):
         else: self.live_preview=self.params['live_preview']
             
         if not 'ID' in self.params: self.params['ID'] = None # default OpenCV camera ID number
+        if not 'debugMode' in self.params: self.params['debugMode']=False
         
         if params is not {}: self.scan(quiet=quiet)
         
@@ -76,12 +78,12 @@ class opencvDevice(device):
         
         def user_choose_stream(validCamRange):
             if not quiet:
-                print "\tMultiple webcams detected. OpenCV cannot automatically identify them."
+                print "\n\tMultiple webcams detected. OpenCV cannot automatically identify them."
                 print "\t(Your built-in webcam may be one of them)."
             self.params['ID']=-1
-            while (self.params['ID']<validCamRange[0]) or (self.params['ID']>validCamRange[1]):
+            while not self.params['ID'] in validCamRange:
                 try:
-                    self.params['ID']=int(raw_input("\tPlease select OpenCV device in the range %s: " % str(validCamRange)))
+                    self.params['ID']=int(raw_input("\tPlease select OpenCV device %s: " % str(validCamRange)))
                     self.userChoseStream = True
                 except:
                     pass
@@ -99,23 +101,27 @@ class opencvDevice(device):
                 pass
             
             # Now try and open cameras in increasing number until we hit error condition!
-            for cam_num in range(64):
+            validCamRange = []
+            for cam_num in range(self.MAX_CAMERAS):
                 proc = subprocess.Popen([sys.executable,"-c",\
                                         "import cv2; print cv2.__version__; dev=cv2.VideoCapture(%i)" % cam_num],\
                                         stdout = subprocess.PIPE, stderr = subprocess.PIPE)
                 stdout, stderr = proc.communicate()
-                
                 if stdout.strip() == '': raise RuntimeError("OpenCV version returned nothing!")
                 elif not quiet and (cam_num==0): print "\tOpenCV Version:",stdout.strip()
                 if not quiet: print "\t",cam_num,':',stderr.strip()
 
-                if ('out device of bound' in stderr) or ('VIDEOIO ERROR' in stderr) or ('HIGHGUI ERROR' in stderr):
+                if ('out device of bound' in stderr) or ('VIDEOIO ERROR' in stderr) or ('HIGHGUI ERROR' in stderr)\
+                    or ('Cannot identify device' in stderr):
                     break
         
-            validCamRange = [0, cam_num - 1]    
+        	if ('is not a capture device' in stderr) or ('can\'t open camera by index' in stderr):
+        	    pass
+        	else:
+            	    validCamRange.append( cam_num )    
 
             # only one camera anyway:
-            if validCamRange[0] == validCamRange[1]:
+            if len(validCamRange)==1:
                 if not quiet: print "Using camera %i (default)" % validCamRange[0]
                 self.params['ID']=validCamRange[0]
                 confirmkb=''
@@ -243,7 +249,7 @@ class opencvDevice(device):
             self.config['scale']=[1.]
             self.config['offset']=[0.]
             self.params['n_channels']=self.config['n_frames']
-            self.frame_counter = 0 # reset frame counter
+            self.frame_counter = -1 # reset frame counter. It'll be incremented up to zero before the first save.
 
         # Get Image(s)
         self.lastValue = []
@@ -254,8 +260,9 @@ class opencvDevice(device):
                 self.lastValue.append(frame[...])
                 # Set up live preview mode if requested
                 if j==0 and self.live_preview:
-                    cv2.imshow('pyLabDataLogger: %s' % self.params['name'],frame)
-                    if cv2.waitKey(1) & 0xFF == ord('q'): break
+                    print("\tlive_preview: displaying frame_%08i" % self.frame_counter)
+                    cv2.imshow('pyLabDataLogger: %s' % (self.params['name']),frame)
+                    if cv2.waitKey(1000) & 0xFF == ord('q'): break  # require a 1000ms wait
             else:
                 self.lastValue.append(np.array((np.nan,)))
                 raise pyLabDataLoggerIOError("OpenCV Webcam capture failed")

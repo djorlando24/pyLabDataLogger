@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 """
     Show just last frame of Video capture in HDF file.
@@ -7,7 +7,7 @@
     @copyright (c) 2020 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 13/07/2020
+    @date 18/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -32,6 +32,7 @@
 
     Version history:
         13/07/2020 - First version.
+        18/07/2020 - Bug fixes
 """
     
 import sys, os
@@ -69,7 +70,9 @@ if __name__=='__main__':
             
             frame_name = os.path.basename(frame.name)
             n = int(frame_name.split('_')[-1]) - 1 # frame usually starts at 1 not 0
-            output_name = "%s_%s.%s" % (frame_name, Timestamps[n], IMAGE_EXTN)
+            if (n<len(Timestamps)) and (n>=0): ts = Timestamps[n]
+            else: ts = "noTimestamp"
+            output_name = "%s_%s.%s" % (frame_name, ts, IMAGE_EXTN)
             full_path = output_dir+'/'+output_name
             
             # Load image array, flip around to the right way up.

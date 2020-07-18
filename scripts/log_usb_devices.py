@@ -19,16 +19,17 @@
 """
 
 from pyLabDataLogger.device import usbDevice
-import time
+import datetime,time
 
 if __name__ == '__main__':
     
-    logfilename='test_log.hdf5'
-
+    logfilename='logfile_%s.hdf5' %  datetime.datetime.now().strftime('%d-%m-%y_%Hh%Mm%Ss')
+    
     usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=False)
     
     # kwargs to customise setup of devices
-    special_args={'live_preview':True, 'debugMode':True, 'init_tc08_config':['K','K','K','T','T','T','X','X'], 'quiet':False, 'init_tc08_chnames':['Cold Junction','K1','K2','K3','T4','T5','T6','420mA_P1','420mA_P2']}
+    special_args={'live_preview':True, 'debugMode':True, 'init_tc08_config':['K','K','K','T','T','T','X','X'], 'quiet':False,\
+                  'init_tc08_chnames':['Cold Junction','K1','K2','K3','T4','T5','T6','420mA_P1','420mA_P2']}
 
     devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
 
@@ -41,7 +42,7 @@ if __name__ == '__main__':
                 d.query()
                 d.pprint()
                 d.log(logfilename)
-            time.sleep(5)
+            time.sleep(2)
     except KeyboardInterrupt:
         print "Stopped."
     except: # all other errors

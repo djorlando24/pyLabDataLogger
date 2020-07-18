@@ -7,7 +7,7 @@
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 09/07/2020
+    @date 18/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -19,7 +19,9 @@
 """
 
 from pyLabDataLogger.device import usbDevice
-import datetime
+import datetime, time
+import Tkinter as tk
+import tkMessageBox as mb
 
 if __name__ == '__main__':
     
@@ -27,7 +29,8 @@ if __name__ == '__main__':
     usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=False)
     
     # kwargs to customise setup of devices
-    special_args={'live_preview':True, 'debugMode':False, 'init_tc08_config':['K','K','K','T','T','T','X','X'], 'quiet':False, 'init_tc08_chnames':['Cold Junction','K1','K2','K3','T4','T5','T6','420mA_P1','420mA_P2']}
+    special_args={'live_preview':True, 'debugMode':True, 'init_tc08_config':['K','K','K','T','T','T','X','X'], 'quiet':False,\
+                  'init_tc08_chnames':['Cold Junction','K1','K2','K3','T4','T5','T6','420mA_P1','420mA_P2']}
 
     devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
 
@@ -40,7 +43,10 @@ if __name__ == '__main__':
                 d.query()
                 d.pprint()
                 d.log(logfilename)
-            key=raw_input("Press ENTER to continue or CTRL-C to exit")
+            time.sleep(1)
+            if not mb.askokcancel('pyLabDataLogger','Press OK to take next data or CANCEL to exit'): 
+            	print "Stopped."
+            	exit()
     except KeyboardInterrupt:
         print "Stopped."
     except: # all other errors

@@ -100,6 +100,12 @@ class device:
         if self.driverConnected: self.activate()
         else: print "Error resetting %s: device is not detected" % self.name
 
+    # Check if the device is a video type (ie for animating loops, handling output)
+    def isVideo(self):
+    	print self.driver
+        if ('opencv' in self.driver) or ('v4l2' in self.driver): return True
+        else: return False
+    
     ###########################################################################################################################################
     # Print values with units in a nice readable format.
     def pprint(self,lead='\t'):
