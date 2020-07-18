@@ -25,6 +25,7 @@ import numpy as np
 import datetime, time
 import h5py
 import glob
+from natsort import natsorted
 
 try:
     import v4l2capture, select
@@ -71,10 +72,11 @@ class v4l2Device(device):
             # Find /dev/video0 or similar relating to a USB device
             # v4l2-ctl --all | grep 'Bus info'  <   returns "	Bus info      : usb-0000:00:14.0-14" for example
             # we have params['vid'], params['pid'] and can use usb.core to get the bus and address to see if a match in above.
-            video_devices = glob.glob('/dev/video*')
+            video_devices = natsorted(glob.glob('/dev/video*'))
             n=-1
             if len(video_devices)>1:
-                print "\tMultiple video streams detected. Please choose one of", ['%i: %s' % (m,video_devices[m]) for m in range(len(video_devices))]
+                print "\tMultiple video streams detected. First one may be your internal webcam!"
+                print "\tPlease choose one of", ['%i: %s' % (m,video_devices[m]) for m in range(len(video_devices))]
                 while (n<0) or (n>=len(video_devices)): 
                     try: n=int(raw_input("Choose video stream [0-%i]: " % (len(video_devices)-1)))
                     except: pass
@@ -98,7 +100,7 @@ class v4l2Device(device):
         if 'fourcc' in self.params: self.config['fourcc'] = self.params['fourcc']
         else: self.config['fourcc'] = 'NTSC'
         if 'n_frames' in self.params: self.config['n_frames'] = self.params['n_frames']
-        else: self.config['n_frames'] = 1
+        else: self.config['n_frames'] = 100
         
         # choose input for multi input devices?
         if not quiet:
@@ -190,28 +192,31 @@ class v4l2Device(device):
             self.config['offset']=[0.]
             self.params['n_channels']=self.config['n_frames']
 
-            '''
+            
             if self.live_preview:
                 self.fig = plt.figure()
                 self.ax = self.fig.add_subplot(111)
                 self.ax.axis('off')
                 #plt.ion()
                 plt.show(block=False)
-                #time.sleep(0.01)
-            '''
+                time.sleep(.1)
+            
 
         # Capture frames
-        self.vd.start()
-        select.select((self.vd,),(),())
         try:
+            self.vd.start()
+            select.select((self.vd,),(),())
             self.image_data = self.vd.read_and_queue()
+            self.vd.stop()
+        except IOError:
+            raise    
         except:
-            pass
+            raise
         # currently only support 1 frame here. Need to update to split up multiple frames into list
-        self.lastValue = [np.frombuffer(self.image_data, dtype=np.uint8).reshape(self.config['height'],self.config['width'],3)] # 8 bit colour
-        self.vd.stop()
+        self.lastValue = [np.frombuffer(self.image_data, dtype=np.uint8).reshape(self.config['height'],\
+                            self.config['width'],3)] # 8 bit colour
         
-        '''
+        
         if self.live_preview: # show one frame of set
             try:
                 assert self.imshow
@@ -221,13 +226,14 @@ class v4l2Device(device):
                 self.imshow = self.ax.imshow(self.lastValue[-1])
 
             try:
+                self.ax.set_title("Frame %06i" % self.frame_counter)
                 self.fig.canvas.draw()
                 #plt.show(block=False)
                 plt.pause(0.01)
                 #time.sleep(0.1)
             except:
                 print "\tError updating v4l2 device window"
-        '''
+        
         
         if reset: self.frame_counter=0
         else: self.frame_counter += self.config['n_frames']
