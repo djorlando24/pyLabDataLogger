@@ -2,10 +2,10 @@
     ALSA audio capture device class
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2020 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 01/12/2019
+    @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -47,6 +47,8 @@ class alsaDevice(device):
         self.name = "uninitialized"
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
+        if 'debugMode' in kwargs.keys(): self.debugMode = kwargs['debugMode']
+        else: self.debugMode=False
         
         if 'card' in kwargs.keys(): self.alsacard = kwargs['card']
         elif 'card' in params.keys(): self.alsacard = self.params['card']
@@ -57,8 +59,8 @@ class alsaDevice(device):
 
         # Set attribute defaults to Mono, 44100 Hz
         if not 'channels' in self.params: self.params['channels']=1
+        self.params['n_channels'] = self.params['channels']
         if not 'samplerate' in self.params: self.params['samplerate']=44100
-        
         
         if params is not {}: self.scan(quiet=self.quiet)
         
@@ -93,21 +95,28 @@ class alsaDevice(device):
                 cards = [ (n, alsaaudio.cards()[n]) for n in range(len(alsaaudio.cards())) ]
             else:
                 raise RuntimeError("Unknown alsaaudio API:\n"+dir(alsaaudio))
-            #if not quiet: print "\tAll ALSA devices:",alsaaudio.cards()
+            #if self.debugMode: print "\tAll ALSA devices:",alsaaudio.cards()
             
             #  find one that matches the USB device found.
-            cards = [ c for c in cards if 'USB' in c[1] ]
+            if any(['USB' in c[1] for c in cards]): # if 'USB' in the name of any device, select from those
+                cards = [ c for c in cards if 'USB' in c[1] ]
             if len(cards)==0:
-                print "\tUnable to find a USB ALSA device."; return
+                print "\tUnable to find a USB ALSA device."
+                # abort setup.
+                return
             elif len(cards)==1:
                 print "\tFound 1 USB ALSA card: [card %02i] %s" % cards[0]
                 self.alsacard = cards[0][0]
                 self.name = "ALSA Audio device "+cards[0][1]
             elif len(cards)>1:
-                print "\tFound multiple ALSA cards:"
-                for c in cards: print "\t\t[card %02i] %s" % c
-                print "\tBy default the first one will be used. Specify kwargs 'card' to choose a different one."
-                j=0
+                print "\tFound multiple ALSA cards. The first one may be your internet sound card."
+                print "\tPlease choose one of:"
+                for j in range(len(cards)): print "\t\t%i: [card %02i] %s" % (j,cards[j][0], cards[j][1])
+                j=-1
+                while (j<0) or (j>=len(cards)):
+                    try: j=int(raw_input("Choose audio stream [0-%i]:" % (len(cards)-1)))
+                    except KeyboardInterrupt: exit(1)
+                    except: pass
                 self.alsacard = cards[j][0]
                 self.name = cards[j][1]
         

@@ -7,10 +7,10 @@
     - Handle VID/PID conflicts for devices that use generic serial ports i.e. FTDI chips.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2020 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 18/07/2020
+    @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -220,6 +220,7 @@ def load_usb_devices(devs=None,**kwargs):
 
     print '\nLoading drivers...'
     for d in devs:
+        print '\n'
         print d['name'], '-', d['driver']
         driverClass = d['driver'].split('/')[0].lower()
 

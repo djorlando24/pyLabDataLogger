@@ -2,10 +2,10 @@
     Video 4 Linux capture device support (v4l2)
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2020 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 18/07/2020
+    @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -75,10 +75,13 @@ class v4l2Device(device):
             video_devices = natsorted(glob.glob('/dev/video*'))
             n=-1
             if len(video_devices)>1:
-                print "\tMultiple video streams detected. First one may be your internal webcam!"
-                print "\tPlease choose one of", ['%i: %s' % (m,video_devices[m]) for m in range(len(video_devices))]
+                print "\tMultiple video streams detected. The one first may be your internal webcam!"
+                print "\tPlease choose one of:"
+                for m in range(len(video_devices)):
+                    print '\t\t%i: [%s]' % (m,video_devices[m])
                 while (n<0) or (n>=len(video_devices)): 
                     try: n=int(raw_input("Choose video stream [0-%i]: " % (len(video_devices)-1)))
+                    except KeyboardInterrupt: exit(1)
                     except: pass
             self.params['dev'] = video_devices[n]
         try:
