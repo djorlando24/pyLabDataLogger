@@ -4,9 +4,9 @@
     Test lm-sensors support.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 20/11/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -19,9 +19,12 @@
 """
 
 from pyLabDataLogger.device import lmsensorsDevice
+from pyLabDataLogger.logger import globalFunctions
 import time
 
 if __name__ == '__main__':
+    
+    globalFunctions.banner()
     
     devices = [lmsensorsDevice.lmsensorsDevice(quiet=False)]
 
@@ -30,12 +33,12 @@ if __name__ == '__main__':
     try:
         while True:
             for d in devices:
-                print '-'*79
-                print d.name
+                cprint( d.name, 'magenta', attrs=['bold'] )
                 d.query()
                 d.pprint()
                 d.log('lm_sensors_test_log.hdf5')
-            time.sleep(2)
+            time.sleep(1)
+            print("")
     except KeyboardInterrupt:
         print "Stopped."
     except: # all other errors

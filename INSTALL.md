@@ -37,21 +37,44 @@ Those which require legacy versions or are hard to find have been stored in the 
 - For *Thorlabs translation stages*, pyAPT for Linux:
   Use the python2 modified version in thirdParty directory, or download from https://gitlab.com/weinshec/pyAPT.git
 
-### External python modules you must install yourself
+### Python modules available via package manager
 
-- numpy (usually comes bundled with Python)
+Use pip, easy_install, apt, etc.
+
+- numpy
+
+- matplotlib
+
+- natsort
+
+- tqdm
+
+- termcolor
+
+- re
+
+- subprocess
+
+- glob
 
 - pyusb (for USB device support. Access via pip or pypi/easy_install)
+
+- pylibftdi
 
 - For I2C devices, you will need smbus module:
   and driver specific modules i.e. Adafruit_ADS1x15
 
-- for Picoscope devices, install pico-python
-  https://github.com/colinoflynn/pico-python
-
 - For VISA over TCP/IP for networked devices, pyvisa-py module is required
   Install by 'pip install pyvisa-py' and check installed options with
   'python -m visa info'
+
+- For TC-08 RS-232 serial support, install the thermocouples_reference
+  module which provides conversion of thermocouple voltage to temperature.
+
+### Python modules you must install yourself
+
+- for Picoscope devices, install pico-python
+  https://github.com/colinoflynn/pico-python
 
 - For Agilent 33220A, usbtmc driver is required.
   See thirdParty/usbtmc or download yourself from https://github.com/python-ivi/python-usbtmc
@@ -59,7 +82,7 @@ Those which require legacy versions or are hard to find have been stored in the 
 - For ALSA audio devices, pyalsaaudio
   https://github.com/larsimmisch/pyalsaaudio.git
 
-- For Video4Linux support, v4l2capture module & matplotlib
+- For Video4Linux support, v4l2capture module
   https://pypi.org/project/v4l2capture/
 
 - For Picoscope devices, picopython

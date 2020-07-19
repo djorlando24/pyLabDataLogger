@@ -4,9 +4,9 @@
     pyVISA-py device class
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 28/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -16,16 +16,30 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time, sys, struct
+from termcolor import cprint
 
 try:
     import visa
 except ImportError:
-    print "Please install pyvisa-py"
+    cprint( "Please install pyvisa-py", 'red', attrs=['bold'])
     raise
 
 ########################################################################################################################
@@ -79,9 +93,9 @@ class pyvisaDevice(device):
         assert(self.rm)
         
         if not 'resource' in self.params:
-            print "pyVISA-py: Please specify a resource. Possible resources include but not limited to:"
+            cprint( "pyVISA-py: Please specify a resource. Possible resources include but not limited to:", 'yellow', attrs=['bold'])
             print self.rm.list_resources()
-            print "Network device resources can usually be determined by browsing to the device's IP address or checking the Network Settings control panel on the device."
+            print( "Network device resources can usually be determined by browsing to the device's IP address or checking the Network Settings control panel on the device." )
             return
         
         self.activate(quiet=quiet)
@@ -145,7 +159,7 @@ class pyvisaDevice(device):
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
         
         except ValueError:
-            print "%s - Invalid setting requested" % self.name
+            cprint( "%s - Invalid setting requested" % self.name, 'red', attrs=['bold'])
         
         return
 
@@ -164,7 +178,7 @@ class pyvisaDevice(device):
         self.deactivate()
         self.scan()
         if self.driverConnected: self.activate()
-        else: print "Error resetting %s: device is not detected" % self.name
+        else: cprint( "Error resetting %s: device is not detected" % self.name, 'red', attrs=['bold'])
 
     # For oscilloscopes, sweep the channels for a certain parameter stored under
     # SCPI command :CHAN<n.:CMD
@@ -369,7 +383,7 @@ class pyvisaDevice(device):
             assert(self.inst)
             if self.inst is None: raise pyLabDataLoggerIOError
         except:
-            print "Connection to the device is not open."
+            cprint( "Connection to the device is not open.", 'red', attrs=['bold'])
 
         # If first time or reset, get configuration (ie units)
         if not 'raw_units' in self.params.keys() or reset:

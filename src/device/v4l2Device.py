@@ -2,9 +2,9 @@
     Video 4 Linux capture device support (v4l2)
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2020 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -15,6 +15,20 @@
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
 
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    
+    ---
 
     Note: to get correct resolution I had to run v4l2-ctl --set-fmt-video=width=720,height=480
           then I had to used v4l2ucp to check stream works ok
@@ -23,15 +37,17 @@
 from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
-import h5py
-import glob
-from natsort import natsorted
 
 try:
     import v4l2capture, select
+    from natsort import natsorted
     import matplotlib.pyplot as plt
-except ImportError:
-    print "Please install v4l2capture, matplotlib"
+    import h5py
+    import glob
+    from termcolor import cprint
+except ImportError as e:
+    cprint( "Please install missing module:", 'red', attrs=['bold'])
+    cprint( e, 'red')
     raise
 
 ########################################################################################################################
@@ -75,10 +91,10 @@ class v4l2Device(device):
             video_devices = natsorted(glob.glob('/dev/video*'))
             n=-1
             if len(video_devices)>1:
-                print "\tMultiple video streams detected. The one first may be your internal webcam!"
-                print "\tPlease choose one of:"
+                print( "\tMultiple video streams detected. The one first may be your internal webcam!" )
+                print( "\tPlease choose one of:" )
                 for m in range(len(video_devices)):
-                    print '\t\t%i: [%s]' % (m,video_devices[m])
+                    print( '\t\t%i: [%s]' % (m,video_devices[m]) )
                 while (n<0) or (n>=len(video_devices)): 
                     try: n=int(raw_input("Choose video stream [0-%i]: " % (len(video_devices)-1)))
                     except KeyboardInterrupt: exit(1)
@@ -86,9 +102,9 @@ class v4l2Device(device):
             self.params['dev'] = video_devices[n]
         try:
             self.dev = self.params['dev']
-            print "\tV4L2 device: %s" % self.dev
+            cprint( "\tV4L2 device: %s" % self.dev, 'green' )
         except KeyError:
-            print "No v4l2 device found."
+            cprint( "No v4l2 device found.", 'red', attrs=['bold'])
             return
         if self.dev is not None: self.activate(quiet=quiet)
         return
@@ -107,8 +123,8 @@ class v4l2Device(device):
         
         # choose input for multi input devices?
         if not quiet:
-            print "\tRequest %i x %i, fourcc = %s, capture %i frames" % (self.config['width'],self.config['height'],\
-                        self.config['fourcc'],self.config['n_frames'])
+            cprint( "\tRequest %i x %i, fourcc = %s, capture %i frames" % (self.config['width'],self.config['height'],\
+                        self.config['fourcc'],self.config['n_frames']),'green')
         
         if 'uninitialized' in self.name:    
             self.name = '%s v4l2 stream' % self.dev
@@ -116,7 +132,7 @@ class v4l2Device(device):
         try:
             self.vd = v4l2capture.Video_device(self.dev)
             size_x, size_y = self.vd.set_format(self.config['width'], self.config['height'])
-            if not quiet: print "\tv4l2 device chose {0}x{1} res".format(size_x, size_y)
+            if not quiet: cprint( "\tv4l2 device chose {0}x{1} res".format(size_x, size_y) ,'green')
             self.config['width']=size_x
             self.config['height']=size_y
             self.vd.create_buffers(self.config['n_frames'])
@@ -150,8 +166,7 @@ class v4l2Device(device):
             self.query(reset=True)
             
         except ValueError:
-            print "%s - Invalid setting requested" % self.name
-            print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
+            cprint( "%s - Invalid setting requested" % self.name, 'red', attrs=['bold'])
         
         return
 
@@ -170,7 +185,7 @@ class v4l2Device(device):
         self.deactivate()
         self.scan()
         if self.driverConnected: self.activate()
-        else: print "Error resetting %s: device is not detected" % self.name
+        else: cprint( "Error resetting %s: device is not detected" % self.name, 'red', attrs=['bold'])
 
     
 
@@ -182,7 +197,7 @@ class v4l2Device(device):
             assert(self.vd)
             if self.vd is None: raise pyLabDataLoggerIOError
         except:
-            print "Connection to the v4l2 stream is not open."
+            cprint( "Connection to the v4l2 stream is not open.", 'red', attrs=['bold'])
 
         # First-time configuration
         if not 'raw_units' in self.params.keys() or reset:
@@ -225,7 +240,6 @@ class v4l2Device(device):
         if self.live_preview: # show one frame of set
             try:
                 assert self.imshow
-                #print "updating"
                 self.imshow.set_data(self.lastValue[-1])
             except:
                 self.imshow = self.ax.imshow(self.lastValue[-1])
@@ -234,10 +248,9 @@ class v4l2Device(device):
                 self.ax.set_title("Frame %06i : %s" % (self.frame_counter,self.lastValueTimestamp))
                 self.fig.canvas.draw()
                 #plt.show(block=False)
-                plt.pause(0.01)
-                #time.sleep(0.1)
+                plt.pause(0.01) # 10 ms for window to refresh itself.
             except:
-                print "\tError updating v4l2 device window"
+                cprint( "\tError updating v4l2 device window", 'red', attrs=['bold'])
         
         
         if reset: self.frame_counter=0
@@ -279,7 +292,7 @@ class v4l2Device(device):
             for j in range(len(self.lastValue)):
                 dsname = 'frame_%08i' % (self.frame_counter-len(self.lastValue)+j+1)
                 if dsname in dg:             
-                    if not self.quiet: print "\tOverwriting image %s in HDF5 log file!" % dsname
+                    if not self.quiet: cprint( "\tOverwriting image %s in HDF5 log file!" % dsname, 'yellow' )
                     del dg[dsname]
                 dset=dg.create_dataset(dsname, data=np.fliplr(np.flipud(self.lastValue[j])), dtype='uint8', chunks=True,\
                                         compression='gzip', compression_opts=1) # apply fast compression

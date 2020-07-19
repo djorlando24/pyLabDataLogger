@@ -2,9 +2,9 @@
     Main device class for pyPiDataLogger
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2020 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -15,6 +15,19 @@
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
 
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
     Changes:
         22/02/2019 - Added logging options
 """
@@ -22,11 +35,12 @@
 import datetime
 import numpy as np
 import sys, os
+from termcolor import cprint
 
 try:
     import h5py
 except ImportError:
-    print "Install h5py library to enable HDF5 logging support."
+    cprint( "Install h5py library to enable HDF5 logging support.", 'red', attrs=['bold'])
 
 class pyLabDataLoggerIOError(IOError):
     """ Exception raised when an IO error occurs in a driver.
@@ -39,7 +53,8 @@ class pyLabDataLoggerIOError(IOError):
     def __init__(self, *args, **kwargs):
         # Call the base class constructor with the parameters it needs
         super(pyLabDataLoggerIOError, self).__init__(*args,**kwargs)
-        print "\tIO Error: ",''.join(args)
+        cprint( "\tIO Error:", 'red', attrs=['bold'])
+        cprint( "\t"+''.join(args), 'red')
         pass
 
 
@@ -63,21 +78,21 @@ class device:
 
     # Detect if device is present
     def scan(self):
-        print "scan method not yet implemented for",self.name
+        cprint( "scan method not yet implemented for",self.name, 'red', attrs=['bold'])
 
     # Establish connection to device (ie open serial port)
     def activate(self):
         # self.driverConnected=True
-        print "activate method not yet implemented for",self.name
+        cprint( "activate method not yet implemented for",self.name, 'red', attrs=['bold'])
 
     # Deactivate connection to device (ie close serial port)
     def deactivate(self):
         self.driverConnected=False
-        print "deactivate method not yet implemented for",self.name
+        cprint( "deactivate method not yet implemented for",self.name, 'red', attrs=['bold'])
 
     # Apply configuration changes to the driver
     def apply_config(self):
-        print "apply_config not yet implemented for",self.name
+        cprint( "apply_config not yet implemented for",self.name, 'red', attrs=['bold'])
 
     # Update configuration (ie change sample rate or number of samplezzs)
     def update_config(self,config_keys={}):
@@ -98,11 +113,10 @@ class device:
         self.deactivate()
         self.scan()
         if self.driverConnected: self.activate()
-        else: print "Error resetting %s: device is not detected" % self.name
+        else: cprint( "Error resetting %s: device is not detected" % self.name, 'red', attrs=['bold'])
 
     # Check if the device is a video type (ie for animating loops, handling output)
     def isVideo(self):
-    	print self.driver
         if ('opencv' in self.driver) or ('v4l2' in self.driver): return True
         else: return False
     

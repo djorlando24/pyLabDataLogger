@@ -1,13 +1,13 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 """
-    Show just last frame of Video capture in HDF file.
+    pyUSB functionality test.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-20 LTRAC
+    @copyright (c) 2020 LTRAC
     @license GPL-3.0+
     @version 1.0.0
-    @date 13/07/2020
+    @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -30,27 +30,14 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-    Version history:
-        13/07/2020 - First version.
 """
-    
-import sys
-import h5py
-import numpy as np
-import matplotlib.pyplot as plt
 
-if __name__=='__main__':
-	H=h5py.File(sys.argv[1],'r')
-	Dev=H['Video capture card (video stream)']
-	Frames=Dev.keys() 
-	LastFrame = [ f for f in Frames if 'frame' in f ][-1]
-	Timestamps = Dev['timestamp']
-	LastTimestamp = Timestamps[-1]
-	ImageData = Dev[LastFrame][...]
-	ImageData = np.fliplr(np.flipud(ImageData))
-	fig=plt.figure()
-	plt.suptitle(sys.argv[1])
-	plt.title('%s @ %s' % (LastFrame,LastTimestamp))
-	plt.imshow(ImageData)
-	H.close()
-	plt.show()
+    
+import usb.core
+for dev in usb.core.find(find_all=True): 
+	serial_number=None;manufacturer=None
+	try: serial_number=dev.serial_number
+	except: pass
+	try: manufacturer=dev.manufacturer
+	except: pass
+	print 'bus=%03i address=%03i : vid=0x%04x pid=0x%04x : class=0x%02x device=0x%04x serial=%s manuf=%s' % (dev.bus, dev.address, dev.idVendor, dev.idProduct,dev.bDeviceClass,dev.bcdDevice,serial_number,manufacturer)

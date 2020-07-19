@@ -8,9 +8,9 @@
         - SPI devices
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 28/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/

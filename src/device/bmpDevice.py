@@ -3,9 +3,9 @@
     Compatible with BMP085 and BMP150 
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 06/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -15,17 +15,31 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from i2cDevice import *
 from device import pyLabDataLoggerIOError
 import datetime, time
 import numpy as np
+from termcolor import cprint
 
 try:
     import Adafruit_BMP.BMP085 as BMP085
 except ImportError:
-    print "Error, could not load Adafruit_BMP085 library"
+    cprint( "Error, could not load Adafruit_BMP085 library", 'red', attrs=['bold'])
 
 ########################################################################################################################
 class bmpDevice(i2cDevice):
@@ -50,7 +64,7 @@ class bmpDevice(i2cDevice):
         self.config['scale']=np.ones(self.params['n_channels'],)
         self.config['offset']=np.zeros(self.params['n_channels'],)
         if 'gain' in self.params: self.config['gain']=self.params['gain']
-        print "Activating %s on i2c bus at %i:%s with %i channels" % (self.params['driver'],self.params['bus'],self.params['address'],self.params['n_channels'])
+        cprint( "Activating %s on i2c bus at %i:%s with %i channels" % (self.params['driver'],self.params['bus'],self.params['address'],self.params['n_channels']), 'green')
         if ('untitled' in self.name.lower()) or (self.name==''):
             self.name = '%s I2C %i:%s' % (self.params['driver'],self.params['bus'],self.params['address'])
 

@@ -8,9 +8,9 @@
     Logging is done after the GPIO loop is complete each time.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 17/02/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/

@@ -5,9 +5,9 @@
     Run a sequence of events after an input trigger is detected.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 08/03/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/

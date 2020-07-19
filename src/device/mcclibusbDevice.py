@@ -3,9 +3,9 @@
     based on the mcc-libusb driver by Warren J. Jasper
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 28/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -15,16 +15,31 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
 import site, itertools, glob
 import datetime, time
+from termcolor import cprint
 
+# Ctypes required
 import ctypes, ctypes.util, struct
-from ctypes import c_int, c_bool, py_object, c_long, c_uint, c_ulong, c_float, c_uint8, c_uint16, POINTER, cast, addressof, c_double, c_char_p
-#from threading import Lock
+from ctypes import c_int, c_bool, py_object, c_long, c_uint, c_ulong, c_float,\
+                c_uint8, c_uint16, POINTER, cast, addressof, c_double, c_char_p
 
 # This is the ScanList struct defined by the interface C header file
 class ScanList_t(ctypes.Structure):
@@ -68,17 +83,18 @@ class mcclibusbDevice(device):
                 if libname is None: raise OSError
                 _lib=ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
         except OSError:
-            print "Please install mcc-libusb"
+            cprint( "Please install mcc-libusb", 'red', attrs=['bold'])
             return
         self.libmccusb = _lib
-        if not quiet: print "\tLoaded %s" % _lib._name
+        if not quiet: cprint( "\tLoaded %s" % _lib._name, 'green')
 
         # Get subdriver
         self.subdriver = ''.join(params['driver'].split('/')[1:])
         # Check it is supported
         if not self.subdriver in self.supported_devices:
-            print "\tError. Device %s not supported." % self.subdriver
-            print "\tValid choices are:",self.supported_devices
+            cprint( "\tError. Device %s not supported." % self.subdriver, 'red', attrs=['bold'])
+            cprint( "\tValid choices are:", 'red')
+            cprint(self.supported_devices,'red')
             return
         
         # Find DLLs for specific devices generated at build time from src/mcclibusb
@@ -88,7 +104,7 @@ class mcclibusbDevice(device):
             path_to_lib = list(itertools.chain.from_iterable([ glob.glob(p+'/lib'+libname+'.'+libext)\
                                         for p in sites ]))
             if len(path_to_lib)>0: break
-        if len(path_to_lib)==0: print("\tWarning - can't find lib%s" % libname)
+        if len(path_to_lib)==0: cprint("\tWarning - can't find lib%s" % libname,'yellow')
         else: self.libpath = path_to_lib[0]
 
         # Set up the device class
@@ -113,11 +129,11 @@ class mcclibusbDevice(device):
         
         if override_params is not None: self.params = override_params
 
-        if not self.quiet: print '\tScanning for devices'
+        if not self.quiet: cprint( '\tScanning for devices' ,'green')
 
         # Load device-specific library found in __init__.
         self.L = ctypes.cdll.LoadLibrary(self.libpath)        
-        if not self.quiet: print '\tLoaded',self.L._name
+        if not self.quiet: cprint( '\tLoaded '+self.L._name,'green')
 
         # Scan for device
         self.L.detect_device.restype = pyudev_t
@@ -250,8 +266,7 @@ class mcclibusbDevice(device):
             # ...
         
         except ValueError:
-            print "%s - Invalid setting requested" % self.name
-            print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
+            cprint( "%s - Invalid setting requested" % self.name, 'red', attrs=['bold'])
         
         return
 
@@ -275,7 +290,7 @@ class mcclibusbDevice(device):
         self.deactivate()
         self.scan()
         if self.driverConnected: self.activate()
-        else: print "Error resetting %s: device is not detected" % self.name
+        else: cprint( "Error resetting %s: device is not detected" % self.name, 'red', attrs=['bold'])
 
     # Read values from device.
     def get_values(self):
@@ -314,7 +329,7 @@ class mcclibusbDevice(device):
         try:
             assert(self.pyudev)
         except:
-            print "Connection to the device is not open."
+            cprint( "Connection to the device is not open.", 'red', attrs=['bold'])
 
         # If first time or reset, get configuration (ie units)
         if not 'raw_units' in self.params.keys() or reset:

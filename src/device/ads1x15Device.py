@@ -2,9 +2,9 @@
     Adafruit ADS1x15 Analog to Digital Converter Class
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 06/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -14,17 +14,31 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from i2cDevice import *
 from device import pyLabDataLoggerIOError
 import datetime, time
 import numpy as np
+from termcolor import cprint
 
 try:
     import Adafruit_ADS1x15
 except ImportError:
-    print "Error, could not load Adafruit_ADS1x15 library"
+    cprint( "Error, could not load Adafruit_ADS1x15 library", 'red', attrs=['bold'])
 
 ########################################################################################################################
 class ads1x15Device(i2cDevice):
@@ -44,7 +58,7 @@ class ads1x15Device(i2cDevice):
         elif self.params['driver']=='ADS1015':
             self.ADC =  Adafruit_ADS1x15.ADS1015(address=int(self.params['address'],16), busnum=self.params['bus'])
         else:
-            print "Error: unknown driver. Choices are ADS1015 or ADS1115"
+            cprint( "Error: unknown driver. Choices are ADS1015 or ADS1115" ,'red',attrs=['bold'] )
             return
 
         if not 'differential' in self.params.keys(): 
@@ -70,7 +84,7 @@ class ads1x15Device(i2cDevice):
         self.config['offset']=np.zeros(self.params['n_channels'],)
         if 'gain' in self.params: self.config['gain']=self.params['gain']
 
-        print "Activating %s on i2c bus at %i:%s with %i channels" % (self.params['driver'],self.params['bus'],self.params['address'],self.params['n_channels'])
+        cprint( "Activating %s on i2c bus at %i:%s with %i channels" % (self.params['driver'],self.params['bus'],self.params['address'],self.params['n_channels']) , 'green' )
         if self.diffDefault: print "\tDifferential mode (default)"
         elif self.diff: print "\tDifferential mode specified"
         else: print "\tSingle-ended mode"
@@ -89,7 +103,7 @@ class ads1x15Device(i2cDevice):
         if not 'gain' in self.config.keys(): self.config['gain']=[default_gain]*self.params['n_channels']
         for chg in self.config['gain']:
             if not chg in valid_gain_values:
-                print "Error, gain values are invalid. Resetting"
+                cprint( "Error, gain values are invalid. Resetting", 'yellow' )
                 self.config['gain']=[default_gain]*self.params['n_channels']
         return
 

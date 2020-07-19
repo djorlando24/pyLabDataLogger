@@ -2,9 +2,9 @@
     Serial device class - arduino like devices that talk over a USB to serial TTY
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 29/11/2018
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -14,17 +14,31 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from serialDevice import serialDevice
 from device import pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
+from termcolor import cprint
 
 try:
     import serial
 except ImportError:
-    print "Please install pySerial"
+    cprint( "Please install pySerial", 'red', attrs=['bold'])
     raise
 
 ########################################################################################################################
@@ -40,7 +54,7 @@ class arduinoSerialDevice(serialDevice):
             assert(self.Serial)
             if self.Serial is None: raise pyLabDataLoggerIOError("Could not access serial port")
         except:
-            print "Serial connection to Arduino device is not open."
+            cprint( "Serial connection to Arduino device is not open.", 'red', attrs=['bold'])
         
         # The serial arduino device should report repeated strings with the structure
         # DESCRIPTION: VARIABLE = VALUE UNITS, VARIABLE = VALUE UNITS\n
@@ -63,7 +77,7 @@ class arduinoSerialDevice(serialDevice):
             self.config['eng_units']=[]
             self.params['n_channels']=0
             self.name = desc
-            print '\t',self.name
+            cprint( '\t'+self.name, 'green')
     
             while self.config['eng_units'] == []:
                 nbytes=0; s=''

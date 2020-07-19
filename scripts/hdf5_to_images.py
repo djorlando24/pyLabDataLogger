@@ -4,9 +4,9 @@
     Show just last frame of Video capture in HDF file.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2020 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -33,7 +33,7 @@
     Version history:
         13/07/2020 - First version.
         18/07/2020 - Bug fixes
-        19/07/2020 - allow overwrite
+        19/07/2020 - allow overwrite, colour text.
 """
     
 import sys, os, shutil
@@ -42,6 +42,7 @@ import tqdm
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
+from termcolor import cprint
 
 IMAGE_EXTN = 'jpg'
 
@@ -55,7 +56,7 @@ if __name__=='__main__':
     H=h5py.File(sys.argv[1],'r')
     
     # Find all devices containing image data type
-    print("Scanning for images in HDF5 file...")
+    cprint("Scanning for images in HDF5 file...",'cyan')
     videoDevices = [ g for g in H.values() if np.any([ 'IMAGE_SUBCLASS' in g.values()[n].attrs.keys() for n in range(len(g.keys()))])  ]
     
     # Loop thru all devices
@@ -90,7 +91,7 @@ if __name__=='__main__':
             
         print("")
     
-    print("Done.")
+    cprint("Done.",'cyan')
             
             
             

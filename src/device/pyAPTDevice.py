@@ -2,9 +2,9 @@
     pyAPT device class - Thorlabs stepper motors
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 28/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -14,23 +14,37 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
+from termcolor import cprint
 
 try:
     import pylibftdi
     import pyAPT
 except ImportError:
-    print "Please install pyAPT and pylibftdi"
+    cprint( "Please install pyAPT and pylibftdi", 'red', attrs=['bold'])
     exit()
 
 try:
     import usb.core
 except ImportError:
-    print "Please install pyUSB"
+    cprint( "Please install pyUSB", 'red', attrs=['bold'])
     raise
 
 ########################################################################################################################
@@ -79,7 +93,7 @@ class pyAPTDevice(device):
         
         # Find the matching pyAPT device seen on the USB tree, ensure it exists
         try:
-            print '\tLooking for APT controllers'
+            cprint( '\tLooking for APT controllers', 'green')
             drv = pylibftdi.Driver()
             controllers = drv.list_devices()
         except:
@@ -87,13 +101,13 @@ class pyAPTDevice(device):
         
         if self.serial_number is None:
             for controller in controllers:
-                print controller
+                cprint( controller, 'magenta' )
                 con = pyAPT.Controller(serial_number=controller[2])
                 print '\t',con.info()
                 if fmatch(con,self.bus,self.adds): self.serial_number = controller[2]
             
         if self.serial_number is None:
-            print "Could not open port to device."
+            cprint( "Could not open port to device.", 'red', attrs=['bold'])
         else: self.activate(quiet=quiet)
         return
 
@@ -116,7 +130,7 @@ class pyAPTDevice(device):
         self.query(reset=True)
 
         if not quiet: 
-            print '\t',self.params['name']
+            print( '\t'+str(self.params['name']) )
             self.pprint()
         return
 
@@ -161,7 +175,7 @@ class pyAPTDevice(device):
         self.deactivate()
         self.scan()
         if self.driverConnected: self.activate()
-        else: print "Error resetting %s: device is not detected" % self.name
+        else: cprint( "Error resetting %s: device is not detected" % self.name, 'red', attrs=['bold'])
     
     # Handle query for values
     def query(self, reset=False):

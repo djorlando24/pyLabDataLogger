@@ -55,6 +55,8 @@ USB video capture device support depends on v4l2 support. A significant number o
 - Roxio video capture USB UB315-E ver3 with EMPIA em2860 chip, uses the em28xx driver
 - NexTech XC4991 USB video capture with SoMagic chip, uses a custom sm2021 driver, install instructions at https://github.com/Manouchehri/smi2021
 
+To get correct resolution detected for some v4l2 devices, I had to run v4l2-ctl --set-fmt-video=width=720,height=480 then I had to used v4l2ucp to check stream works ok. Those programs should be available through apt or yum, etc.
+
 
 # Can you add support for my device?
 I can't test and add support for hardware unless I actually have the equipment in my hands to test it, and the time to do so.

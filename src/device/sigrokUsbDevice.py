@@ -2,9 +2,9 @@
     Sigrok-USB device class for pyPiDataLogger
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 30/04/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -14,21 +14,35 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
+from termcolor import cprint
 
 try:
     import usb.core
 except ImportError:
-    print "Please install pyUSB"
+    cprint( "Please install pyUSB", 'red', attrs=['bold'])
     raise
 
 try:
     import sigrok.core.classes as sr
 except ImportError:
-    print "Please install sigrok with Python bindings"
+    cprint( "Please install sigrok with Python bindings", 'red', attrs=['bold'])
     raise
 
 
@@ -190,10 +204,10 @@ class srdevice(device):
         elif (self.params['model'] == 'UT32x') or (self.params['model'] == '72-7730'):
             self.config['valid_samplerates']=(None,)
         elif self.subdriver == 'rigol-ds':
-            if not self.quiet: print '\tSample rate must be set on the oscilloscope in advance'
+            if not self.quiet: cprint( '\tSample rate must be set on the oscilloscope in advance', 'yellow')
             self.config['valid_samplerates']=(1,)
         else:
-            if not self.quiet: print '\tDefault samplerates not known for',self.params['model']
+            if not self.quiet: cprint( '\tDefault samplerates not known for %s' % self.params['model'],'yellow')
             self.config['valid_samplerates']=(1,)
         
         self.config['samplerate']=self.config['valid_samplerates'][0]
@@ -202,14 +216,14 @@ class srdevice(device):
     def log_callback_debug(self, loglevel, s):  
         if self.quiet: return
         if loglevel != sr.LogLevel.SPEW:
-            print "\t\tsr(%s):" % loglevel, repr(s)
+            print( "\t\tsr(%s): %s" % (loglevel, repr(s)) )
         return
 
     # Callback for sigrok logging (for normal operation mode)
     def log_callback_normal(self, loglevel, s):
         if self.quiet: return
         if loglevel == sr.LogLevel.INFO:
-            print "\t\tsr(%s):" % loglevel, repr(s)
+            print( "\t\tsr(%s): %s" % (loglevel, repr(s)) )
         return
 
     # Establish connection to device (ie open port)
@@ -218,7 +232,7 @@ class srdevice(device):
             raise ValueError("Cannot use driver %s with sigrokUsbDevice" % self.driver)
             
         # Make new Sigrok context, attempt to load driver requested.
-        print "\tconnecting to %s - sigrok driver" % self.name
+        cprint( "\tconnecting to %s - sigrok driver" % self.name ,'green')
         self.srcontext = sr.Context.create()
         if self.debugMode: self.srcontext.set_log_callback(self.log_callback_debug) # noisy debugging
         else: self.srcontext.set_log_callback(self.log_callback_normal) # minimal messages
@@ -240,9 +254,9 @@ class srdevice(device):
         self.sessionReady = 0 # Zero when session not yet created, 1 when created by callback not setup, 2 when good to go.
         self.has_digital_input = False
                 
-        if not self.quiet: print "\t%s - %s with %d channels: %s" % (self.srdev.driver.name, str.join(' ',\
+        if not self.quiet: print( "\t%s - %s with %d channels: %s" % (self.srdev.driver.name, str.join(' ',\
                 [s for s in (self.srdev.vendor, self.srdev.model, self.srdev.version) if s]),\
-                len(self.srdev.channels), str.join(' ', [c.name for c in self.srdev.channels]))
+                len(self.srdev.channels), str.join(' ', [c.name for c in self.srdev.channels])) )
 
         # Determine channel types and names.
         if sr.ChannelType.LOGIC in [c.type for c in self.srdev.channels]:
@@ -265,7 +279,7 @@ class srdevice(device):
         self.config['enabled'] = [c.enabled for c in self.srdev.channels]
         if False in self.config['enabled']: 
             if not self.quiet: 
-                print "\tEnabled channels:",[self.config['channel_names'][i] for i in range(nch) if self.config['enabled'][i]]
+                print( "\tEnabled channels:",[self.config['channel_names'][i] for i in range(nch) if self.config['enabled'][i]])
         self.default_samplerate()
         
         # Set default configuration parameters
@@ -302,8 +316,8 @@ class srdevice(device):
             if self.config['valid_samplerates'][0] is not None:
                 try:
                     if not self.config['samplerate'] in self.config['valid_samplerates']:
-                        print "Samplerate",self.config['samplerate'],"not accepted"
-                        print "Valid sample rates =",self.config['valid_samplerates']
+                        cprint( "Samplerate %s not accepted" % self.config['samplerate'], 'red', attrs=['bold'])
+                        cprint( "Valid sample rates = %s " % self.config['valid_samplerates'], 'red', attrs=['bold'])
                     self.srdev.config_set(sr.ConfigKey.SAMPLERATE, self.config['samplerate'])
                 except ValueError as err:
                     pass
@@ -418,10 +432,10 @@ class srdevice(device):
             # If only 1 sample, convert self.lastValue to list rather than list of lists with 1 item each.
             if self.config['n_samples']<2:
                 self.lastValue = [ v[0] for v in self.lastValue ]
-                print self.lastValue, self.params['raw_units']
+                print( '%s %s' % (self.lastValue, self.params['raw_units'] ) )
 
         except pyLabDataLoggerIOError:
-            print "Unable to communicate with %s"  % self.name
+            cprint( "Unable to communicate with %s"  % self.name, 'red', attrs=['bold'])
             self.lastValue=[np.nan]*self.params['n_channels']
 
 

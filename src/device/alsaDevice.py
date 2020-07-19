@@ -2,9 +2,9 @@
     ALSA audio capture device class
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2020 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -15,6 +15,19 @@
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
 
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
     TODO: need to test with known function to ensure stereo encoding and bit depth unpacking is correct.
 
 """
@@ -22,17 +35,18 @@
 from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
+from termcolor import cprint
 
 try:
     import alsaaudio
 except ImportError:
-    print "Please install pyalsaaudio module/"
+    cprint( "Please install pyalsaaudio module/", 'red', attrs=['bold'])
     raise
 
 try:
     import usb.core
 except ImportError:
-    print "Please install pyUSB"
+    cprint( "Please install pyUSB", 'red', attrs=['bold'])
     raise
 
 ########################################################################################################################
@@ -101,16 +115,16 @@ class alsaDevice(device):
             if any(['USB' in c[1] for c in cards]): # if 'USB' in the name of any device, select from those
                 cards = [ c for c in cards if 'USB' in c[1] ]
             if len(cards)==0:
-                print "\tUnable to find a USB ALSA device."
+                cprint( "\tUnable to find a USB ALSA device.", 'red', attrs=['bold'])
                 # abort setup.
                 return
             elif len(cards)==1:
-                print "\tFound 1 USB ALSA card: [card %02i] %s" % cards[0]
+                cprint( "\tFound 1 USB ALSA card: [card %02i] %s" % cards[0], 'green')
                 self.alsacard = cards[0][0]
                 self.name = "ALSA Audio device "+cards[0][1]
             elif len(cards)>1:
-                print "\tFound multiple ALSA cards. The first one may be your internet sound card."
-                print "\tPlease choose one of:"
+                print( "\tFound multiple ALSA cards. The first one may be your internet sound card." )
+                print( "\tPlease choose one of:" )
                 for j in range(len(cards)): print "\t\t%i: [card %02i] %s" % (j,cards[j][0], cards[j][1])
                 j=-1
                 while (j<0) or (j>=len(cards)):
@@ -155,8 +169,8 @@ class alsaDevice(device):
 
         if not 'sampleperiod' in self.params: self.params['sampleperiod']=0.1
 
-        print "\tSettings: %i channels @ %.0f Hz / %i bits, sampling for %f sec" %\
-              (self.params['channels'],self.params['samplerate'],self.params['bitdepth'],self.params['sampleperiod'])
+        cprint( "\tSettings: %i channels @ %.0f Hz / %i bits, sampling for %f sec" %\
+              (self.params['channels'],self.params['samplerate'],self.params['bitdepth'],self.params['sampleperiod']) , 'green' )
         
         # The period size controls the internal number of frames per period.
         # The significance of this parameter is documented in the ALSA api.
@@ -205,8 +219,8 @@ class alsaDevice(device):
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
 
         except ValueError:
-            print "%s - Invalid setting requested" % self.name
-            print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
+            cprint( "%s - Invalid setting requested" % self.name, 'red', attrs=['bold'])
+            cprint( "\t(V="+self.params['set_voltage']+" I="+self.params['set_current']+")", 'red')
         
         return
 
@@ -225,7 +239,7 @@ class alsaDevice(device):
         self.deactivate()
         self.scan()
         if self.driverConnected: self.activate()
-        else: print "Error resetting %s: device is not detected" % self.name
+        else: cprint( "Error resetting %s: device is not detected" % self.name, 'red', attrs=['bold'])
 
     
 
@@ -237,7 +251,7 @@ class alsaDevice(device):
             assert(self.pcm)
             if self.pcm is None: raise pyLabDataLoggerIOError("Could not access PCM device")
         except:
-            print "Connection to the ALSA PCM device is not open."
+            cprint( "Connection to the ALSA PCM device is not open.", 'red', attrs=['bold'])
 
         # Make empty output
         self.lastValue = [None]*self.params['n_channels']

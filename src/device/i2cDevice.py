@@ -2,9 +2,9 @@
     I2C device class - for Linux
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 28/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -14,17 +14,36 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from device import device, pyLabDataLoggerIOError
 import datetime, time
 import numpy as np
+from termcolor import cprint
 
 """ Scan for available and unused i2c bus addresses that may contain
     devices we can talk to. """
 def scan_for_devices(bus=1):
-    import smbus
-    bus = smbus.SMBus(bus) # 1 indicates /dev/i2c-1
+    try:
+        import smbus
+        bus = smbus.SMBus(bus) # 1 indicates /dev/i2c-1
+    except ImportError:
+        cprint( "Error, smbus module could not be loaded", 'red', attrs=['bold'])
+        return
+    
     devices=[]
     for device in range(128):
        try:
@@ -54,7 +73,7 @@ def load_i2c_devices(devices=None,bus=1,**kwargs):
             from pyLabDataLogger.device import bmpDevice
             device_list.append(bmpDevice.bmpDevice(params={'address':address, 'bus':bus},**kwargs))
         else:
-            print "I don't know what to do with I2C device at address",address
+            cprint( "I don't know what to do with I2C device at address "+str(address), 'red', attrs=['bold'])
             print load_i2c_devices.__doc__
     return device_list
 
@@ -94,7 +113,7 @@ class i2cDevice(device):
         if override_params is not None: self.params = override_params
         
         if not 'address' in self.params.keys():
-            print "Error, no I2C address specified"
+            cprint( "Error, no I2C address specified", 'red', attrs=['bold'])
             return
         
         try:
@@ -103,7 +122,7 @@ class i2cDevice(device):
             try:
                 bus.read_byte(int(self.params['address'],16))
             except:
-                print "Error, no I2C devices found on bus %i address %s" % (self.params['bus'],self.params['address'])
+                cprint( "Error, no I2C devices found on bus %i address %s" % (self.params['bus'],self.params['address']), 'red', attrs=['bold'])
                 raise
                 return
 
@@ -112,5 +131,5 @@ class i2cDevice(device):
             if not quiet: self.pprint()
             
         except ImportError:
-            print "Error, smbus module could not be loaded"
+            cprint( "Error, smbus module could not be loaded", 'red', attrs=['bold'])
             return

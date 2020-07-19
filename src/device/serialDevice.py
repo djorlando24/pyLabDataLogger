@@ -2,9 +2,9 @@
     Serial device class - general serial port support
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 20/05/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -19,18 +19,31 @@
      - commas denote a sequence of commands sent as quickly as possible.
      - a double-comma denotes a pause for data aquisition by the client device,
        where the delay is set by params['sample_period'].
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time, struct, sys, os
 import binascii
+from termcolor import cprint
 
 try:
     import serial
 except ImportError:
-    print "Please install pySerial"
+    cprint( "Please install pySerial", 'red', attrs=['bold'])
     raise
 
 
@@ -75,7 +88,7 @@ class serialDevice(device):
             try:
                 from thermocouples_reference import thermocouples
             except ImportError:
-                print "Please install the thermocouples_reference module"
+                cprint( "Please install the thermocouples_reference module", 'red', attrs=['bold'])
                 raise
 
         # Apply custom initial configuration settings
@@ -114,12 +127,12 @@ class serialDevice(device):
                 if ('port_numbers' in self.params) and ('bus' in self.params) and ('location' in dir(serialport)):
                     search_location = '%i-%s' % (self.params['bus'],'.'.join(['%i'% nn for nn in self.params['port_numbers']]))
                     if search_location == serialport.location:
-                        if not self.quiet: print '\tVID:PID match- location %s == %s' % (search_location,\
-                                                serialport.location)
+                        if not self.quiet: cprint( '\tVID:PID match- location %s == %s' % (search_location,\
+                                                  serialport.location) , 'green')
                         return True
                     else:
-                        if not self.quiet: print '\tVID:PID match but location %s does not match %s' % (search_location,\
-                                                serialport.location)
+                        if not self.quiet: cprint( '\tVID:PID match but location %s does not match %s' % (search_location,\
+                                                serialport.location), 'yellow' )
                         return False
                 else:
                     # If the feature is unsupported, assume first device is the real one! We can't check.
@@ -153,14 +166,14 @@ class serialDevice(device):
                         thename = serialport[0]
                         # Sometimes serialport[-1] will contain "USB VID:PID=0x0000:0x0000" and
                         # sometimes extra data will follow after, i.e. "USB VID:PID=1234:5678 SERIAL=90ab".
-                        if not self.quiet: print '\t',serialport[-1] # report to terminal, useful for debugging.
+                        if not self.quiet: print( '\t'+str(serialport[-1])) # report to terminal, useful for debugging.
                         vididx = serialport[-1].upper().index('PID')
                         if vididx <= 0: raise IndexError("Can't interpret USB VID:PID information!")
                         vidpid = serialport[-1][vididx+4:vididx+13] # take fixed set of chars after 'PID='
                         thevid,thepid = [ int(val,16) for val in vidpid.split(':')]
                         if thevid==self.params['vid'] and thepid==self.params['pid'] and locationMatch(serialport):
                             
-                            if not self.quiet: print '\t',serialport
+                            if not self.quiet: print( '\t'+str(serialport))
                             if thename is not None:
                                 self.port = thename # Linux
                             else:
@@ -171,7 +184,7 @@ class serialDevice(device):
                     elif 'vid' in dir(serialport): # dictionary
                         if serialport.vid==self.params['vid'] and serialport.pid==self.params['pid'] and locationMatch(serialport):
                             # Vid/Pid matching
-                            if not self.quiet: print '\t',serialport.hwid, serialport.name
+                            if not self.quiet: print( '\t'+str(serialport.hwid)+' '+str(serialport.name))
                             if serialport.name is not None:
                                 self.port = serialport.name # Linux
                             else:
@@ -190,9 +203,10 @@ class serialDevice(device):
             #####################################################################################################################
         
         if self.port is None:
-            print "\tUnable to connect to serial port - port unknown."
-            print "\tYou may need to install a specific USB-to-Serial driver."
-            print "\tfound non-matching ports:",list_ports.comports()[0]
+            cprint( "\tUnable to connect to serial port - port unknown.", 'red', attrs=['bold'])
+            cprint( "\tYou may need to install a specific USB-to-Serial driver.",'red')
+            cprint( "\tfound non-matching ports:", 'red')
+            cprint( list_ports.comports()[0], 'red')
             raise pyLabDataLoggerIOError("Serial port driver missing")
         
         else: self.activate()
@@ -234,11 +248,11 @@ class serialDevice(device):
         if not 'timeout_total' in self.params.keys(): self.params['timeout_total']=10. # sec for total request loop
         if not 'min_response_length' in self.params.keys(): self.params['min_response_length']=0 # bytes
         
-        if not self.quiet: print "\tOpening serial port %s: %s (%i, %s, %s, %s, %s, %i)" % (self.port,\
+        if not self.quiet: cprint( "\tOpening serial port %s: %s (%i, %s, %s, %s, %s, %i)" % (self.port,\
                                     self.params['baudrate'],\
                                     self.params['bytesize'], self.params['parity'],\
                                     self.params['stopbits'], self.params['xonxoff'],\
-                                    self.params['rtscts'], self.params['timeout'])
+                                    self.params['rtscts'], self.params['timeout']), 'green')
                                     
         self.Serial = serial.Serial(port=self.port, baudrate=self.params['baudrate'],\
                                     bytesize=self.params['bytesize'], parity=self.params['parity'],\
@@ -342,7 +356,7 @@ class serialDevice(device):
         self.deactivate()
         self.scan()
         if self.driverConnected: self.activate()
-        else: print "Error resetting %s: device is not detected" % self.name
+        else: cprint( "Error resetting %s: device is not detected" % self.name, 'red', attrs=['bold'])
 
     ########################################################################################################################
     # Blocking call to send a request and get a string back.
@@ -418,7 +432,7 @@ class serialDevice(device):
             # Find out what model we have
             idstring = self.blockingSerialRequest('ID?\r\n',terminationChar='\r',min_response_length=1)
             if idstring is None:  raise pyLabDataLoggerIOError("no response from oscilloscope") 
-            else: print "\tGPIB Address %i: Device ID string = %s" % (self.params['gpib-address'],idstring)
+            else: cprint( "\tGPIB Address %i: Device ID string = %s" % (self.params['gpib-address'],idstring) , 'green')
             
             if 'TDS 220' in idstring: 
                 self.name = "Tektronix TDS220"
@@ -500,7 +514,7 @@ class serialDevice(device):
             elif int(self.config['RATE'])==7: self.config['sample_rate_Hz'] = 640
             elif int(self.config['RATE'])==8: self.config['sample_rate_Hz'] = 1000
             else: raise ValueError("omega-usbh: unknown RATE value %s" % self.config['RATE'])
-            print "\tomega-usbh: Sample rate %i Hz" % self.config['sample_rate_Hz']
+            cprint( "\tomega-usbh: Sample rate %i Hz" % self.config['sample_rate_Hz'], 'green')
             # Get/set sampling period. Default 1 second.
             if not 'sample_period' in self.params: self.params['sample_period']=1.
             # 6-10 bytes per sample, * sample period, * samples per second, dictates maxlen returned for 'PC'
@@ -556,7 +570,7 @@ class serialDevice(device):
             
             # Confirm model number. Send 'K' and response will be \r\n terminated.
             self.params['ID']=self.blockingSerialRequest('K\r\n','\r')
-            print "\tReturned Model ID =",self.params['ID']
+            cprint( "\tReturned Model ID =",self.params['ID'], 'green')
 
             
         # ----------------------------------------------------------------------------------------
@@ -571,14 +585,14 @@ class serialDevice(device):
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
             if '485' in self.driver:
-                if not self.quiet: print '\tRS-485 comms mode with fixed address = 01'
+                if not self.quiet: cprint( '\tRS-485 comms mode with fixed address = 01', 'green')
                 #RS-485 requires commands to be prepended with the device's address
                 self.serialQuery=['*\xb01X\xb01',\
                                   '*\xb01R\xb01',\
                                   '*\xb01R\xb02',\
                                   '*\xb01U\xb01']
             else: # RS-232
-                if not self.quiet: print '\tRS-232 comms mode with fixed address = 01'
+                if not self.quiet: cprint( '\tRS-232 comms mode with fixed address = 01','green')
                 self.serialQuery=['*\xb01X\xb01',\
                                   '*\xb01R\xb01',\
                                   '*\xb01R\xb02',\
@@ -593,15 +607,15 @@ class serialDevice(device):
             time.sleep(1.)  #settling time
             while True:
                 req='*\xb01R\xb05\r'
-                print "Send",repr(req)
+                print( "\tSend "+repr(req) )
                 ver=self.blockingRawSerialRequest(req,terminationChar='',\
                                  sleeptime=.01,min_response_length=1,maxlen=64)
                 #ver=struct.unpack('>3c',ver)
-                print "Read",repr(ver)
+                cprint( "\tRead "+repr(ver) )
                 #self.params['version'] = repr(ver)#ver[0]+binascii.hexlify(ver[1])
                 #if self.params['version'][0] == 'V': break
                 time.sleep(.1)
-            print '\tISeries ID =',self.params['version']
+            cprint( '\tISeries ID = '+self.params['version'], 'green')
 
 
         # ----------------------------------------------------------------------------------------
@@ -637,7 +651,7 @@ class serialDevice(device):
                 self.params['version'] = ver[0]+binascii.hexlify(ver[1])
                 if self.params['version'][0] == 'V': break
                 time.sleep(.5)
-            print '\tTC08 version =',self.params['version']
+            cprint( '\tTC08 version = '+str(self.params['version']), 'green' )
             
         # ----------------------------------------------------------------------------------------
         elif subdriver=='sd700':
@@ -876,7 +890,7 @@ class serialDevice(device):
                 elif 'H' in mode: self.params['raw_units'][1]='F'
                 elif '\x10' in mode: pass
                 else: 
-                    print "\t!! Unknown device mode string in serial response"
+                    cprint( "\t!! Unknown device mode string in serial response", 'red', attrs=['bold'])
                     raise ValueError
                 if len(rawData[0])<6: raise ValueError # Short/corrupted responses.
                 decoded=rawData[0][2:] # Everything after the mode string is T&H data
@@ -945,7 +959,7 @@ class serialDevice(device):
                             #print repr(decoded), decoded
                             vals.append(float(decoded))
                         except ValueError as e:
-                            print e
+                            cprint( e, 'red', attrs=['bold'])
                             vals.append(np.nan)
                             continue
                     else:
@@ -976,15 +990,15 @@ class serialDevice(device):
             if subdriver=='alicat':
                 valStrings= [ s for s in rawData[0].split(' ') if s!='' ]
                 if valStrings[0].upper() != self.params['ID'].upper(): raise pyLabDataLoggerIOError("Alicat Device ID mismatch - wrong serial port?")
-                print self.config['channel_names']
+                cprint( self.config['channel_names'], 'red' )
                 return [ float(valStrings[1]), float(valStrings[2]), float(valStrings[3]), float(valStrings[4]), valStrings[5].strip() ]
 
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         except ValueError:
-            print "\t!! Failure to unpack raw string from device:", rawData
+            cprint( "\t!! Failure to unpack raw string from device: "+str( rawData ), 'red', attrs=['bold'])
         except IndexError: # Nothing in rawData!
-            print "\tDevice %s returned no data." % self.name
+            cprint( "\tDevice %s returned no data." % self.name , 'red', attrs=['bold'])
         
         return [np.nan]*self.params['n_channels']
     
@@ -1002,7 +1016,7 @@ class serialDevice(device):
                 # The responses will be concatenated.
                 if ',,' in self.serialQuery[n] and not 'sample_period' in self.params:
                     self.params['sample_period']=1.
-                    print "sample_period not set for %s, default to 1 second" % self.name
+                    cprint( "sample_period not set for %s, default to 1 second" % self.name, 'yellow')
 
                 # Split commands,set default values.
                 cmds=self.serialQuery[n].split(',')
@@ -1041,7 +1055,7 @@ class serialDevice(device):
             assert(self.Serial)
             if self.Serial is None: raise pyLabDataLoggerIOError("Could not access serial port.")
         except:
-            print "Serial connection to the device is not open."
+            cprint( "Serial connection to the device is not open.", 'red', attrs=['bold'])
 
         # If first time or reset, get configuration
         if not 'raw_units' in self.params.keys() or reset:

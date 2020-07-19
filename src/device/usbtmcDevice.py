@@ -5,9 +5,9 @@
     https://github.com/python-ivi/python-usbtmc
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 28/02/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -17,22 +17,36 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time, struct, sys
+from termcolor import cprint
 
 try:
     import usbtmc
 except ImportError:
-    print "Please install usbtmc"
+    cprint( "Please install usbtmc", 'red', attrs=['bold'])
     raise
     
 try:
     import usb.core
 except ImportError:
-    print "Please install pyUSB"
+    cprint( "Please install pyUSB", 'red', attrs=['bold'])
     raise
 
 ########################################################################################################################
@@ -103,18 +117,18 @@ class usbtmcDevice(device):
             else:
                 self.instr.clear()
         except usbtmc.usbtmc.UsbtmcException as e:
-            print '\t',e
+            cprint( '\t%s' % e, 'red', attrs=['bold'])
 
         # Try and get ID of device as a check for successful connection
         try:
             self.params['IDN'] = self.ask("*IDN?")
-            print "\tdetected %s" % self.params['IDN']
+            cprint( "\tdetected %s" % self.params['IDN'] ,'green')
             if self.subdriver=='33220a': 
                 self.write("SYST:BEEP") # beep the interface
         except KeyboardInterrupt: raise
         except:
             self.params['IDN']='?'
-            if not quiet: print '[no response]\n'
+            if not quiet: cprint( '[no response]\n', 'yellow', attrs=['bold'])
                     
         # Make first query to get units, description, etc.
         self.query(reset=True)
@@ -149,8 +163,7 @@ class usbtmcDevice(device):
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
     
         except ValueError:
-            print "%s - Invalid setting requested" % self.name
-            print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
+            cprint( "%s - Invalid setting requested" % self.name, 'red', attrs=['bold'])
         
         return
 
@@ -169,7 +182,7 @@ class usbtmcDevice(device):
         self.deactivate()
         self.scan()
         if self.driverConnected: self.activate()
-        else: print "Error resetting %s: device is not detected" % self.name
+        else: cprint( "Error resetting %s: device is not detected" % self.name , 'red', attrs=['bold'])
 
     # Ask a command and get a response. Print debugging info if required
     def ask(self,cmd):
@@ -345,7 +358,7 @@ class usbtmcDevice(device):
             except KeyboardInterrupt: raise
             except:
                 rawData.append(np.nan) # failed to get data
-                if self.debugMode: print "[no response]\n"
+                if self.debugMode: cprint( "[no response]\n", 'red', attrs=['bold'])
 
         
         self.lastValue = self.convert_to_array(rawData)
@@ -361,13 +374,13 @@ class usbtmcDevice(device):
             assert(self.instr)
             if self.instr is None: raise pyLabDataLoggerIOError("Could not access device.")
         except:
-            print "Connection to the device is not open."
+            cprint( "Connection to the device is not open.", 'red', attrs=['bold'])
 
         # For 33220a, if the mode has changed we will need to reset the configuration.
         if self.subdriver=='33220a' and 'mode' in self.params:
             if self.ask('FUNC?') != self.params['mode']:
                 reset=True
-                if self.debugMode: print "\tFunction mode switch detected"
+                if self.debugMode: cprint( "\tFunction mode switch detected", 'yellow' )
             
 
         # If first time or reset, get configuration (ie units)

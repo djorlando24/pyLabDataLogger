@@ -7,9 +7,9 @@
     - Handle VID/PID conflicts for devices that use generic serial ports i.e. FTDI chips.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2020 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -19,6 +19,19 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 # Known hardware.
@@ -104,7 +117,7 @@ usb_device_table = [
     #{'vid':0x0403, 'pid':0x6001, 'driver':'shell', 'bcdDevice':0x600, 'name':'Intel Edison A502OTFN'},
 ]
 
-
+from termcolor import cprint
 
 # Search table for a match
 def match_device(dev):
@@ -137,11 +150,11 @@ def search_for_usb_devices(debugMode=False):
     try:
         import usb.core
     except ImportError as e:
-        print "Please install pyUSB"
+        cprint( "Please install pyUSB", 'red', attrs=['bold'])
         print '\t',e
         return []
 
-    print "Scanning for USB devices..."
+    cprint( "Scanning for USB devices..." ,'cyan')
     found_entries = []
 
     # Search all USB devices on the computer
@@ -170,11 +183,11 @@ def search_for_usb_devices(debugMode=False):
         elif (len(found_devices) == 2) & ('v4l2' in [d['driver'] for d in found_devices]): table_entry = found_devices # Video and audio capture type device with two drivers
         else:
             # Handle multiple possible matches (generic/common USB adapter)
-            print '\nGeneric USB adapter found at %i.%i. Please choose which hardware you have on this adapter:' % (dev.bus, dev.address)
-            print "0) None (don't use this device)"
+            print( '\nGeneric USB adapter found at %i.%i. Please choose which hardware you have on this adapter:' % (dev.bus, dev.address) )
+            print( "0) None (don't use this device)")
             n=1; choose_n=-1
             for d in found_devices: 
-                print '%i) %s (%s)' % (n,d['name'],d['driver'])
+                print( '%i) %s (%s)' % (n,d['name'],d['driver']))
                 n+=1
             while (choose_n<0) | (choose_n>len(found_devices)):
                 try:
@@ -194,7 +207,7 @@ def search_for_usb_devices(debugMode=False):
                 table_entry[n]['bus']=dev.bus
                 table_entry[n]['address']=dev.address
                 table_entry[n]['port_numbers']=dev.port_numbers
-                print '- found %s, driver=%s' % (table_entry[n]['name'],table_entry[n]['driver'])
+                print( '- found %s, driver=%s' % (table_entry[n]['name'],table_entry[n]['driver']) )
             found_entries.extend(table_entry)
         # or add one device to list
         elif table_entry is not None:
@@ -203,11 +216,11 @@ def search_for_usb_devices(debugMode=False):
             table_entry['bus']=dev.bus
             table_entry['address']=dev.address
             table_entry['port_numbers']=dev.port_numbers
-            print '- found %s, driver=%s' % (table_entry['name'],table_entry['driver'])
+            print( '- found %s, driver=%s' % (table_entry['name'],table_entry['driver']) )
             found_entries.append(table_entry)
         
 
-    print 'Detected %i devices.\n' % len(found_entries)
+    cprint( 'Detected %i devices.\n' % len(found_entries), 'green')
     return found_entries
 
 """
@@ -218,10 +231,9 @@ def load_usb_devices(devs=None,**kwargs):
     device_list=[]
     if devs is None: devs=search_for_usb_devices()
 
-    print '\nLoading drivers...'
+    cprint( '\nLoading drivers...', 'green')
     for d in devs:
-        print '\n'
-        print d['name'], '-', d['driver']
+        cprint( '\n' + d['name'] + '-' + d['driver'], 'magenta', attrs=['bold'] )
         driverClass = d['driver'].split('/')[0].lower()
 
         # USB serial types -- load appropriate top level driver here.
@@ -263,7 +275,7 @@ def load_usb_devices(devs=None,**kwargs):
             device_list.append(opencvDevice.opencvDevice(params=d,**kwargs))
         
         else:
-            print "\tI don't know what to do with this device"
+            cprint( "\tI don't know what to do with this device" ,'red', attrs=['bold'])
 
     return device_list
 

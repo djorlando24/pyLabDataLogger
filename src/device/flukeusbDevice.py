@@ -2,9 +2,9 @@
     Fluke USB device support
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 15/03/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -14,17 +14,31 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time, struct, array
+from termcolor import cprint
 
 try:
     import usb.core
     import usb.util
 except ImportError:
-    print "Please install pyUSB library"
+    cprint( "Please install pyUSB library", 'red', attrs=['bold'])
     raise
 
 ########################################################################################################################
@@ -62,7 +76,7 @@ class flukeusbDevice(device):
             else:
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
         except:
-            print "Unable to find Fluke USB device."
+            cprint( "Unable to find Fluke USB device.", 'red', attrs=['bold'])
             return
         
         if self.dev is not None:
@@ -117,8 +131,8 @@ class flukeusbDevice(device):
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
         
         except ValueError:
-            print "%s - Invalid setting requested" % self.name
-            print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
+            cprint( "%s - Invalid setting requested" % self.name, 'red', attrs=['bold'])
+            cprint( "\t(V="+self.params['set_voltage']+" I="+self.params['set_current']+")" , 'red')
         
         return
 
@@ -137,7 +151,7 @@ class flukeusbDevice(device):
         self.deactivate()
         self.scan()
         if not self.driverConnected: self.activate()
-        else: print "Error resetting %s: device is not detected" % self.name
+        else: cprint( "Error resetting %s: device is not detected" % self.name, 'red', attrs=['bold'])
 
     # Configure device based on what sub-driver is being used.
     # This is done when self.query(reset=True) is called, as at
@@ -176,7 +190,7 @@ class flukeusbDevice(device):
                     break
     
             if len(s) < 64:
-                print "\tFluke 568 communication failed."
+                cprint( "\tFluke 568 communication failed.", 'red', attrs=['bold'])
                 return
             
             # Extraction of values. Little endian floats are buried inside the byte string.
@@ -232,7 +246,7 @@ class flukeusbDevice(device):
             assert(self.dev)
             if self.dev is None: raise pyLabDataLoggerIOError
         except:
-            print "\tConnection to the device is not open."
+            cprint( "\tConnection to the device is not open.", 'red', attrs=['bold'])
 
         # If first time or reset, get configuration (ie units)
         if not 'raw_units' in self.params.keys() or reset:

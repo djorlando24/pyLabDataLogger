@@ -1,13 +1,13 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 """
-    Show just last frame of Video capture in HDF file.
+    Omega iSeries Serial Communications Test
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-20 LTRAC
+    @copyright (c) 2020 LTRAC
     @license GPL-3.0+
     @version 1.0.0
-    @date 13/07/2020
+    @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -29,28 +29,41 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-    Version history:
-        13/07/2020 - First version.
 """
-    
-import sys
-import h5py
-import numpy as np
-import matplotlib.pyplot as plt
 
-if __name__=='__main__':
-	H=h5py.File(sys.argv[1],'r')
-	Dev=H['Video capture card (video stream)']
-	Frames=Dev.keys() 
-	LastFrame = [ f for f in Frames if 'frame' in f ][-1]
-	Timestamps = Dev['timestamp']
-	LastTimestamp = Timestamps[-1]
-	ImageData = Dev[LastFrame][...]
-	ImageData = np.fliplr(np.flipud(ImageData))
-	fig=plt.figure()
-	plt.suptitle(sys.argv[1])
-	plt.title('%s @ %s' % (LastFrame,LastTimestamp))
-	plt.imshow(ImageData)
-	H.close()
-	plt.show()
+import serial
+import sys
+
+port = '/dev/ttyUSB0'
+baudrate = 9600
+bytesize = serial.SEVENBITS
+parity = serial.PARITY_ODD
+stopbits = serial.STOPBITS_ONE
+timeout = 5.
+
+print "Attempt to communicate with Omega iSeries on",port
+
+s = serial.Serial(port, baudrate, bytesize, parity, stopbits, timeout)
+
+serialQuery  =   ['*\xb01X\xb01',\
+                  '*\xb01R\xb01',\
+                  '*\xb01R\xb02',\
+                  '*\xb01U\xb01']
+
+#s.open()
+
+for q in serialQuery:
+    print "Tx:",repr(q)
+    s.write(q+'\r\n')
+    sys.stdout.write( "Rx: " )
+    c=''; str=''
+    while not '\n' in c:    
+        c=s.read(1)
+        #sys.stdout.write(repr(c))
+        sys.stdout.flush()
+        str+=c
+    print repr(str)
+    print ""
+
+print "Close",port
+s.close()

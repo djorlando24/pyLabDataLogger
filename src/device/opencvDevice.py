@@ -2,9 +2,9 @@
     OpenCV webcam device class
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2020 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -14,17 +14,31 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time, subprocess, sys
+from termcolor import cprint
 
 try:
     import cv2
     import usb.core
 except ImportError:
-    print "Please install OpenCV and PyUSB"
+    cprint( "Please install OpenCV and PyUSB", 'red', attrs=['bold'])
     raise
 
 ########################################################################################################################
@@ -108,7 +122,7 @@ class opencvDevice(device):
                                         stdout = subprocess.PIPE, stderr = subprocess.PIPE)
                 stdout, stderr = proc.communicate()
                 if stdout.strip() == '': raise RuntimeError("OpenCV version returned nothing!")
-                elif not quiet and (cam_num==0): print "\tOpenCV Version:",stdout.strip()
+                elif not quiet and (cam_num==0): cprint( "\tOpenCV Version: "+stdout.strip(), 'green')
                 if not quiet: print "\t",cam_num,':',stderr.strip()
 
                 if ('out device of bound' in stderr) or ('VIDEOIO ERROR' in stderr) or ('HIGHGUI ERROR' in stderr)\
@@ -129,35 +143,6 @@ class opencvDevice(device):
                 user_choose_stream(validCamRange)
                 confirmkb='n'  
         
-            
-            '''
-            #Now request to open camera no. 64 which ought to fail and return on stderr the number
-            # of valid streams from the library.  stdout will return opencv version for sanity check.
-            proc = subprocess.Popen([sys.executable,"-c","import cv2; print cv2.__version__; dev=cv2.VideoCapture(63)"],\
-                                    stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-            stdout, stderr = proc.communicate()
-            
-            if stdout.strip() == '': raise RuntimeError("OpenCV version returned nothing!")
-            elif not quiet: print "OpenCV Version:",stdout.strip()
-            
-            if "out device of bound" in stderr:
-                # Expect the first line to have (nnn-nnn) string in it.
-                validCamRange = stderr.split('\n')[0].split('(')[1].split(')')[0].split('-')
-                if len(validCamRange) != 2: return
-                validCamRange = [int(n) for n in validCamRange]
-                
-                # only one camera anyway:
-                if validCamRange[0] == validCamRange[1]:
-                    if not quiet: print "Using camera %i (default)" % validCamRange[0]
-                    self.params['ID']=validCamRange[0]
-                else:
-                    user_choose_stream(validCamRange)
-                
-            if not "out device of bound" in stderr:
-                print stderr.strip()
-                if not quiet: print "\tWarning: unable to determine which webcam to use, guessing 0"
-                self.params['ID']=0
-            '''
 
         # End camera id block
 
@@ -168,7 +153,7 @@ class opencvDevice(device):
         # If user chose, check that they are happy with their choice.
         while 'n' in confirmkb:
             if self.userChoseStream and not quiet:
-                print "\tWebcam is now active, record light should be ON."
+                cprint( "\tWebcam is now active, record light should be ON if it has one.", 'green', attrs=['bold'])
                 confirmkb = raw_input("\tIs camera correct? [Y/n] ").lower().strip()
                 if 'n' in confirmkb: user_choose_stream(validCamRange)
         
@@ -204,8 +189,7 @@ class opencvDevice(device):
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
         
         except ValueError:
-            print "%s - Invalid setting requested" % self.name
-            print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
+            cprint( "%s - Invalid setting requested" % self.name, 'red', attrs=['bold'])
         
         return
 
@@ -224,7 +208,7 @@ class opencvDevice(device):
         self.deactivate()
         self.scan()
         if self.driverConnected: self.activate()
-        else: print "Error resetting %s: device is not detected" % self.name
+        else: cprint( "Error resetting %s: device is not detected" % self.name, 'red', attrs=['bold'])
    
 
     # Handle query for values
@@ -235,7 +219,7 @@ class opencvDevice(device):
             assert(self.opencvdev)
             if self.opencvdev is None: raise pyLabDataLoggerIOError
         except:
-            print "Connection to the device is not open."
+            cprint( "Connection to the device is not open.", 'red', attrs=['bold'])
 
         # If first time or reset, get configuration (ie units)
         if not 'raw_units' in self.params.keys() or reset:
@@ -260,7 +244,7 @@ class opencvDevice(device):
                 self.lastValue.append(frame[...])
                 # Set up live preview mode if requested
                 if j==0 and self.live_preview:
-                    print("\tlive_preview: displaying frame_%08i" % self.frame_counter)
+                    cprint("\tlive_preview: displaying frame_%08i" % self.frame_counter, 'green')
                     cv2.imshow('pyLabDataLogger: %s' % (self.params['name']),frame)
                     if cv2.waitKey(1000) & 0xFF == ord('q'): break  # require a 1000ms wait
             else:
@@ -282,7 +266,7 @@ class opencvDevice(device):
         try:
             import h5py
         except ImportError:
-            print "Please install h5py"
+            cprint( "Please install h5py", 'red', attrs=['bold'])
             return
         
         # Open file
@@ -315,7 +299,7 @@ class opencvDevice(device):
             for j in range(len(self.lastValue)):
                 dsname = 'frame_%08i' % (self.frame_counter-len(self.lastValue)+j+1)
                 if dsname in dg:
-                    print "\tOverwriting image %s in HDF5 log file!" % dsname
+                    cprint( "\tOverwriting image %s in HDF5 log file!" % dsname, 'yellow')
                     del dg[dsname]
                 
                 # Flip colours in dataset - 21/5/20

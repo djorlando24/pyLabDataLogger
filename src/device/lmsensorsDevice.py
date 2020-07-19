@@ -4,9 +4,9 @@
     lm-sensors device (monitoring computer temperatures and fan RPM)
  
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
+    @version 1.0.0
     @date 20/11/2019
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -16,16 +16,30 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from device import device, pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
+from termcolor import cprint
 
 try:
     import re, subprocess
 except ImportError:
-    print "Please install re, subprocess libraries"
+    cprint( "Please install re, subprocess libraries", 'red', attrs=['bold'])
     raise
 
 
@@ -63,12 +77,13 @@ class lmsensorsDevice(device):
         # check that sensors binary can be called and some chips exist
         try:
             if len(subprocess.check_output(['which','sensors'])) < 1:
-                print "lm-sensors not installed/available on this system"
+                cprint( "lm-sensors not installed/available on this system", 'red', attrs=['bold'])
             elif len(subprocess.check_output(['sensors']).strip()) < 1:
-                print "lm-sensors detected no chips, try `sudo sensors-detect`"
+                cprint( "lm-sensors detected no chips, try `sudo sensors-detect`", 'red', attrs=['bold'])
             else: self.activate(quiet=quiet)
         except OSError as e:
-            print "lm-sensors is not installed/available on this system: ",e
+            cprint( "lm-sensors is not installed/available on this system:", 'red', attrs=['bold'])
+            cprint(e, 'red')
         return
 
     # Establish connection to device (ie open serial port)
@@ -85,6 +100,8 @@ class lmsensorsDevice(device):
             output = [ line for line in subprocess.check_output(['sensors']).split('\n') if line != '' ]
         except OSError:
             raise pyLabDataLoggerIOError("lm-sensors not available")
+        
+        cprint("Loading lmsensors device...",'green')
         
         # add temperatures
         for j in range(len(output)):
@@ -133,8 +150,7 @@ class lmsensorsDevice(device):
             pass
         
         except ValueError:
-            print "%s - Invalid setting requested" % self.name
-            print "\t(V=",self.params['set_voltage'],"I=", self.params['set_current'],")"
+            cprint( "%s - Invalid setting requested" % self.name, 'red', attrs=['bold'])
         
         return
 
@@ -153,7 +169,7 @@ class lmsensorsDevice(device):
         self.deactivate()
         self.scan()
         if self.driverConnected: self.activate()
-        else: print "Error resetting %s: device is not detected" % self.name
+        else: cprint( "Error resetting %s: device is not detected" % self.name, 'red', attrs=['bold'])
 
 
     def get_values(self):
