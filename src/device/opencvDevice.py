@@ -5,7 +5,7 @@
     @copyright (c) 2020 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 21/05/2019
+    @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -319,7 +319,9 @@ class opencvDevice(device):
                     del dg[dsname]
                 
                 # Flip colours in dataset - 21/5/20
-                dset=dg.create_dataset(dsname, data=np.flip(self.lastValue[j],axis=2), dtype='uint8', chunks=True)
+                dset=dg.create_dataset(dsname, data=np.flip(self.lastValue[j],axis=2), dtype='uint8', chunks=True,\
+                                        compression='gzip', compression_opts=1) # apply fast compression
+                
                 #Set the image attributes
                 dset.attrs.create('CLASS', 'IMAGE')
                 dset.attrs.create('IMAGE_VERSION', '1.2')

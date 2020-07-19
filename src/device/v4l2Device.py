@@ -220,6 +220,7 @@ class v4l2Device(device):
         self.lastValue = [np.frombuffer(self.image_data, dtype=np.uint8).reshape(self.config['height'],\
                             self.config['width'],3)] # 8 bit colour
         
+        self.updateTimestamp()
         
         if self.live_preview: # show one frame of set
             try:
@@ -230,7 +231,7 @@ class v4l2Device(device):
                 self.imshow = self.ax.imshow(self.lastValue[-1])
 
             try:
-                self.ax.set_title("Frame %06i" % self.frame_counter)
+                self.ax.set_title("Frame %06i : %s" % (self.frame_counter,self.lastValueTimestamp))
                 self.fig.canvas.draw()
                 #plt.show(block=False)
                 plt.pause(0.01)
@@ -242,7 +243,6 @@ class v4l2Device(device):
         if reset: self.frame_counter=0
         else: self.frame_counter += self.config['n_frames']
         
-        self.updateTimestamp()
         return self.lastValue
     
     
@@ -278,11 +278,12 @@ class v4l2Device(device):
             # Write frames
             for j in range(len(self.lastValue)):
                 dsname = 'frame_%08i' % (self.frame_counter-len(self.lastValue)+j+1)
-                if dsname in dg:
-                    #print dg.keys()
+                if dsname in dg:             
                     if not self.quiet: print "\tOverwriting image %s in HDF5 log file!" % dsname
                     del dg[dsname]
-                dset=dg.create_dataset(dsname, data=self.lastValue[j], dtype='uint8', chunks=True)
+                dset=dg.create_dataset(dsname, data=np.fliplr(np.flipud(self.lastValue[j])), dtype='uint8', chunks=True,\
+                                        compression='gzip', compression_opts=1) # apply fast compression
+                
                 #Set the image attributes
                 dset.attrs.create('CLASS', 'IMAGE')
                 dset.attrs.create('IMAGE_VERSION', '1.2')

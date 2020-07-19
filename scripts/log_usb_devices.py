@@ -4,10 +4,10 @@
     Test device support - log to file
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2020 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 01/12/2019
+    @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -20,6 +20,7 @@
 
 from pyLabDataLogger.device import usbDevice
 import datetime,time
+from termcolor import cprint
 
 if __name__ == '__main__':
     
@@ -34,16 +35,26 @@ if __name__ == '__main__':
     devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
 
     if len(devices) == 0: exit()
-   
+    loop_counter = 0
+    running_average = 0.
     try:
         while True:
+            t0 = time.time()
             for d in devices:
-                print d.name
+                print('\n'+d.name)
                 d.query()
                 d.pprint()
                 d.log(logfilename)
-            time.sleep(2)
+            #time.sleep(0.01)
+            dt = time.time()-t0
+            running_average = ((running_average*float(loop_counter)) + dt)/(float(loop_counter)+1)
+            loop_counter += 1
+            cprint("Loop time = %0.3f sec" % dt, 'cyan')
+            
     except KeyboardInterrupt:
-        print "Stopped."
+        cprint( "Stopped.", 'red', attrs=['bold'])
+        
     except: # all other errors
         raise
+
+    cprint("Average loop time = %0.3f sec (%i loops)" % (running_average, loop_counter), 'cyan', attrs=['bold'])    

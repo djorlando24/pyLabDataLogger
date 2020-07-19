@@ -2,10 +2,10 @@
     Main device class for pyPiDataLogger
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019 LTRAC
+    @copyright (c) 2020 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 30/04/2019
+    @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -106,6 +106,7 @@ class device:
         if ('opencv' in self.driver) or ('v4l2' in self.driver): return True
         else: return False
     
+
     ###########################################################################################################################################
     # Print values with units in a nice readable format.
     def pprint(self,lead='\t'):

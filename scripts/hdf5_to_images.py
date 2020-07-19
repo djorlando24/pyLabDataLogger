@@ -7,7 +7,7 @@
     @copyright (c) 2020 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 18/07/2020
+    @date 19/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -33,10 +33,12 @@
     Version history:
         13/07/2020 - First version.
         18/07/2020 - Bug fixes
+        19/07/2020 - allow overwrite
 """
     
-import sys, os
+import sys, os, shutil
 import h5py
+import tqdm
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
@@ -62,12 +64,18 @@ if __name__=='__main__':
         output_dir = "%s_%s" % (os.path.splitext(sys.argv[1])[0], Dev.name.replace('/',''))
         print("Saving %s %s \n\t-> %s" % (sys.argv[1],Dev.name,output_dir))
         
+        # Overwrite?
+        if os.path.exists(output_dir):
+            print("Overwriting %s" % output_dir)
+            shutil.rmtree(output_dir)
+
         # Make dir to save to
         os.mkdir(output_dir)
-        
+
         # Loop thru each image
-        for frame in [ fr for fr in Dev.values() if 'IMAGE_SUBCLASS' in fr.attrs.keys() ]:
-            
+        all_frames = [ fr for fr in Dev.values() if 'IMAGE_SUBCLASS' in fr.attrs.keys() ]
+        for i in tqdm.tqdm(range(len(all_frames))):
+            frame = all_frames[i]
             frame_name = os.path.basename(frame.name)
             n = int(frame_name.split('_')[-1]) - 1 # frame usually starts at 1 not 0
             if (n<len(Timestamps)) and (n>=0): ts = Timestamps[n]
@@ -80,9 +88,6 @@ if __name__=='__main__':
             # Save image
             im.save(full_path)
             
-            sys.stdout.write('.')
-            sys.stdout.flush()
-        
         print("")
     
     print("Done.")

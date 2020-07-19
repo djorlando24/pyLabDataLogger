@@ -118,7 +118,7 @@ class alsaDevice(device):
                     except KeyboardInterrupt: exit(1)
                     except: pass
                 self.alsacard = cards[j][0]
-                self.name = cards[j][1]
+                self.name = "ALSA Audio device "+cards[j][1]
         
         
         if self.alsacard: self.activate(quiet=quiet)
