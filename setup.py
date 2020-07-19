@@ -32,7 +32,7 @@
 """
 
 __author__="Daniel Duke <daniel.duke@monash.edu>"
-__version__="0.0.1"
+__version__="1.0.0"
 __license__="GPL-3.0+"
 __copyright__="Copyright (c) 2018-20 LTRAC"
 
@@ -60,7 +60,7 @@ c_libraries = [
 
 
 setup(name="pyLabDataLogger",
-      version="0.0.1",
+      version="1.0.0",
       description="Laboratory datalogging for USB and Serial devices.",
       author="Daniel Duke",
       author_email="daniel.duke@monash.edu",
