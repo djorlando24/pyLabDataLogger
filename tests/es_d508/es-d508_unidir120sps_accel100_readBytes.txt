@@ -1,0 +1,83 @@
+    01 06 00 15 00 64 99 e5                           .....d™å         
+    01 06 00 18 00 64 08 26                           .....d.&         
+    01 06 00 1b 03 e8 f9 73                           .....èùs         
+    01 06 00 19 00 01 99 cd                           ......™Í         
+    01 06 00 16 00 78 68 2c                           .....xh,         
+    01 06 00 d0 00 64 89 d8                           ...Ð.d‰Ø         
+    01 06 00 41 00 01 18 1e                           ...A....         
+    01 06 00 42 00 00 29 de                           ...B..)Þ         
+    01 06 00 09 00 01 98 08                           ......˜.         
+    01 06 00 14 00 01 08 0e                           ........         
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 02 39 85                              .....9…          
+    01 03 90 ff fb ff fb ff fb ff fb ff fb ff fb ff   ..ÿûÿûÿûÿûÿûÿûÿ 
+    fb ff fb ff fb ff fb ff fb ff fb ff fa ff fa ff   ûÿûÿûÿûÿûÿûÿúÿúÿ 
+    fa ff fa ff fa ff fa ff fa ff fa ff fa ff fb ff   úÿúÿúÿúÿúÿúÿúÿûÿ 
+    fa ff fb ff fa ff fb ff fa ff fa ff f9 ff fa ff   úÿûÿúÿûÿúÿúÿùÿúÿ 
+    f9 ff fa ff fa ff fa ff fa ff fa ff fa ff fa ff   ùÿúÿúÿúÿúÿúÿúÿúÿ 
+    fa ff fb ff fa ff fa ff fa ff fa ff fa ff fa ff   úÿûÿúÿúÿúÿúÿúÿúÿ 
+    fa ff fa ff fa ff fb ff fb ff fb ff fb ff fb ff   úÿúÿúÿûÿûÿûÿûÿûÿ 
+    fb ff fa ff fa ff fb ff fb ff fb ff fb ff fb ff   ûÿúÿúÿûÿûÿûÿûÿûÿ 
+    fb ff fb ff fb ff fc ff fc ff fc ff fc ff fc ff   ûÿûÿûÿüÿüÿüÿüÿüÿ 
+    fb ff fb ff fb ff fc ff fc ff fc ff fc ff fc ff   ûÿûÿûÿüÿüÿüÿüÿüÿ 
+    fc ff fc ff fc ff fc ff fc ff fc ff fc ff fc ff   üÿüÿüÿüÿüÿüÿüÿüÿ 
+    fc ff fd ff fd ff fd 00 00 ff ff 00 00 ff ff ff   üÿýÿýÿý..ÿÿ..ÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff 21 75                                    ÿÿÿ!u            
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 01 79 84                              .....y„          
+    01 03 02 00 02 39 85                              .....9…          
+    01 03 90 ff ff ff ff ff ff ff ff ff ff ff ff ff   ..ÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff   ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ 
+    ff ff ff 00 00 00 00 00 00 00 00 00 00 00 00 00   ÿÿÿ............. 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................ 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................ 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................ 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................ 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................ 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................ 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................ 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................ 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................ 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................ 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................ 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................ 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................ 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................ 
+    00 00 00 6f 01                                    ...o.            
+    01 06 00 09 00 00 59 c8                           ......YÈ         
