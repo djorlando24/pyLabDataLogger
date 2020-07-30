@@ -10,7 +10,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.0.0
-    @date 19/07/2020
+    @date 30/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -98,6 +98,7 @@ usb_device_table = [
     {'vid':0x0403, 'pid':0x6015, 'driver':'serial/alicat', 'name':'Alicat Scientific M-series mass flow meter'},
     {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/alicat', 'name':'Alicat Scientific M-series mass flow meter'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/wtb', 'name':'Radwag WTB series precision balance'},
+    {'vid':0x0403, 'pid':0x6001, 'driver':'serial/esd508', 'name':'Leadshine ES-D508 easy servo driver'},
     #{'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-iseries/485', 'name':'Omega iSeries via RS-485'}, # needs work
     #{'vid':0x1a86, 'pid':0x7523, 'driver':'serial/omega-iseries/232', 'name':'Omega iSeries via RS-232'}, # needs work
 

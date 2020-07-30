@@ -43,14 +43,17 @@ Oscilloscopes using the GPIB-USB adapter (http://dangerousprototypes.com/blog/20
 ## Extech USB-RS232 adapters
 The Extech brand USB to RS232 adapters are multifunction and some have a switch to choose between mode 1 & 2. You must select mode 2 for the communications to work.
 
-# I2C Devices
+## Leadshine ES-D508 servomotor controller
+The RJ-12 to RS-232 adapter supplied for tuning the ES-D508 servomotor controller can be used to move the motor and poll the encoder to get the current position. The tuning constants may need adjustment depending on choice of motor, which can be determined using the tuning software supplied by the manufacturer.
+
+## I2C Devices
 I2C devices that use Adafruit libraries rely on deprecated python libraries which have been copied into thirdParty in case
 the old repositories on Github go away. These devices have been tested on Raspberry pi, but should work on Beaglebones as well.
 
-# Webcams
+## Webcams
 Webcame frame capture requires the OpenCV library. If your webcam is not detected you may need to add its VID and PID to the device table in src/device/usbDevice.py, and specify the 'opencv' driver. Then merge your changes so I can expand the supported deice list!
 
-# Video4Linux capture devices
+## Video4Linux capture devices
 USB video capture device support depends on v4l2 support. A significant number of PCI and USB capture cards are not supported by Linux, so check https://www.linuxtv.org/downloads/v4l-dvb-apis-new/v4l-drivers/cardlist.html before you buy! Tested devices that work have their USB VID/PID added to usbDevice.py. These include:
 - Roxio video capture USB UB315-E ver3 with EMPIA em2860 chip, uses the em28xx driver
 - NexTech XC4991 USB video capture with SoMagic chip, uses a custom sm2021 driver, install instructions at https://github.com/Manouchehri/smi2021

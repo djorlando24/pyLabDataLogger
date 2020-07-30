@@ -61,6 +61,8 @@ Use pip, easy_install, apt, etc.
 
 - pylibftdi
 
+- libscrc
+
 - For I2C devices, you will need smbus module:
   and driver specific modules i.e. Adafruit_ADS1x15
 

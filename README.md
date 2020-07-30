@@ -88,6 +88,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
       (must set mode switch on dongle to '2')
     - Alicat Scientific M-series mass flow meters via RS232-to-USB dongle
       (default baud rate 19200, default unit ID 'A')
+    - Leadshine ES-D508 servomotor controller
     - Radwag WTB series digital lab balance/scale via RS232-to-USB UART adapter **
     - Omega iSeries temperature process controllers, via generic RS-485 or RS-232 adapter **
 

@@ -5,7 +5,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.0.0
-    @date 19/07/2020
+    @date 30/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -30,6 +30,7 @@
 
     Changes:
         22/02/2019 - Added logging options
+        30/07/2020 - handle mixed array and float types
 """
 
 import datetime
@@ -123,7 +124,7 @@ class device:
 
     ###########################################################################################################################################
     # Print values with units in a nice readable format.
-    def pprint(self,lead='\t'):
+    def pprint(self,lead='\t',maxarrayvalues=12):
         show_scaled = ('eng_units' in self.config) and ('scale' in self.config) and\
                       ('offset' in self.config) and ('eng_units' in self.config) and\
                       not (np.all(np.array(self.config['scale'])==1.) and  np.all(np.array(self.config['offset'])==0.))
@@ -169,12 +170,30 @@ class device:
         # Vectors (i.e. timeseries data) with units added to the end where present. ####################################
         else:
             for n in range(self.params['n_channels']):
-                if len(self.lastValue[n].shape) == 1:
-                    if ~show_scaled: print lead+u'%i: %s = %s %s' % (n,self.config['channel_names'][n],\
-                                        self.lastValue[n],self.params['raw_units'][n].decode('utf-8'))
-                    else: print lead+u'%i: %s = %s %s \t %s %s' % (n,self.config['channel_names'][n],self.lastValue[n],\
-                            self.params['raw_units'][n].decode('utf-8'),\
-                            self.lastScaled[n],self.config['eng_units'][n].decode('utf-8'))
+                # show some values of 1-D lists and arrays
+                if (len(self.lastValue[n].shape) <= 1):
+                
+                    # Limit how many values to print
+                    ismore=''
+                    if ( isinstance( self.lastValue[n], list) or isinstance(self.lastValue[n], np.ndarray) ):
+                        if len(self.lastValue[n])>maxarrayvalues:
+                            nn=maxarrayvalues
+                            lv=self.lastValue[n][:nn]
+                            lvs=self.lastScaled[n][:nn]
+                            ismore='...& %i more values' % (len(self.lastValue[n]) - maxarrayvalues)
+                        else:
+                            nn=len(self.lastValue[n])
+                    else:
+                        lv=self.lastValue[n]
+                        lvs=self.lastScaled[n]
+                        
+                    if ~show_scaled: print lead+u'%i: %s = %s %s %s' % (n,self.config['channel_names'][n],\
+                                                       lv,self.params['raw_units'][n].decode('utf-8'),ismore)
+                    else: print lead+u'%i: %s = %s%s %s \t %s %s %s' % (n,self.config['channel_names'][n],lv,\
+                                                          self.params['raw_units'][n].decode('utf-8'),ismore,\
+                                                        lvs,self.config['eng_units'][n].decode('utf-8'),ismore)
+                
+                # Don't show N-D arrays where N>1
                 else:
                     if ~show_scaled: print lead+u'%i: %s = <array of size %s> %s' % (n,self.config['channel_names'][n],\
                                         self.lastValue[n].shape,self.params['raw_units'][n].decode('utf-8'))

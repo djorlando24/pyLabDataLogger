@@ -1,13 +1,15 @@
 #!/usr/bin/env python2
 # -*- coding: UTF-8 -*-
 """
-    Easy Servo Drive ES-D508 RS-232 interface
+    Easy Servo Drive ES-D508 RS-232 functions.
+    This is not a pyLabDataLogger class, just a bunch of functions we can call
+    to do useful things. serialDevice will handle the low level communication.
     
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2020 LTRAC
     @license GPL-3.0+
     @version 0.0.1
-    @date 20/07/2020
+    @date 30/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -31,7 +33,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
     Version history:
-        20/07/2020 - First version.
+        30/07/2020 - First version.
 """
 
 '''
@@ -47,16 +49,18 @@ import binascii
 import libscrc
 import numpy as np
 import serial, time
+from termcolor import cprint
 
 def checkCrc(data):
     crc1 = data[-2:]
     crc2 = libscrc.modbus(data[:-2])
     return crc1 == crc2
-
-# These are the default settings in the Leadshine test software. Do not edit.
+#################################################################################
+# Build motion commands (MODBUS packets) to send to driver.
+# These are the default settings in the Leadshine test software.
 def motionCommand(revolutions = 1.0, velocity = 120, acceleration = 200, intermission = 1000, repeats=1,\
                   current = 100, reverse = False, bidirectional = False, ESD508_ID = '\x01',\
-                  pulses_per_rev = 4000, encoder_resolution = 4000, position_err = 10):
+                  pulses_per_rev = 4000, encoder_resolution = 4000, position_err = 10, **kwargs):
                
     # Commands
     ESD508_WRITE = b'\x06'
@@ -95,6 +99,9 @@ def motionCommand(revolutions = 1.0, velocity = 120, acceleration = 200, intermi
     ESD508_DATA = b'\x02\x00\x02' # buffer ready to send
     
     distance = revolutions * 100 # ?? why is this
+    if revolutions < 0:
+        reverse = ~reverse
+        distance = np.abs(distance)
     
     commands = []
     
@@ -137,43 +144,45 @@ def motionCommand(revolutions = 1.0, velocity = 120, acceleration = 200, intermi
     
     return setup_commands, loop_commands
                   
-def writeAndVerify(serialPort, cmd, verbose=True):
+#################################################################################
+# Modbus write and readback to check command was received and acted upon
+def writeAndVerify(serialPort, cmd, sleeptime, debugMode=True):
     # Write command
     serialPort.write(cmd)
     # Wait
-    time.sleep(0.010)
+    time.sleep(sleeptime)
     # Read back same # bytes
     readback = serialPort.read(len(cmd))
-    if verbose: print("\twrote %s / read %s" % (binascii.hexlify(cmd),binascii.hexlify(readback)))
+    if debugMode: print("\twrote %s / read %s" % (binascii.hexlify(cmd),binascii.hexlify(readback)))
     # Confirm checksum ok
     data = readback[:-2]
     crc1 = readback[-2:]
     crc2 = struct.pack('H',libscrc.modbus(data))
-    #if verbose: print("\t\tCRC = %s / %s" % (binascii.hexlify(crc1),binascii.hexlify(crc2)))
+    #if debugMode: print("\t\tCRC = %s / %s" % (binascii.hexlify(crc1),binascii.hexlify(crc2)))
     
     return crc1==crc2
 
 
 #################################################################################
-# ES-D508 control routine.  Move motor and return servo data from driver buffer
-def move_servomotor(serialPort, verbose=True, **kwargs):
+# ES-D508 control routine.  Move motor and return servo data from driver buffer.
+# S is the (already opened) pySerial class instance.
+def move_servomotor(S, verbose=True, debugMode=False, sleeptime=0.001, maxlen=65535, **kwargs):
+
+    ENCODER_CAL_DEFAULT = 78912
 
     # Make command set
     setup_commands, loop_commands = motionCommand(**kwargs)
     enquire_loop, enquire_wait, enquire_ready, enquire_send, cleanup = loop_commands
     
-    # Open serial port
-    if verbose: print("Opening %s" % serialPort)
-    S = serial.Serial(serialPort,\
-                      38400, serial.EIGHTBITS, serial.PARITY_NONE,\
-                      serial.STOPBITS_ONE, xonxoff=False, rtscts=False, timeout=1.)
               
     # Send setup commands
     for cmd in setup_commands:
-        if not writeAndVerify(S,cmd,verbose): raise IOError("Communication failed")
-        time.sleep(0.001)
+        if not writeAndVerify(S,cmd,sleeptime,debugMode): raise IOError("Communication failed")
+        time.sleep(sleeptime)
     
     # Motion happens now.
+    cprint("\tMoving servomotor...",'green')
+    
     # Go into a loop to wait for encoder data to come back.
     enc_data = []
     try:
@@ -185,33 +194,33 @@ def move_servomotor(serialPort, verbose=True, **kwargs):
             while in_loop:
                 # ask if ready
                 S.write(enquire_loop)
-                if verbose: print("\twrote %s ENQUIRE" % binascii.hexlify(enquire_loop))
-                time.sleep(0.010)
+                if debugMode: print("\twrote %s ENQUIRE" % binascii.hexlify(enquire_loop))
+                time.sleep(sleeptime)
                 # Check response
                 readback = S.read(len(enquire_wait))
                 if readback == enquire_ready:
                     in_loop = False
-                    if verbose: print("\tread %s READY\n" % binascii.hexlify(readback))
+                    if debugMode: print("\tread %s READY\n" % binascii.hexlify(readback))
                 elif readback == enquire_wait:
-                    if verbose: print("\tread %s WAIT" % binascii.hexlify(readback))
+                    if debugMode: print("\tread %s WAIT" % binascii.hexlify(readback))
                 else:
-                    if verbose: print("\t%s ???? (%s or %s)" % (binascii.hexlify(readback),binascii.hexlify(enquire_ready),binascii.hexlify(enquire_wait)))
+                    if debugMode: print("\t%s ???? (%s or %s)" % (binascii.hexlify(readback),binascii.hexlify(enquire_ready),binascii.hexlify(enquire_wait)))
                 # Check timeout of loop
                 if time.time() - t0 > 5.:
-                    if verbose: print("\tStatus timeout in inner loop!")
+                    if debugMode or verbose: cprint("\tStatus timeout in inner loop!",'red')
                     break
                 
             # Read data
             if not in_loop:
-                time.sleep(0.001)
+                time.sleep(sleeptime)
                 S.write(enquire_send)
-                if verbose: print("\t%s RTS" % binascii.hexlify(enquire_send))
+                if debugMode: print("\t%s RTS" % binascii.hexlify(enquire_send))
                 data = ''
-                time.sleep(0.001)
+                time.sleep(sleeptime)
                 data = ''
                 crc_ok = False
                 # Keep reading until crc is satisfied and length is within bounds
-                while (not crc_ok) and (len(data)<65535):
+                while (not crc_ok) and (len(data)<maxlen):
                     data += S.read(1)
                     if len(data)>=4:
                         crc1 = data[-2:]
@@ -219,9 +228,10 @@ def move_servomotor(serialPort, verbose=True, **kwargs):
                         if crc1 == crc2: crc_ok = True
                     
                 
-                if verbose: print("\tread %i bytes" % (len(data)))
-                #if verbose: print(binascii.hexlify(data[3:-2]), len(data[3:-2]))
-                shorts = struct.unpack('%ih' % (len(data[3:-2])/2),data[3:-2])
+                if debugMode: print("\tread %i bytes" % (len(data)))
+                #if debugMode: print(binascii.hexlify(data[3:-2]), len(data[3:-2]))
+                n = len(data[3:-2])/2
+                shorts = struct.unpack('%ih' % n,data[3:3+2*n])
                 enc_data.extend(list(shorts))
                 
                 # If the last 20 encoder values are the same, we are done sampling.
@@ -231,7 +241,7 @@ def move_servomotor(serialPort, verbose=True, **kwargs):
                     time.sleep(.05)
                 
             else:
-                if verbose: print("\tAborting outer loop")
+                if debugMode or verbose: cprint("\tAborting outer loop",'red')
                 break
         
             # Loop back to read more data if we reach this point.
@@ -239,25 +249,44 @@ def move_servomotor(serialPort, verbose=True, **kwargs):
     except KeyboardInterrupt: # manual aborting data read loop
         time.sleep(0.1)
     
-    writeAndVerify(S,cleanup,verbose)
-    if verbose: print("\n\t%s CLEANUP" % binascii.hexlify(cleanup))
+    writeAndVerify(S,cleanup,sleeptime,debugMode)
+    if debugMode: print("\n\t%s CLEANUP" % binascii.hexlify(cleanup))
+
+    cprint("\tServomotor stopped.",'green')
 
     # Process encoder data
     enc_data = np.array(enc_data)
     enc_data -= enc_data[-1]
-    enc_pos = np.cumsum(enc_data)/78912. # convert to revolutions
+    
+    if not 'encoder_calibration' in kwargs:
+        encoder_calibration = ENCODER_CAL_DEFAULT
+        cprint("\tEncoder calibration set to default value of %f" % encoder_calibration,'yellow')
+    elif kwargs['encoder_calibration'] is None:
+        encoder_calibration = ENCODER_CAL_DEFAULT
+        cprint("\tEncoder calibration set to default value of %f" % encoder_calibration,'yellow')
+    else:
+        encoder_calibration = kwargs['encoder_calibration']
+    
+    enc_pos = np.cumsum(enc_data)/float(encoder_calibration) # convert to revolutions
     
     return enc_pos
     
     
 #################################################################################
+# This is just for testing.
 if __name__ == '__main__':
 
-
-    enc_pos = move_servomotor('/dev/cu.usbserial-AC00I4ZZ', verbose=True, revolutions = 1)
+    # Open serial port
+    if debugMode: print("Opening %s" % serialPort)
+    S = serial.Serial('/dev/cu.usbserial-AC00I4ZZ',\
+                      38400, serial.EIGHTBITS, serial.PARITY_NONE,\
+                      serial.STOPBITS_ONE, xonxoff=False, rtscts=False, timeout=1.)
+                      
+    enc_pos = move_servomotor(S, verbose=True, debugMode=True, revolutions = 1)
 
     import matplotlib.pyplot as plt
     fig=plt.figure()
     plt.plot(enc_pos)
     plt.show()
     exit()
+

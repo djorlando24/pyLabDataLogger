@@ -5,7 +5,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.0.0
-    @date 20/05/2020
+    @date 30/07/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -32,6 +32,9 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    
+    Changelog:
+        30/07/2020 - add esd508 support
 """
 
 from device import device, pyLabDataLoggerIOError
@@ -55,15 +58,16 @@ class serialDevice(device):
         in the params dict.
         
         The 'serial' driver supports the following hardware:
-            'serial/tds220gpib'        : Tektronix TDS22x series oscilloscopes via the RS-232 port
-            'serial/omega-ir-usb'      : Omega IR-USB temperature probe with built in USB to Serial converter
-            'serial/omega-usbh         : Omega USB-H 'high speed' pressure transducers with built in USB to Serial converter
-            'serial/ohaus7k'           : OHAUS 7000 series scientific scales via RS232
+            'serial/alicat'            : Alicat Scientific M-series mass flow meter
             'serial/center310'         : CENTER 310 Temperature and Humidity meter
-            'serial/tc08rs232'         : Pico TC08 RS-232 thermocouple datalogger (USB version has a seperate driver 'picotc08')
+            'serial/esd508'             : Leadshine ES-D508 Easy Servomotor Driver
+            'serial/omega-ir-usb'      : Omega IR-USB temperature probe with built in USB to Serial converter
             'serial/omega-iseries/232' : Omega iSeries Process Controller via RS232 transciever
             'serial/omega-iseries/485' : Omega iSeries Process Controller via RS485 transciever
-            'serial/alicat'            : Alicat Scientific M-series mass flow meter
+            'serial/omega-usbh         : Omega USB-H 'high speed' pressure transducers with built in USB to Serial converter
+            'serial/ohaus7k'           : OHAUS 7000 series scientific scales via RS232
+            'serial/tc08rs232'         : Pico TC08 RS-232 thermocouple datalogger (USB version has a seperate driver 'picotc08')
+            'serial/tds220gpib'        : Tektronix TDS22x series oscilloscopes via the RS-232 port
             'serial/wtb'               : Radwag WTB precision balance/scale
     """
 
@@ -81,6 +85,9 @@ class serialDevice(device):
         if 'quiet' in kwargs: self.quiet = kwargs['quiet']
         else: self.quiet=quiet
         
+        if 'debugMode' in kwargs: self.debugMode = kwargs['debugMode']
+        else: self.debugMode=False
+        
         self.driver = self.params['driver'].split('/')[1:]
         self.subdriver = self.driver[0].lower()
         
@@ -96,7 +103,10 @@ class serialDevice(device):
         if 'usbh-ifilter' in kwargs: self.config['IFILTER'] = kwargs['usbh-ifilter']
         if 'usbh-mfilter' in kwargs: self.config['MFILTER'] = kwargs['usbh-mfilter']
         if 'usbh-avg' in kwargs: self.config['AVG'] = kwargs['usbh-avg']
-        if 'set_emissivity' in kwargs: self.config['set_emissivity'] = kwargs['set_emissivity']
+        # More, with same var name
+        for k in ['set_emissivity','revolutions','velocity','intermission','repeats','current','reverse','bidirectional','ESD508_ID',\
+                  'pulses_per_rev','encoder_resolution','position_err','encoder_calibration','acceleration']:
+            if k in kwargs: self.config[k] = kwargs[k]
         
 
         if params is not {}: self.scan()
@@ -234,6 +244,8 @@ class serialDevice(device):
             if not 'ID' in self.params.keys(): self.params['ID']='A' # default unit ID is 'A'
         elif self.subdriver=='omega-usbh':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=115200
+        elif self.subdriver=='esd508':
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=38400
         
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -329,6 +341,10 @@ class serialDevice(device):
                 # No settings can be modified at present. In future we could set units and gas type
                 # from software.
                 pass
+            elif subdriver=='esd508':
+                # The settings are actually passed to the driver when it's queried, rather than in advance.
+                # This could change in future.
+                pass
             elif subdriver=='tc08rs232':
                 raise RuntimeError("Need to implement selection of thermocouple types! Contact the developer.")
             else:
@@ -408,6 +424,14 @@ class serialDevice(device):
         except pyLabDataLoggerIOError:
             pass
         return data
+    
+    ########################################################################################################################
+    # Special function to handle MODBUS communications for ES-D508 devices. In future this could be replaced with
+    # a generic MODBUS communications handler, but for now I'll code it to use a special subroutine for this one device.
+    def esd508_modbus(self,request,terminationChar=None,maxlen=99999,min_response_length=0,sleeptime=0.001):
+        from pyLabDataLogger.device import esd508Device
+        return esd508Device.move_servomotor(self.Serial, debugMode=self.debugMode, verbose=~self.quiet, \
+                                            sleeptime=sleeptime, maxlen=maxlen, **self.config)
     
     ########################################################################################################################
     # Configure device based on what sub-driver is being used.
@@ -669,7 +693,34 @@ class serialDevice(device):
             self.responseTerminator='\r'
             self.params['min_response_length']=8 # bytes
 
-
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='esd508':
+            self.name = "Leadshine ES-D508 easy servo driver"
+            self.config['channel_names']=['encoder_history','last_encoder_position']
+            self.params['raw_units']=['rev','rev']
+            self.config['eng_units']=['rev','rev']
+            self.config['scale']=[1.,1.]
+            self.config['offset']=[0.,0.]
+            self.lastValue = [np.nan, 0] # force set starting encoder position
+            self.params['n_channels']=2
+            
+            # apply default settings
+            for k, default in zip(['velocity','acceleration','intermission','repeats','current','reverse','bidirectional','ESD508_ID',\
+                      'pulses_per_rev','encoder_resolution','position_err','encoder_calibration'],\
+                      [120,200,1000,1,100,False,False,'\x01',4000,4000,10,None]):
+                if not k in self.config: self.config[k]=default
+            
+            if not 'revolutions' in self.config:
+                if not self.quiet: cprint("\tRevolutions per trigger not set  - defaulting to 1.0",'yellow')
+                self.config['revolutions']=1.0
+            
+            self.serialCommsFunction=self.esd508_modbus
+            self.serialQuery='\x00' # Special functions will be used for MODBUS communication. Have to put a dummy byte here
+            self.queryTerminator=''
+            self.responseTerminator=''
+            self.sleeptime = 0.001
+            self.params['min_response_length']=1 # bytes
+        
         # ----------------------------------------------------------------------------------------
         elif subdriver=='alicat':
             self.name = "Alicat Scientific M-series mass flow meter" # update w/model number later
@@ -719,9 +770,16 @@ class serialDevice(device):
     ########################################################################################################################
     # Convert string responses from serial port into usable numbers/values
     def convert_raw_string_to_values(self, rawData, requests=None):
-        self.lastValue=[np.nan]*self.params['n_channels']
-        # Parse depending on subdriver
         subdriver = self.subdriver
+        
+        # Generally, we want to wipe away the old measurements first.
+        # However, for cumulative measurement devices such as stepper motor encoders, we don't.
+        if not 'lastValue' in dir(self):
+            self.lastValue=[np.nan]*self.params['n_channels']
+        if subdriver != 'esd508':
+            self.lastValue=[np.nan]*self.params['n_channels']
+        
+        # Parse depending on subdriver
         try:
             # Catch all types of failed serial reads.
             if len(rawData)==0: raise IndexError
@@ -992,6 +1050,18 @@ class serialDevice(device):
                 if valStrings[0].upper() != self.params['ID'].upper(): raise pyLabDataLoggerIOError("Alicat Device ID mismatch - wrong serial port?")
                 cprint( self.config['channel_names'], 'red' )
                 return [ float(valStrings[1]), float(valStrings[2]), float(valStrings[3]), float(valStrings[4]), valStrings[5].strip() ]
+
+            # ----------------------------------------------------------------------------------------
+            if subdriver=='esd508':
+                # Data was already processed, just need to split it apart & add to previous encoder value.
+                
+                if np.isnan(self.lastValue[1]) or (self.lastValue[1] is None):
+                    starting_position = 0
+                else:
+                    starting_position = self.lastValue[1]
+                    
+                return [ starting_position + rawData[0], starting_position + rawData[0][-1] ]
+
 
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
