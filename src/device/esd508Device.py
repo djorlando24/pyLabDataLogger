@@ -168,7 +168,7 @@ def writeAndVerify(serialPort, cmd, sleeptime, debugMode=True):
 # S is the (already opened) pySerial class instance.
 def move_servomotor(S, verbose=True, debugMode=False, sleeptime=0.001, maxlen=65535, **kwargs):
 
-    ENCODER_CAL_DEFAULT = 78912
+    ENCODER_CAL_DEFAULT = 42518 #78912
 
     # Make command set
     setup_commands, loop_commands = motionCommand(**kwargs)
