@@ -110,7 +110,7 @@ def motionCommand(revolutions = 1.0, velocity = 120, acceleration = 200, intermi
     commands.append(struct.pack('>ccxcH', ESD508_ID, ESD508_WRITE, ESD508_PERR, position_err))
     commands.append(struct.pack('>ccxcH', ESD508_ID, ESD508_WRITE, ESD508_ENCR, encoder_resolution))
     # standard parameter block before each run
-    commands.append(struct.pack('>ccxcx?',ESD508_ID, ESD508_WRITE, ESD508_DIRN, reverse))
+    commands.append(struct.pack('>ccxcx?',ESD508_ID, ESD508_WRITE, ESD508_DIRN, ~reverse))
     commands.append(struct.pack('>ccxcx?',ESD508_ID, ESD508_WRITE, ESD508_BIDR, bidirectional))
     commands.append(struct.pack('>ccxcH', ESD508_ID, ESD508_WRITE, ESD508_ACCL, acceleration))
     commands.append(struct.pack('>ccxcH', ESD508_ID, ESD508_WRITE, ESD508_DIST, distance))
@@ -168,7 +168,7 @@ def writeAndVerify(serialPort, cmd, sleeptime, debugMode=True):
 # S is the (already opened) pySerial class instance.
 def move_servomotor(S, verbose=True, debugMode=False, sleeptime=0.001, maxlen=65535, **kwargs):
 
-    ENCODER_CAL_DEFAULT = 42518 #78912
+    ENCODER_CAL_DEFAULT = 89211. #42518 #78912
 
     # Make command set
     setup_commands, loop_commands = motionCommand(**kwargs)

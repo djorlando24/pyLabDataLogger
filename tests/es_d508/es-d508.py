@@ -46,6 +46,7 @@ import struct
 import binascii
 import libscrc
 import numpy as np
+from termcolor import cprint
 import serial, time
 
 def checkCrc(data):
@@ -95,7 +96,9 @@ def motionCommand(revolutions = 1.0, velocity = 120, acceleration = 200, intermi
     ESD508_DATA = b'\x02\x00\x02' # buffer ready to send
     
     distance = revolutions * 100 # ?? why is this
-    
+    if distance<0:
+        distance = -distance
+        reverse = ~reverse
     commands = []
     
     # Set up motor parameters - generally set once
@@ -103,7 +106,7 @@ def motionCommand(revolutions = 1.0, velocity = 120, acceleration = 200, intermi
     commands.append(struct.pack('>ccxcH', ESD508_ID, ESD508_WRITE, ESD508_PERR, position_err))
     commands.append(struct.pack('>ccxcH', ESD508_ID, ESD508_WRITE, ESD508_ENCR, encoder_resolution))
     # standard parameter block before each run
-    commands.append(struct.pack('>ccxcx?',ESD508_ID, ESD508_WRITE, ESD508_DIRN, reverse))
+    commands.append(struct.pack('>ccxcx?',ESD508_ID, ESD508_WRITE, ESD508_DIRN, ~reverse))
     commands.append(struct.pack('>ccxcx?',ESD508_ID, ESD508_WRITE, ESD508_BIDR, bidirectional))
     commands.append(struct.pack('>ccxcH', ESD508_ID, ESD508_WRITE, ESD508_ACCL, acceleration))
     commands.append(struct.pack('>ccxcH', ESD508_ID, ESD508_WRITE, ESD508_DIST, distance))
@@ -221,7 +224,11 @@ def move_servomotor(serialPort, verbose=True, **kwargs):
                 
                 if verbose: print("\tread %i bytes" % (len(data)))
                 #if verbose: print(binascii.hexlify(data[3:-2]), len(data[3:-2]))
-                shorts = struct.unpack('%ih' % (len(data[3:-2])/2),data[3:-2])
+                if len(data)%2 == 1:
+                    shorts = struct.unpack('%ih' % ((len(data[3:-2])-0)/2),data[3:-2])
+                else:
+                    shorts = struct.unpack('%ih' % ((len(data[3:-2])-1)/2),data[3:-3])
+                
                 enc_data.extend(list(shorts))
                 
                 # If the last 20 encoder values are the same, we are done sampling.
@@ -235,29 +242,54 @@ def move_servomotor(serialPort, verbose=True, **kwargs):
                 break
         
             # Loop back to read more data if we reach this point.
-        
-    except KeyboardInterrupt: # manual aborting data read loop
-        time.sleep(0.1)
+    
+    #except KeyboardInterrupt: # manual aborting data read loop
+    #    time.sleep(0.1)
+    except:
+        raise
     
     writeAndVerify(S,cleanup,verbose)
     if verbose: print("\n\t%s CLEANUP" % binascii.hexlify(cleanup))
 
     # Process encoder data
     enc_data = np.array(enc_data)
-    enc_data -= enc_data[-1]
-    enc_pos = np.cumsum(enc_data)/78912. # convert to revolutions
+    #enc_data -= enc_data[-1]
+    enc_pos = np.cumsum(enc_data)/89211. # convert to revolutions
     
     return enc_pos
     
     
 #################################################################################
 if __name__ == '__main__':
-
-
-    enc_pos = move_servomotor('/dev/cu.usbserial-AC00I4ZZ', verbose=True, revolutions = 1)
-
+    import scipy.optimize as sopt
     import matplotlib.pyplot as plt
     fig=plt.figure()
-    plt.plot(enc_pos)
+    ax1=fig.add_subplot(121)
+    plt.xlabel("Time"); plt.ylabel("Encoder value")
+    
+    ax2=fig.add_subplot(122)
+    plt.xlabel("Revolutions"); plt.ylabel("Encoder value")
+    
+    rvals = np.arange(-1.0,1.01,0.01)
+    ans = []
+    try:
+        for r in rvals:
+            cprint("Rotating %f rev" % r, color='cyan')
+            enc_pos = move_servomotor('/dev/cu.usbserial-AC00I4ZZ', verbose=False, revolutions = r,\
+                                        velocity=50, acceleration=50, intermission=100)
+            if len(enc_pos)>0:
+                ax1.plot(enc_pos,lw=1,label='%f rev' % r)
+                ax2.scatter((r,),(enc_pos[-1],),c='k')
+                ans.append(enc_pos[-1])
+    except KeyboardInterrupt:
+        rvals = rvals[:len(ans)]
+        pass
+    
+    ffit = lambda x,a,b,c:  a*x**2 + b*x + c
+    popt, pcov = sopt.curve_fit(ffit, rvals, ans, p0=(0,1,0))
+    ax2.plot(rvals, ffit(rvals,*popt),lw=1,ls='--',c='k')
+    
+    #print "enc_pos = %f * rev + %f" % tuple(popt)
+    print popt
     plt.show()
     exit()
