@@ -45,6 +45,8 @@ Use pip, easy_install, apt, etc.
 
 - matplotlib
 
+- cython
+
 - natsort
 
 - tqdm
@@ -98,6 +100,8 @@ Use pip, easy_install, apt, etc.
 pyLabDataLogger also requires the following external software:
 
 - hidapi development packages, available on Linux through package manager (apt-get install hidapi-dev) and on MacOS through Homebrew (brew install hidapi).
+
+- libusb headers (libusb-1.0.0 and libusb-1.0.0-dev).
 
 - python2 and python3 development headers
 
