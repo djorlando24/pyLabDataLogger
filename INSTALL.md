@@ -1,45 +1,23 @@
 # INSTALLATION INSTRUCTIONS
 
-## building on Linux
+Most of the external libraries pyLabDataLogger needs to run specific devices do not need to be installed unless required. pyLabDataLogger will throw an error at you if you need one of these libraries. Details on how to get them are listed below. Before you install, please read below to ensure the modules that are mandatory have been installed, so that the build does not fail.
 
-The software has been tested extensively on Ubuntu and Debian Linux. 
-You'll need to install software from package repository (ie apt or dpkg or yum).
-See below sections as to what modules are needed for which drivers.
+## Required system libraries to install before building
 
-To install without superuser privileges :
+- hidapi development packages, available on Linux through package manager (apt-get install hidapi-dev) and on MacOS through Homebrew (brew install hidapi).
 
-	python setup.py install --user
+- libusb headers (libusb-1.0.0 and libusb-1.0.0-dev on Debian/Ubuntu)
 
-To install as root, which you may need to do on raspberry Pis etc:
+- A C++ compiler and standard C++ libraries
 
-	sudo python setup.py install
+- Cython
 
-## building on MacOS
+- python2 and/or python3 development headers
 
-To compile the mcclibusb drivers, you need libusb installed. On MacOS you can get this
-from Homebrew. Once you've done "brew install libusb" you may then need to tell python
-where the headers are. On my machine, I used:
+## Required Python modules
 
-    CFLAGS="-I/usr/local/Cellar/libusb/1.0.22/include" python setup.py install --user
-
-## Required python modules
-
-pyLabDataLogger depends on the following non-core python packages.
-Those which require legacy versions or are hard to find have been stored in the thirdParty directory.
-
-### Python modules bundled in thirdParty
-
-- For *Pico USB TC-08*, the usbtc08 python module is required. See thirdParty/usbtc08
-
-- *Measurement Computing* devices require libmccusb, see thirdParty/mcc-libusb
-  (you will need to run "make libmccusb.so" in there to build the shared library)
-
-- For *Thorlabs translation stages*, pyAPT for Linux:
-  Use the python2 modified version in thirdParty directory, or download from https://gitlab.com/weinshec/pyAPT.git
-
-### Python modules available via package manager
-
-Use pip, easy_install, apt, etc.
+pyLabDataLogger depends on the following modules. Those which require legacy versions or are hard to find have been stored in the thirdParty directory.
+Use pip, easy_install, apt, etc. to install these.
 
 - numpy
 
@@ -65,6 +43,44 @@ Use pip, easy_install, apt, etc.
 
 - libscrc
 
+## building on Linux
+
+The software has been tested extensively on Ubuntu and Debian Linux. 
+You'll need to install software from package repository (ie apt or dpkg or yum).
+See below sections as to what modules are needed for which drivers.
+
+To install without superuser privileges :
+
+	python setup.py install --user
+
+To install as root, which you may need to do on raspberry Pis etc:
+
+	sudo python setup.py install
+
+## building on MacOS
+
+To compile the mcclibusb drivers, you need libusb installed. On MacOS you can get this
+from Homebrew. Once you've done "brew install libusb" you may then need to tell python
+where the headers are. On my machine, I used:
+
+    CFLAGS="-I/usr/local/Cellar/libusb/1.0.22/include" python setup.py install --user
+
+## Optional Python modules
+
+From here on, all these modules are optional. They only need to be installed for specific hardware.
+
+### Optional Python modules bundled in thirdParty
+
+- For *Pico USB TC-08*, the usbtc08 python module is required. See thirdParty/usbtc08
+
+- *Measurement Computing* devices require libmccusb, see thirdParty/mcc-libusb
+  (you will need to run "make libmccusb.so" in there to build the shared library)
+
+- For *Thorlabs translation stages*, pyAPT for Linux:
+  Use the python2 modified version in thirdParty directory, or download from https://gitlab.com/weinshec/pyAPT.git
+
+### Optional Python modules you can obtain from a package manager
+
 - For I2C devices, you will need smbus module:
   and driver specific modules i.e. Adafruit_ADS1x15
 
@@ -75,7 +91,7 @@ Use pip, easy_install, apt, etc.
 - For TC-08 RS-232 serial support, install the thermocouples_reference
   module which provides conversion of thermocouple voltage to temperature.
 
-### Python modules you must install yourself
+### Optional Python modules you will need to download and build manually
 
 - for Picoscope devices, install pico-python
   https://github.com/colinoflynn/pico-python
@@ -95,15 +111,13 @@ Use pip, easy_install, apt, etc.
 - For webcam support, OpenCV
   (check your package manager such as apt/pip or use Homebrew on MacOS)
 
-## Non-Python dependencies
+- For CSI camera interface support, libcamera
+  see http://libcamera.org/getting-started.html for more information
+  libcamera requires a number of additional libraries;
+    - libudev-dev libboost-dev libgnutls28-dev openssl libtiff5-dev meson qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5
+  There is a test program in tests/test_picamera.py that will confirm libcamera is installed and working.
 
-pyLabDataLogger also requires the following external software:
-
-- hidapi development packages, available on Linux through package manager (apt-get install hidapi-dev) and on MacOS through Homebrew (brew install hidapi).
-
-- libusb headers (libusb-1.0.0 and libusb-1.0.0-dev).
-
-- python2 and python3 development headers
+## Optional non-Python dependencies
 
 - Any generic USB serial port drivers that your system does not have. By default Linux has most standard serial to USB device drivers in the kernel. MacOS and Windows may require FTDI, CP2102, etc. driver packages. These should come with the hardware and are also available online.
 
@@ -146,14 +160,3 @@ pyLabDataLogger also requires the following external software:
   You will also need to add yourself to the group usbtmc: sudo groupadd usbtmc && sudo usermod -a -G usbtmc userName
 
 - *Center 310* hygrometer support is built-in, there are some test utilities in thirdParty/C310
-
-## Install procedure
-
-- Go to the pyLabDataLogger directory and run
-  python setup.py install --user
-
-  or to install system-wide with superuser, do:
-  sudo python setup.py install
-
-  Note that missing dependencies will not be picked up at install time. These will flag
-  as ImportError throws or warning messages at run-time.

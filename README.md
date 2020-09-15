@@ -8,7 +8,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 1.0.0
-    @date 01/12/2019
+    @date 15/09/2020
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -78,6 +78,9 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 - Generic USB webcams supported by OpenCV
     - Note that OpenCV2 can't tell multiple webcams apart, user
       would be asked which is which.
+
+- CSI camera interfaces such as the Raspberry Pi Camera, using libcamera
+    - see libcamera.org for information
 
 - RS-232 Serial devices via Serial-to-USB adapters. pyLabDataLogger may not be able to auto-identify the USB VID & PID and you might be asked to select from a list of supported devices.
     - Tenma 72-2710 USB programmable bench power supply
