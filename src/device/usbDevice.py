@@ -64,6 +64,7 @@ usb_device_table = [
     # OpenCV-compatible webcams
     {'vid':0x045e, 'pid':0x00f5, 'driver':'opencv', 'name':'Microsoft Webcam'},
     {'vid':0x1908, 'pid':0x2311, 'driver':'opencv', 'name':'Gembird Webcam'},
+    {'vid':0x534d, 'pid':0x2109, 'driver':'opencv', 'name':'HDMI video capture'},
     #{'vid':0x04f2, 'pid':0xb084, 'driver':'opencv', 'name':'Chicony Internal Webcam'},
     #{'vid':0x04f2, 'pid':0xb5d7, 'driver':'opencv', 'name':'Chicony Internal Webcam'},
 
