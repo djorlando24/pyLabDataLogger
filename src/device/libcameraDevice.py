@@ -1,8 +1,7 @@
 """
     libcamera device class
-    
-    Useful for interfacing with CSI camera interfaces on single-board PCs,
-    such as the Raspberry Pi camera.
+    Currently just uses the picamera library for Rasberry Pi.
+    In future can be a generic CSI/CSI2 interface for other SBCs.
     
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
@@ -40,6 +39,7 @@ from termcolor import cprint
 try:
     from picamera.array import PiRGBArray
     from picamera import PiCamera
+    import matplotlib.pyplot as plt
 except ImportError:
     cprint( "Please install libcamera (libcamera.org)", 'red', attrs=['bold'])
     raise
@@ -56,8 +56,11 @@ class libcameraDevice(device):
         self.name = "uninitialized"
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
-        self.driver = self.params['driver'].split('/')[1:]
+        #self.driver = self.params['driver'].split('/')[1:]
         
+        if 'resolution' in kwargs:
+            self.params['resolution']=kwargs['resolution']
+
         if not 'live_preview' in self.params:
             if not 'live_preview' in kwargs:
                 self.live_preview=False
@@ -66,6 +69,8 @@ class libcameraDevice(device):
         
         if not 'debugMode' in self.params: self.params['debugMode']=False
         
+        self.quiet = quiet
+
         if params is not {}: self.scan(quiet=quiet)
         
         return
@@ -91,11 +96,9 @@ class libcameraDevice(device):
     # Establish connection to device (ie open serial port)
     def activate(self,quiet=False):
         
-
         # Try to open camera stream.
-        # This should cause the REC light to come on the camera if it has one.
         self.camera = PiCamera()
-        self.rawcapture = PiRGBArray(camera)
+        self.rawCapture = PiRGBArray(self.camera)
         time.sleep(0.1) # warmup time
         self.driverConnected=True
         
@@ -117,18 +120,18 @@ class libcameraDevice(device):
 
     # Apply configuration changes to the driver (subdriver-specific)
     def apply_config(self):
-        subdriver = self.params['driver'].split('/')[1:]
+        #subdriver = self.params['driver'].split('/')[1:]
         try:
             assert(self.deviceClass)
             if self.deviceClass is None: raise pyLabDataLoggerIOError("Could not access device.")
-            
+            '''
             # Apply subdriver-specific variable writes
             if subdriver=='?':
                 #...
                 pass
             else:
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
-        
+            '''
         except ValueError:
             cprint( "%s - Invalid setting requested" % self.name, 'red', attrs=['bold'])
         
@@ -176,20 +179,45 @@ class libcameraDevice(device):
             self.config['offset']=[0.]
             self.params['n_channels']=self.config['n_frames']
             self.frame_counter = -1 # reset frame counter. It'll be incremented up to zero before the first save.
+            if 'resolution' in self.params:
+                self.camera.resolution = self.params['resolution']
+                if not self.quiet: cprint("\tSet resolution to %s." % str(self.params['resolution']), 'cyan')
+
+            if self.live_preview:
+                self.fig = plt.figure()
+                self.ax = self.fig.add_subplot(111)
+                self.ax.axis('off')
+                #plt.ion()
+                plt.show(block=False)
+                plt.pause(.1)
 
         # Get Image(s)
         self.lastValue = []
         for j in range(self.config['n_frames']):
-            camera.capture(rawCapture, format="bgr")
-            frame=rawCapture.array
+            self.rawCapture.truncate(0) # reset buffer
+            self.camera.capture(self.rawCapture, format="bgr")
+            frame=self.rawCapture.array
             self.frame_counter += 1 # increment counter even if image not returned
             
             self.lastValue.append(frame[...])
             # Set up live preview mode if requested
             if j==0 and self.live_preview:
+                transform = lambda I: np.flip(I,axis=-1)
                 cprint("\tlive_preview: displaying frame_%08i" % self.frame_counter, 'green')
-                matplotlib.imshow(frame)
-        
+                try:
+                    assert self.imshow
+                    self.imshow.set_data(transform(self.lastValue[-1]))
+                except:
+                    self.imshow = self.ax.imshow(transform(self.lastValue[-1]))
+
+                try:
+                    self.ax.set_title("Frame %06i : %s" % (self.frame_counter,self.lastValueTimestamp))
+                    self.fig.canvas.draw()
+                    #plt.show(block=False)
+                    plt.pause(0.01) # 10 ms for window to refresh itself.
+                except:
+                    cprint( "\tError updating libcamera device window", 'red', attrs=['bold'])
+
         # Generate scaled values. Convert non-numerics to NaN
         lastValueSanitized = []
         for v in self.lastValue: 

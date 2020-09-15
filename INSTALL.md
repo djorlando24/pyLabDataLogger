@@ -43,6 +43,8 @@ Use pip, easy_install, apt, etc. to install these.
 
 - libscrc
 
+- gi-cairo
+
 ## building on Linux
 
 The software has been tested extensively on Ubuntu and Debian Linux. 
