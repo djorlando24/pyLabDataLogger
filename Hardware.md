@@ -30,6 +30,10 @@ Make sure the usbtmc rules are added in /etc/udev/rules.d as per INSTALL.md
 If the device won't communicate, unplug & replug it.
 you will otherwise need to be a superuser to access the device.
 
+## Thorlabs scientific cameras
+Download the closed-source (boo!) drivers and SDK from https://www.thorlabs.com/software_pages/viewsoftwarepage.cfm?code=ThorCam
+Follow the install directions (which requires manually copying the libraries, installing the python package, and inserting udev rules).
+
 ## Rigol DS-series oscilloscopes
 The Rigol DS scopes are working over USB via the sigrok driver, which seems to handle the non standard SCPI frame fsormat that usbtmc can't.
 

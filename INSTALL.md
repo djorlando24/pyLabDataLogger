@@ -150,6 +150,9 @@ From here on, all these modules are optional. They only need to be installed for
   To build python's v4l2capture you will need the v4l2 headers (apt-get install libv4l-dev for example)
   You may also need specific device drivers for some USB capture cards (see Hardware.md)
 
+- For Thorlabs Scientific Cameras, download the SDK from https://www.thorlabs.com/software_pages/viewsoftwarepage.cfm?code=ThorCam
+  and follow the install directions (copy the binary DLLs, insert udev rules, build and install the python module).
+
 ## System configuration notes
 
 - You need to be able to write and read hardware serial ports. On linux, run:
