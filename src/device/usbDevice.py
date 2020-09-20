@@ -9,8 +9,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.0
-    @date 30/07/2020
+    @version 1.0.1
+    @date 16/09/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -67,6 +67,9 @@ usb_device_table = [
     {'vid':0x534d, 'pid':0x2109, 'driver':'opencv', 'name':'HDMI video capture'},
     #{'vid':0x04f2, 'pid':0xb084, 'driver':'opencv', 'name':'Chicony Internal Webcam'},
     #{'vid':0x04f2, 'pid':0xb5d7, 'driver':'opencv', 'name':'Chicony Internal Webcam'},
+    
+    # Thorlabs cameras supported by the TSI drivers
+    {'vid':0x1313, 'pid':0x4001, 'driver':'thorcam', 'name':'Thorlabs Camera'},
 
     # Specialty drivers with fixed VID and PID
     {'vid':0x09db, 'pid':0x0112, 'driver':'mcc-libusb/mccusb1608G', 'name':'MCC USB-1608GX-2AO ADC'},
@@ -275,7 +278,10 @@ def load_usb_devices(devs=None,**kwargs):
         elif driverClass == 'opencv':
             from pyLabDataLogger.device import opencvDevice
             device_list.append(opencvDevice.opencvDevice(params=d,**kwargs))
-        
+        elif driverClass == 'thorcam':
+            from pyLabDataLogger.device import thorcamDevice
+            device_list.append(thorcamDevice.thorcamDevice(params=d,**kwargs))
+            
         else:
             cprint( "\tI don't know what to do with this device" ,'red', attrs=['bold'])
 

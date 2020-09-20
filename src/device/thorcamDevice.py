@@ -1,13 +1,11 @@
 """
-    libcamera device class
-    Currently just uses the picamera library for Rasberry Pi.
-    In future can be a generic CSI/CSI2 interface for other SBCs.
+    Thorlabs Scientific camera device class
     
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.0.1
-    @date 15/09/2020
+    @date 17/09/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -37,40 +35,41 @@ import datetime, time, subprocess, sys
 from termcolor import cprint
 
 try:
-    from picamera.array import PiRGBArray
-    from picamera import PiCamera
+    import usb.core
     import matplotlib.pyplot as plt
+    from thorlabs_tsi_sdk.tl_camera import TLCameraSDK
+    from thorlabs_tsi_sdk.tl_mono_to_color_processor import MonoToColorProcessorSDK
+    from thorlabs_tsi_sdk.tl_mono_to_color_enums import COLOR_SPACE
+    from thorlabs_tsi_sdk.tl_color_enums import FORMAT
+
 except ImportError:
-    cprint( "Please install libcamera (libcamera.org)", 'red', attrs=['bold'])
+    cprint( "Please install Thorlabs Scientific Camera Linux SDK and PyUSB", 'red', attrs=['bold'])
     raise
 
 ########################################################################################################################
-class libcameraDevice(device):
-    """ Class providing support for generic libcamera devices.
+class thorcamDevice(device):
+    """ Class providing support for Thorlabs scientific cameras.
     """
 
     def __init__(self,params={},quiet=True,**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
-        self.name = "uninitialized camera"
+        self.name = "uninitialized"
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
-        #self.driver = self.params['driver'].split('/')[1:]
+        self.driver = self.params['driver'].split('/')[1:]
+        self.quiet = quiet
         
-        if 'resolution' in kwargs:
-            self.params['resolution']=kwargs['resolution']
-
         if not 'live_preview' in self.params:
             if not 'live_preview' in kwargs:
                 self.live_preview=False
             else: self.live_preview=kwargs['live_preview']
         else: self.live_preview=self.params['live_preview']
-        
+            
+        if not 'ID' in self.params: self.params['ID'] = None # default OpenCV camera ID number
         if not 'debugMode' in self.params: self.params['debugMode']=False
         
-        self.quiet = quiet
-
         if params is not {}: self.scan(quiet=quiet)
         
         return
@@ -80,37 +79,49 @@ class libcameraDevice(device):
         
         if override_params is not None: self.params = override_params
         
-        # check CSI interface is available.
-        # expect to see "supported=1 detected=1" or similar
+        # check USB device exists
         try:
-            '''
-            detect=''
-            if 'run' in dir(subprocess):
-                detect=subprocess.run(["vcgencmd","get_camera"])
-            else:
-                detect=subprocess.call(["vcgencmd","get_camera"])
-            '''
-            p = subprocess.Popen(['vcgencmd', 'get_camera'],\
-                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            detect, err = p.communicate()
-            if int(detect.strip().split('etected=')[-1][0]) >= 1:
-                self.activate(quiet=quiet)
-            else:
-                raise IOError
+            self.usbdev = usb.core.find(idVendor=self.params['vid'], idProduct=self.params['pid'])
+            self.activate(quiet=quiet)
         except:
-            cprint("No camera available",'red',attrs={'bold'})
-            pass
+            raise
         
         return
 
-    # Establish connection to device (ie open serial port)
+    # Establish connection to device
     def activate(self,quiet=False):
         
-        # Try to open camera stream.
-        self.camera = PiCamera()
-        self.rawCapture = PiRGBArray(self.camera)
-        time.sleep(0.1) # warmup time
-        self.driverConnected=True
+        # begin camera id block
+        self.userChoseStream = False
+        validCamRange = [None, None]
+        
+        self.camera_sdk = TLCameraSDK()
+        self.mono_to_color_sdk = MonoToColorProcessorSDK()
+        
+        try:
+            self.available_cameras = self.camera_sdk.discover_available_cameras()
+        except UnicodeDecodeError:
+            cprint("Thorlabs SDK Error: Please power cycle camera",'red',attrs=['bold'])
+            exit()
+            
+        if len(self.available_cameras) < 1:
+            cprint("no cameras detected! Check udev rules",'red',attrs=['bold'])
+            return
+        elif len(self.available_cameras) > 1:
+            for i in range(len(self.available_cameras)):
+                print("%i: %s" % (i,self.available_cameras[i]))
+            while not self.params['ID'] in validCamRange:
+                try:
+                    self.params['ID']=int(raw_input("\tPlease select camera ID [0-%i]:" % (len(self.available_cameras)-1)))
+                    self.userChoseStream = True
+                except:
+                    pass
+        else:
+            self.params['ID']=0
+        
+        # End camera id block
+        
+        # Set up configuration for number of frames to capture per query event
         
         if 'n_frames' in self.params: self.config['n_frames'] = self.params['n_frames']
         else: self.config['n_frames'] = 1
@@ -124,24 +135,23 @@ class libcameraDevice(device):
     # Deactivate connection to device (close serial port)
     def deactivate(self):
         self.driverConnected=False
-        del self.camera
-        del self.rawCapture
+        del self.opencvdev
         return
 
     # Apply configuration changes to the driver (subdriver-specific)
     def apply_config(self):
-        #subdriver = self.params['driver'].split('/')[1:]
+        subdriver = self.params['driver'].split('/')[1:]
         try:
             assert(self.deviceClass)
             if self.deviceClass is None: raise pyLabDataLoggerIOError("Could not access device.")
-            '''
+            
             # Apply subdriver-specific variable writes
             if subdriver=='?':
                 #...
                 pass
             else:
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
-            '''
+        
         except ValueError:
             cprint( "%s - Invalid setting requested" % self.name, 'red', attrs=['bold'])
         
@@ -168,19 +178,12 @@ class libcameraDevice(device):
     # Handle query for values
     def query(self, reset=False):
 
-        # Check
-        try:
-            assert(self.rawCapture)
-            assert(self.camera)
-            if self.camera is None: raise pyLabDataLoggerIOError
-        except:
-            cprint( "Connection to the device is not open.", 'red', attrs=['bold'])
-
+        
         # If first time or reset, get configuration (ie units)
         if not 'raw_units' in self.params.keys() or reset:
 
             # Set up device
-            self.name = 'CSI camera'
+            self.name = self.params['name'] # from usbDevice lookup table, usb descriptor data often empty
             if self.config['n_frames'] == 1: self.config['channel_names']=['Image']
             else: self.config['channel_names']=['Frame %i' % j  for j in range(self.config['n_frames'])]
             self.params['raw_units']=['Intensity']
@@ -189,10 +192,26 @@ class libcameraDevice(device):
             self.config['offset']=[0.]
             self.params['n_channels']=self.config['n_frames']
             self.frame_counter = -1 # reset frame counter. It'll be incremented up to zero before the first save.
-            if 'resolution' in self.params:
-                self.camera.resolution = self.params['resolution']
-                if not self.quiet: cprint("\tSet resolution to %s." % str(self.params['resolution']), 'cyan')
-
+            
+            # Try to open camera stream.
+            self.camera =  self.camera_sdk.open_camera(self.available_cameras[self.params['ID']])
+            self.camera.frames_per_trigger_zero_for_unlimited = 0  # start camera in continuous mode
+            self.camera.image_poll_timeout_ms = 2000  # 2 second timeout
+            self.driverConnected=True
+            
+            # Setup post-processor for colour images
+            self.mono_to_color_processor = self.mono_to_color_sdk.create_mono_to_color_processor(
+                self.camera.camera_sensor_type,
+                self.camera.color_filter_array_phase,
+                self.camera.get_color_correction_matrix(),
+                self.camera.get_default_white_balance_matrix(),
+                self.camera.bit_depth)
+            self.mono_to_color_processor.color_space = COLOR_SPACE.SRGB  # sRGB color space
+            self.mono_to_color_processor.output_format = FORMAT.RGB_PIXEL  # data is returned as sequential RGB values
+            self.params['red gain']=red_gain=self.mono_to_color_processor.red_gain
+            self.params['green gain']=green_gain=self.mono_to_color_processor.green_gain
+            self.params['blue gain']=blue_gain=self.mono_to_color_processor.blue_gain
+            
             if self.live_preview:
                 self.fig = plt.figure()
                 self.ax = self.fig.add_subplot(111)
@@ -201,32 +220,65 @@ class libcameraDevice(device):
                 plt.show(block=False)
                 plt.pause(.1)
 
-        # Get Image(s)
-        self.lastValue = []
-        for j in range(self.config['n_frames']):
-            self.rawCapture.truncate(0) # reset buffer
-            self.camera.capture(self.rawCapture, format="bgr")
-            frame=self.rawCapture.array
-            self.frame_counter += 1 # increment counter even if image not returned
-            
-            self.lastValue.append(frame[...])
-            # Set up live preview mode if requested
-            if j==0 and self.live_preview:
-                transform = lambda I: np.flip(I,axis=-1)
-                cprint("\tlive_preview: displaying frame_%08i" % self.frame_counter, 'green')
-                try:
-                    assert self.imshow
-                    self.imshow.set_data(transform(self.lastValue[-1]))
-                except:
-                    self.imshow = self.ax.imshow(transform(self.lastValue[-1]))
 
-                try:
-                    self.ax.set_title("Frame %06i : %s" % (self.frame_counter,self.lastValueTimestamp))
-                    self.fig.canvas.draw()
-                    #plt.show(block=False)
-                    plt.pause(0.01) # 10 ms for window to refresh itself.
-                except:
-                    cprint( "\tError updating libcamera device window", 'red', attrs=['bold'])
+        # Check
+        try:
+            assert(self.camera)
+            if self.camera is None: raise pyLabDataLoggerIOError
+        except:
+            cprint( "Connection to the device is not open.", 'red', attrs=['bold'])
+        
+
+        # Get Image(s)
+        rawFrames = []
+        self.camera.arm(self.config['n_frames'])
+        self.params['width'] = self.camera.image_width_pixels
+        self.params['height'] = self.camera.image_height_pixels
+        for j in range(self.config['n_frames']):
+            self.camera.issue_software_trigger()
+            rawframe = self.camera.get_pending_frame_or_null()
+            self.frame_counter += 1 # increment counter even if image not returned
+            rawFrames.append(rawframe)
+            if rawframe is None:
+                cprint("\tNo frame arrived from Thorlabs camera within the timeout!",'red')
+        self.camera.disarm()
+            
+        if not self.quiet:
+            cprint("\tCaptured %i/%i frames" % (len([f for f in rawFrames if f is not None]),self.config['n_frames']),'green')
+        
+        # Post process image(s)
+        self.lastValue=[]
+        livePreviewImg=None
+        for rawframe in rawFrames:
+            if rawframe is None:
+                self.lastValue.append(np.nan)
+            else:
+                # this will give us a resulting image with 3 channels (RGB) and 16 bits per channel, resulting in 48 bpp
+                color_image_16bit = self.mono_to_color_processor.transform_to_48(rawframe.image_buffer, self.params['width'], self.params['height'])
+                # this will give us a resulting image with 4 channels (RGBA) and 8 bits per channel, resulting in 32 bpp
+                #color_image = self.mono_to_color_processor.transform_to_32((rawframe.image_buffer, self.params['width'], self.params['height'])
+                # this will give us a resulting image with 3 channels (RGB) and 8 bits per channel, resulting in 24 bpp
+                color_image_8bit = self.mono_to_color_processor.transform_to_24(rawframe.image_buffer, self.params['width'], self.params['height'])
+                # copy to lastValue
+                if livePreviewImg is None: livePreviewImg = color_image_8bit[...].reshape(self.params['height'], self.params['width'], 3)
+                self.lastValue.append(color_image_16bit[...].reshape(self.params['height'], self.params['width'], 3))
+                
+        # Set up live preview mode if requested
+        if self.live_preview:
+            cprint("\tlive_preview: displaying frame_%08i %s" % (self.frame_counter,livePreviewImg.shape), 'green')
+            try:
+                assert self.imshow
+                self.imshow.set_data(livePreviewImg)
+            except:
+                self.imshow = self.ax.imshow(livePreviewImg)
+
+            try:
+                self.ax.set_title("Frame %06i : %s" % (self.frame_counter,self.lastValueTimestamp))
+                self.fig.canvas.draw()
+                #plt.show(block=False)
+                plt.pause(0.01) # 10 ms for window to refresh itself.
+            except:
+                cprint( "\tError updating Thorlabs preview window", 'red', attrs=['bold'])
 
         # Generate scaled values. Convert non-numerics to NaN
         lastValueSanitized = []
@@ -280,7 +332,8 @@ class libcameraDevice(device):
                     del dg[dsname]
                 
                 # Flip colours in dataset - 21/5/20
-                dset=dg.create_dataset(dsname, data=np.flip(self.lastValue[j],axis=2), dtype='uint8', chunks=True,\
+                # Swap to uint16, this might not work in HDFView but keep all the bits anyway! 17/9/20
+                dset=dg.create_dataset(dsname, data=np.flip(self.lastValue[j],axis=2), dtype='uint16', chunks=True,\
                                         compression='gzip', compression_opts=1) # apply fast compression
                 
                 #Set the image attributes
