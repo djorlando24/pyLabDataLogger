@@ -53,7 +53,7 @@ class libcameraDevice(device):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
-        self.name = "uninitialized"
+        self.name = "uninitialized camera"
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
         #self.driver = self.params['driver'].split('/')[1:]
@@ -83,13 +83,23 @@ class libcameraDevice(device):
         # check CSI interface is available.
         # expect to see "supported=1 detected=1" or similar
         try:
+            '''
+            detect=''
             if 'run' in dir(subprocess):
-                subprocess.run(["vcgencmd","get_camera"])
+                detect=subprocess.run(["vcgencmd","get_camera"])
             else:
-                subprocess.call(["vcgencmd","get_camera"])
-            self.activate(quiet=quiet)
+                detect=subprocess.call(["vcgencmd","get_camera"])
+            '''
+            p = subprocess.Popen(['vcgencmd', 'get_camera'],\
+                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            detect, err = p.communicate()
+            if int(detect.strip().split('etected=')[-1][0]) >= 1:
+                self.activate(quiet=quiet)
+            else:
+                raise IOError
         except:
-            raise
+            cprint("No camera available",'red',attrs={'bold'})
+            pass
         
         return
 
