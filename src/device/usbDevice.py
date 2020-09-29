@@ -9,8 +9,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.1
-    @date 16/09/2020
+    @version 1.0.2
+    @date 29/09/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -88,7 +88,8 @@ usb_device_table = [
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-usbh', 'name':'Omega USB-H Pressure Transducer', 'manufacturer':'Omega Engineering'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/sd700', 'name':'Extech SD700 Barometric PTH Datalogger'},
     {'vid':0x10c4, 'pid':0xea60, 'driver':'serial/center310', 'name':'CENTER 310 Humidity meter', 'manufacturer':'Silicon Labs'},
-
+    {'vid':0x10c4, 'pid':0xea60, 'driver':'serial/mx5060', 'name':'Metrix MX5060 Multimeter'},
+    
     # Microcontrollers using serial-over-USB
     {'vid':0x2341, 'pid':0x8036, 'driver':'arduino', 'name':'uDuino (Leonardo)'},
     {'vid':0x2341, 'pid':0x0043, 'driver':'arduino', 'name':'Arduino Uno'},

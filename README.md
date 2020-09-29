@@ -7,8 +7,8 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
-    @version 1.0.1
-    @date 17/09/2020
+    @version 1.0.2
+    @date 29/09/2020
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -84,6 +84,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     
 - Thorlabs Scientific Cameras (using Thorlabs SDK and non-free drivers)
     - see https://www.thorlabs.com/software_pages/viewsoftwarepage.cfm?code=ThorCam
+    requires Intel 32 or 64 bit processor (Thorlabs only provides precompiled DLLs)
 
 - RS-232 Serial devices via Serial-to-USB adapters. pyLabDataLogger may not be able to auto-identify the USB VID & PID and you might be asked to select from a list of supported devices.
     - Tenma 72-2710 USB programmable bench power supply
@@ -95,6 +96,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Alicat Scientific M-series mass flow meters via RS232-to-USB dongle
       (default baud rate 19200, default unit ID 'A')
     - Leadshine ES-D508 servomotor controller
+    - Metrix MX5060 Bench multimeter (contains an internal generic CP210x Serial-to-USB bridge)
     - Radwag WTB series digital lab balance/scale via RS232-to-USB UART adapter **
     - Omega iSeries temperature process controllers, via generic RS-485 or RS-232 adapter **
 
@@ -107,13 +109,16 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Adafruit BMP085/BMP150 barometer/altimeter via I2C
     - Raspberry Pi low speed GPIO
 
-## Soon to be supported hardware
+## Future supported hardware
 
 - more I2C bus devices on the Raspberry Pi
+
 - PicoScope headless oscilloscopes
+
 - NI-VISA devices, such as
     - NI USB DAQ boards ie 6212-series
     - NI PCI card DAQs
+    
 - Firewire machine vision cameras (libdc1394)
   [https://damien.douxchamps.net/ieee1394/cameras/]
 

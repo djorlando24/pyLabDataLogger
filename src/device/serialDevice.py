@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.1
-    @date 30/07/2020
+    @version 1.0.2
+    @date 29/09/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -60,7 +60,8 @@ class serialDevice(device):
         The 'serial' driver supports the following hardware:
             'serial/alicat'            : Alicat Scientific M-series mass flow meter
             'serial/center310'         : CENTER 310 Temperature and Humidity meter
-            'serial/esd508'             : Leadshine ES-D508 Easy Servomotor Driver
+            'serial/esd508'            : Leadshine ES-D508 Easy Servomotor Driver
+            'serial/mx5060'            : Metrix MX5060 Bench Multimeter 
             'serial/omega-ir-usb'      : Omega IR-USB temperature probe with built in USB to Serial converter
             'serial/omega-iseries/232' : Omega iSeries Process Controller via RS232 transciever
             'serial/omega-iseries/485' : Omega iSeries Process Controller via RS485 transciever
@@ -246,6 +247,8 @@ class serialDevice(device):
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=115200
         elif self.subdriver=='esd508':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=38400
+        elif self.subdriver=='mx5060':
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=4800
         
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -347,6 +350,9 @@ class serialDevice(device):
                 pass
             elif subdriver=='tc08rs232':
                 raise RuntimeError("Need to implement selection of thermocouple types! Contact the developer.")
+            elif subdriver=='mx5060':
+                # No settings can be modified at present. 
+                pass
             else:
                 print self.__doc__
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -594,7 +600,7 @@ class serialDevice(device):
             
             # Confirm model number. Send 'K' and response will be \r\n terminated.
             self.params['ID']=self.blockingSerialRequest('K\r\n','\r')
-            cprint( "\tReturned Model ID =",self.params['ID'], 'green')
+            cprint( "\tReturned Model ID = %s" % self.params['ID'], 'green')
 
             
         # ----------------------------------------------------------------------------------------
@@ -761,7 +767,36 @@ class serialDevice(device):
                         self.config['eng_units'][j-2] = unitStr
                     self.config['channel_names'][j-2]=nameStr
                 except:
-                    raise pyLabDataLoggerIOError("Unable to parse Alicat channel descriptor string.\nCheck the baud rate is %i and the device ID is %s" % (self.params['baudrate'],self.params['ID']))
+                    raise pyLabDataLoggerIOError("Unable to parse Alicat channel descriptor string.\nCheck the baud rate is %i and the device ID is %s"\
+                                 % (self.params['baudrate'],self.params['ID']))
+        
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='mx5060': # Startup config for MX5060 multimeter
+            # Fixed settings.
+            self.name = "Metrix MX5060 Bench Multimeter"
+            self.config['channel_names']=['Primary', 'Secondary']
+            self.params['raw_units']=['','']
+            self.config['eng_units']=['','']
+            self.config['scale']=[1.,1.]
+            self.config['offset']=[0.,0.]
+            self.params['n_channels']=2
+            self.serialQuery=['READ?','SEC?']
+            self.queryTerminator='\r\n'
+            self.responseTerminator='\r'
+            self.sleeptime = 0.1
+            
+            # Confirm model number.
+            self.params['ID']=self.blockingSerialRequest('*IDN?\r\n','\r',sleeptime=self.sleeptime)
+            cprint( "\tReturned Model ID = %s" % self.params['ID'], 'green')
+            
+            # Get other settings and store in config
+            self.params['Function']=self.blockingSerialRequest('FUNC?\r\n','\r',sleeptime=self.sleeptime)
+            self.params['Range']=self.blockingSerialRequest('RANG?\r\n','\r',sleeptime=self.sleeptime)
+            self.params['Filter']=self.blockingSerialRequest('FILT?\r\n','\r',sleeptime=self.sleeptime)
+            self.params['Coupling']=self.blockingSerialRequest('INP:COUP?\r\n','\r',sleeptime=self.sleeptime)
+            self.params['AutoRange']=self.blockingSerialRequest('RANG:AUTO?\r\n','\r',sleeptime=self.sleeptime)
+            
+            self.sleeptime = 0.5 # Slow down for SEC?
             
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -1062,11 +1097,31 @@ class serialDevice(device):
                     
                 return [ starting_position + rawData[0], starting_position + rawData[0][-1] ]
 
-
+            # ----------------------------------------------------------------------------------------
+            if subdriver=='mx5060':
+                if rawData[0] is None:
+                    pri_val = np.nan
+                else:
+                    s = rawData[0].split(' ',2)
+                    pri_val = s[0]; pri_unit = s[-1]
+                    self.params['raw_units'][0] = pri_unit.strip()
+                    if self.config['eng_units'][0] == '': self.config['eng_units'][0] = pri_unit.strip()
+                
+                if rawData[1] is None: 
+                    sec_val = np.nan
+                else:
+                    s = rawData[1].split(' ',2)
+                    sec_val = s[0]; sec_unit = s[-1]
+                    self.params['raw_units'][1] = sec_unit.strip()
+                    if self.config['eng_units'][1] == '': self.config['eng_units'][1] = sec_unit.strip()
+                
+                return [ float(pri_val), float(sec_val) ]
+                
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         except ValueError:
             cprint( "\t!! Failure to unpack raw string from device: "+str( rawData ), 'red', attrs=['bold'])
+            raise
         except IndexError: # Nothing in rawData!
             cprint( "\tDevice %s returned no data." % self.name , 'red', attrs=['bold'])
         

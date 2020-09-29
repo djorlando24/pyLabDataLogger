@@ -1,6 +1,7 @@
 # Hardware setup instructions
 
 Most hardware is designed to work with the default factory settings.
+If you want to change the baud rate, etc, you can over-ride the default settings when initialising the PyLabDataLogger device class instance.
 Some devices will require special user setup/configuration to be in a mode that makes them compatible with pyLabDataLogger.
 Some devices also require manual configuration in the runtime script because they can't be autodetected (mainly, non-USB devices and devices that use a generic USB-to-Serial adapter that can't be uniquely identified).
 Those special configurations are explained below.
