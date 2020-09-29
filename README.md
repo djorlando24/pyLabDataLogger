@@ -98,7 +98,9 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Leadshine ES-D508 servomotor controller
     - Metrix MX5060 Bench multimeter (contains an internal generic CP210x Serial-to-USB bridge)
     - Radwag WTB series digital lab balance/scale via RS232-to-USB UART adapter **
+    - Ranger 5000 Load Cell Amp via RS232-to-USB adapter **
     - Omega iSeries temperature process controllers, via generic RS-485 or RS-232 adapter **
+    - Status SEM1600/B Load Cell Amplifier (contains and internal FTDI Serial-to-USB bridge)
 
         ** Double asterisk denotes the need for a TTL-UART type adapter without flow control lines.
            Testing with generic RS-232 to USB adapters indicated that when the PC attempts to take control of the flow control

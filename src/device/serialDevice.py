@@ -67,6 +67,7 @@ class serialDevice(device):
             'serial/omega-iseries/485' : Omega iSeries Process Controller via RS485 transciever
             'serial/omega-usbh         : Omega USB-H 'high speed' pressure transducers with built in USB to Serial converter
             'serial/ohaus7k'           : OHAUS 7000 series scientific scales via RS232
+            'serial/r5000'             : Ranger 5000 series load cell amplifier via RS232
             'serial/tc08rs232'         : Pico TC08 RS-232 thermocouple datalogger (USB version has a seperate driver 'picotc08')
             'serial/tds220gpib'        : Tektronix TDS22x series oscilloscopes via the RS-232 port
             'serial/wtb'               : Radwag WTB precision balance/scale
@@ -250,6 +251,7 @@ class serialDevice(device):
         elif self.subdriver=='mx5060':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=4800
         
+            
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
         if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.EIGHTBITS
@@ -339,6 +341,9 @@ class serialDevice(device):
                 pass
             elif subdriver=='sd700':
                 # No settings can be modified.
+                pass
+            elif subdriver=='r5000':
+                # No settings can be modified at present. In future, we could allow zero/tare remotely.
                 pass
             elif subdriver=='alicat':
                 # No settings can be modified at present. In future we could set units and gas type
@@ -798,6 +803,27 @@ class serialDevice(device):
             
             self.sleeptime = 0.5 # Slow down for SEC?
             
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='r5000': # Startup config for Ranger 5000 series load cell amp
+            # Assume default device address = 31  (0x1F)
+            # Fixed settings.
+            self.name = "Ranger 5000 Load Cell Amplifier"
+            self.config['channel_names']=['Load']
+            self.params['raw_units']=['']
+            self.config['eng_units']=['']
+            self.config['scale']=[1.]
+            self.config['offset']=[0.]
+            self.params['n_channels']=1
+            self.serialQuery=['\x02Kp\x1f\x03'] 
+            self.queryTerminator=''
+            self.responseTerminator=''
+            self.serialCommsFunction=self.blockingRawSerialRequest
+            self.sleeptime=0.25
+            
+            # Confirm device ID number. ASCII 137 = 0x89
+            self.params['ID']=self.blockingRawSerialRequest('\x02Kp31\x03','',sleeptime=self.sleeptime)
+            cprint( "\tReturned Model ID = " +  repr(self.params['ID']), 'green')
+            
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         return
@@ -1116,7 +1142,13 @@ class serialDevice(device):
                     if self.config['eng_units'][1] == '': self.config['eng_units'][1] = sec_unit.strip()
                 
                 return [ float(pri_val), float(sec_val) ]
-                
+            
+            # ----------------------------------------------------------------------------------------
+            if subdriver=='r5000':
+                print(repr(rawData))
+                raise pyLabDataLoggerIOError("Ranger 5000 decoding not yet implemented!")
+                return [ np.nan ]
+            
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         except ValueError:

@@ -51,6 +51,9 @@ The Extech brand USB to RS232 adapters are multifunction and some have a switch 
 ## Leadshine ES-D508 servomotor controller
 The RJ-12 to RS-232 adapter supplied for tuning the ES-D508 servomotor controller can be used to move the motor and poll the encoder to get the current position. The tuning constants may need adjustment depending on choice of motor, which can be determined using the tuning software supplied by the manufacturer.
 
+## Ranger 5000 Load Cell Amplifier
+Assumes default settings - RS232 communications at 9600 baud 8n1, device address 31, 0x02 start byte and 0x03 end byte for messages.
+
 ## I2C Devices
 I2C devices that use Adafruit libraries rely on deprecated python libraries which have been copied into thirdParty in case
 the old repositories on Github go away. These devices have been tested on Raspberry pi, but should work on Beaglebones as well.

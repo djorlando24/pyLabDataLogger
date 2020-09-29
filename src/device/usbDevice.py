@@ -89,6 +89,7 @@ usb_device_table = [
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/sd700', 'name':'Extech SD700 Barometric PTH Datalogger'},
     {'vid':0x10c4, 'pid':0xea60, 'driver':'serial/center310', 'name':'CENTER 310 Humidity meter', 'manufacturer':'Silicon Labs'},
     {'vid':0x10c4, 'pid':0xea60, 'driver':'serial/mx5060', 'name':'Metrix MX5060 Multimeter'},
+    {'vid':0x0403, 'pid':0xbab1, 'driver':'serial/sem1600b', 'name':'STATUS SEM1600/B Load Cell Amplifier'},
     
     # Microcontrollers using serial-over-USB
     {'vid':0x2341, 'pid':0x8036, 'driver':'arduino', 'name':'uDuino (Leonardo)'},
@@ -104,6 +105,7 @@ usb_device_table = [
     {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/alicat', 'name':'Alicat Scientific M-series mass flow meter'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/wtb', 'name':'Radwag WTB series precision balance'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/esd508', 'name':'Leadshine ES-D508 easy servo driver'},
+    {'vid':0x0403, 'pid':0x6015, 'driver':'serial/r5000', 'name':'Ranger 5000 Load Cell Amplifier'},
     #{'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-iseries/485', 'name':'Omega iSeries via RS-485'}, # needs work
     #{'vid':0x1a86, 'pid':0x7523, 'driver':'serial/omega-iseries/232', 'name':'Omega iSeries via RS-232'}, # needs work
 
