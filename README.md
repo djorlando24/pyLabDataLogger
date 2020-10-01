@@ -1,14 +1,11 @@
 # pyLabDataLogger
 Laboratory datalogging for USB and Serial devices
 
-## Caution, this software is in Beta and may not work reliably yet!
-Try scripts/test_usb_devices.py to poll compatible USB devices.
-
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 1.0.2
-    @date 29/09/2020
+    @date 01/10/2020
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -33,6 +30,14 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 
     This software searches for sensors and data acquisition devices
     over a range of communication protocols and logs them to a local file.
+
+## TLDR
+
+This software is still in early development and cannot be guaranteed to work
+reliably. You may need to tinker with src/device/usbDevice.py if your USB
+to Serial adapters have different VID/PIDs to mine.
+
+Try scripts/test_usb_devices.py to poll compatible USB devices.
 
 ## Supported hardware
 

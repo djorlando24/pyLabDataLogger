@@ -5,7 +5,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.0.2
-    @date 29/09/2020
+    @date 01/10/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -35,6 +35,7 @@
     
     Changelog:
         30/07/2020 - add esd508 support
+        01/10/2020 - Ranger 5000 support
 """
 
 from device import device, pyLabDataLoggerIOError
@@ -250,7 +251,9 @@ class serialDevice(device):
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=38400
         elif self.subdriver=='mx5060':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=4800
-        
+        elif self.subdriver=='r5000':
+            if not 'timeout' in self.params.keys(): self.params['timeout']=5
+            pass
             
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -814,15 +817,12 @@ class serialDevice(device):
             self.config['scale']=[1.]
             self.config['offset']=[0.]
             self.params['n_channels']=1
-            self.serialQuery=['\x02Kp\x1f\x03'] 
+            self.serialQuery=['\x02Kp31\x03'] 
             self.queryTerminator=''
-            self.responseTerminator=''
+            self.responseTerminator='\x03'
+            self.params['min_response_length']=3
             self.serialCommsFunction=self.blockingRawSerialRequest
-            self.sleeptime=0.25
-            
-            # Confirm device ID number. ASCII 137 = 0x89
-            self.params['ID']=self.blockingRawSerialRequest('\x02Kp31\x03','',sleeptime=self.sleeptime)
-            cprint( "\tReturned Model ID = " +  repr(self.params['ID']), 'green')
+            self.sleeptime=0.5
             
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -1145,9 +1145,15 @@ class serialDevice(device):
             
             # ----------------------------------------------------------------------------------------
             if subdriver=='r5000':
-                print(repr(rawData))
-                raise pyLabDataLoggerIOError("Ranger 5000 decoding not yet implemented!")
-                return [ np.nan ]
+                s=rawData[0].strip()
+                start=s.index('\x02')+1
+                end=s.index('\x03')
+                unit=s[end]
+                if unit=='G': self.params['raw_units'][0]='kg gross'
+                elif unit=='N': self.params['raw_units'][0]='kg net'
+                else: self.params['raw_units'][0]=unit
+                if self.config['eng_units'][0] == '': self.config['eng_units'][0] = unit
+                return [ float(s[start:end-1]) ]
             
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])

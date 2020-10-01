@@ -53,6 +53,7 @@ The RJ-12 to RS-232 adapter supplied for tuning the ES-D508 servomotor controlle
 
 ## Ranger 5000 Load Cell Amplifier
 Assumes default settings - RS232 communications at 9600 baud 8n1, device address 31, 0x02 start byte and 0x03 end byte for messages.
+Flow control lines on serial port must be disonnected (only RX, TX & GND wires).
 
 ## I2C Devices
 I2C devices that use Adafruit libraries rely on deprecated python libraries which have been copied into thirdParty in case
