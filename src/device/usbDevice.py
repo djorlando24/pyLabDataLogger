@@ -10,7 +10,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.0.2
-    @date 29/09/2020
+    @date 21/11/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -106,6 +106,7 @@ usb_device_table = [
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/wtb', 'name':'Radwag WTB series precision balance'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/esd508', 'name':'Leadshine ES-D508 easy servo driver'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/r5000', 'name':'Ranger 5000 Load Cell Amplifier'},
+    {'vid':0x067b, 'pid':0x2303, 'driver':'serial/k3hbvlc', 'name':'Omron K3HB-VLC Load Cell Amplifier'},
     #{'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-iseries/485', 'name':'Omega iSeries via RS-485'}, # needs work
     #{'vid':0x1a86, 'pid':0x7523, 'driver':'serial/omega-iseries/232', 'name':'Omega iSeries via RS-232'}, # needs work
 

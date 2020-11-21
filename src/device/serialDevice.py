@@ -5,7 +5,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.0.2
-    @date 01/10/2020
+    @date 21/11/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -36,6 +36,7 @@
     Changelog:
         30/07/2020 - add esd508 support
         01/10/2020 - Ranger 5000 support
+        21/11/2020 - Omron K3HB support
 """
 
 from device import device, pyLabDataLoggerIOError
@@ -62,6 +63,7 @@ class serialDevice(device):
             'serial/alicat'            : Alicat Scientific M-series mass flow meter
             'serial/center310'         : CENTER 310 Temperature and Humidity meter
             'serial/esd508'            : Leadshine ES-D508 Easy Servomotor Driver
+            'serial/k3hbvlc'           : Omron K3HB-VLC Load Cell Amplifier with FLK1B communications board
             'serial/mx5060'            : Metrix MX5060 Bench Multimeter 
             'serial/omega-ir-usb'      : Omega IR-USB temperature probe with built in USB to Serial converter
             'serial/omega-iseries/232' : Omega iSeries Process Controller via RS232 transciever
@@ -355,6 +357,8 @@ class serialDevice(device):
             elif subdriver=='esd508':
                 # The settings are actually passed to the driver when it's queried, rather than in advance.
                 # This could change in future.
+                pass
+            elif subdriver=='k3hbvlc':
                 pass
             elif subdriver=='tc08rs232':
                 raise RuntimeError("Need to implement selection of thermocouple types! Contact the developer.")
@@ -823,7 +827,37 @@ class serialDevice(device):
             self.params['min_response_length']=3
             self.serialCommsFunction=self.blockingRawSerialRequest
             self.sleeptime=0.5
-            
+           
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='k3hbvlc': # Startup config for Omron K3HB-VLC-FLK1B Load Cell Amplifier
+            # Assume device node number is 1 (factory default)
+            # Fixed settings.
+            self.name = "Omron K3HB-VLC Load Cell Amplifier"
+            self.config['channel_names']=['Load','Max','Min']
+            self.params['raw_units']=['kgf']*len(self.config['channel_names'])
+            self.config['eng_units']=['kgf']*len(self.config['channel_names'])
+            self.config['scale']=[1.,1.,1.]
+            self.config['offset']=[0.,0.,0.]
+            self.params['n_channels']=3
+            self.serialQuery=['\x02010000101C00002000001\x03','\x02010000101C00003000001\x03','\x02010000101C00004000001\x03']
+            # Add checksums to end of each query
+            for i in range(len(self.serialQuery)):
+                checksum=0
+                for c in self.serialQuery[i]: checksum ^= ord(c)
+                self.serialQuery[i] += chr(checksum)
+                print("Command with checksum: ", repr(checksum), self.serialQuery[i])
+            #raise RuntimeError("Stop")
+
+            self.queryTerminator=''
+            self.responseTerminator='\x03'
+            self.params['min_response_length']=3
+            self.serialCommsFunction=self.blockingRawSerialRequest
+            self.sleeptime=0.5
+
+            # these are missing checksums.
+            #self.params['Status'] =self.blockingRawSerialRequest('\\x02010000101C00001000001\x03','',sleeptime=self.sleeptime)
+            #self.params['Version']=self.blockingRawSerialRequest('\\x02010000101C00000000001\x03','',sleeptime=self.sleeptime)
+ 
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         return
@@ -1155,6 +1189,17 @@ class serialDevice(device):
                 if self.config['eng_units'][0] == '': self.config['eng_units'][0] = unit
                 return [ float(s[start:end-1]) ]
             
+            # ----------------------------------------------------------------------------------------
+            if subdriver=='k3hbvlc':
+                vals = []
+                print("Responses:")
+                #print(repr(rawData)); print("")
+                for r in rawData:
+                    print(repr(r))
+                    
+                raise RuntimeError("Stop. Not implemented")
+                return vals
+                
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         except ValueError:
