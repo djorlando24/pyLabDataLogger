@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.2
-    @date 21/11/2020
+    @version 1.0.3
+    @date 22/11/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -36,7 +36,7 @@
     Changelog:
         30/07/2020 - add esd508 support
         01/10/2020 - Ranger 5000 support
-        21/11/2020 - Omron K3HB support
+        22/11/2020 - Omron K3HB support
 """
 
 from device import device, pyLabDataLoggerIOError
@@ -450,6 +450,14 @@ class serialDevice(device):
         from pyLabDataLogger.device import esd508Device
         return esd508Device.move_servomotor(self.Serial, debugMode=self.debugMode, verbose=~self.quiet, \
                                             sleeptime=sleeptime, maxlen=maxlen, **self.config)
+
+    ########################################################################################################################
+    # Special function to calculate XOR checksum for Omron K3HB CompoWay/F serial communications.
+    def k3hbvlc_checksum(self,s):
+        checksum=ord(s[1])
+        for c in s[2:]: checksum ^= ord(c)
+        return chr(checksum)
+
     
     ########################################################################################################################
     # Configure device based on what sub-driver is being used.
@@ -840,23 +848,34 @@ class serialDevice(device):
             self.config['offset']=[0.,0.,0.]
             self.params['n_channels']=3
             self.serialQuery=['\x02010000101C00002000001\x03','\x02010000101C00003000001\x03','\x02010000101C00004000001\x03']
-            # Add checksums to end of each query
+
+            # Add checksums to end of each query. XOR of every byte following the \x02 start byte.
             for i in range(len(self.serialQuery)):
-                checksum=0
-                for c in self.serialQuery[i]: checksum ^= ord(c)
-                self.serialQuery[i] += chr(checksum)
-                print("Command with checksum: ", repr(checksum), self.serialQuery[i])
-            #raise RuntimeError("Stop")
-
+                self.serialQuery[i] += self.k3hbvlc_checksum(self.serialQuery[i])
+            
             self.queryTerminator=''
-            self.responseTerminator='\x03'
-            self.params['min_response_length']=3
+            self.responseTerminator=''
+            self.params['min_response_length']=3 # error codes might be short.
+            self.maxlen=25 # this at least applies to my commands in serialQuery but it's not universal.
             self.serialCommsFunction=self.blockingRawSerialRequest
-            self.sleeptime=0.5
+            self.sleeptime=0.1
 
-            # these are missing checksums.
-            #self.params['Status'] =self.blockingRawSerialRequest('\\x02010000101C00001000001\x03','',sleeptime=self.sleeptime)
-            #self.params['Version']=self.blockingRawSerialRequest('\\x02010000101C00000000001\x03','',sleeptime=self.sleeptime)
+            # Get some fixed parameters. 
+            # no. decimal places
+            cmd='\x02010000101C4000D000001\x03'
+            dp = self.blockingRawSerialRequest(cmd+self.k3hbvlc_checksum(cmd),'',maxlen=25,sleeptime=.1)
+            self.config['decimal_places'] = int(dp[-10:-2],16)
+            # Status
+            cmd='\x02010000101C00001000001\x03'
+            dp = self.blockingRawSerialRequest(cmd+self.k3hbvlc_checksum(cmd),'',maxlen=25,sleeptime=.1)
+            self.config['status'] = int(dp[-10:-2],16)
+            # Version
+            cmd='\x02010000101C00000000001\x03'
+            dp = self.blockingRawSerialRequest(cmd+self.k3hbvlc_checksum(cmd),'',maxlen=25,sleeptime=.1)
+            self.params['version'] = int(dp[-10:-2],16)
+
+            cprint( "\tReturned Version = %s, Status = %s, Decimal places = %i" % (self.params['version'],\
+                                    self.config['status'],self.config['decimal_places']), 'green')
  
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -1192,12 +1211,24 @@ class serialDevice(device):
             # ----------------------------------------------------------------------------------------
             if subdriver=='k3hbvlc':
                 vals = []
-                print("Responses:")
-                #print(repr(rawData)); print("")
-                for r in rawData:
-                    print(repr(r))
+                '''
+                Sent:
+                    [   '\x02010000101C00002000001\x03',
+                        '\x02010000101C00003000001\x03',
+                        '\x02010000101C00004000001\x03']
+                Received:
+                        '\x020100000101000000000124\x03'
+                    '\x05\x02010000010100000000012D\x03'
+                       'u\x020100000101000000000123\x03'
+                '''
                     
-                raise RuntimeError("Stop. Not implemented")
+                for r in rawData:
+                    a=r.index('\x02')
+                    b=r.index('\x03')
+                    #print(r[-1],self.k3hbvlc_checksum(r[a:b]))
+                    dataframe=r[a+11:b]
+                    vals.append(float(int(dataframe,16))*10**(-self.config['decimal_places']))
+                
                 return vals
                 
             else:
