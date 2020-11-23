@@ -55,6 +55,10 @@ The RJ-12 to RS-232 adapter supplied for tuning the ES-D508 servomotor controlle
 Assumes default settings - RS232 communications at 9600 baud 8n1, device address 31, 0x02 start byte and 0x03 end byte for messages.
 Flow control lines on serial port must be disonnected (only RX, TX & GND wires).
 
+## Omron K3HB Load Cell Process Controller with FLK1B CompoWay/F RS-232/485 communications
+Assumes the default device address of 01 (factory setting).
+Assumes the serial comms are at 9600 baud 8N1. The factory default comms mode is 9600 7O2 and this needs to be fixed in the device's menus.
+
 ## I2C Devices
 I2C devices that use Adafruit libraries rely on deprecated python libraries which have been copied into thirdParty in case
 the old repositories on Github go away. These devices have been tested on Raspberry pi, but should work on Beaglebones as well.

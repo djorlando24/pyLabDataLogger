@@ -4,8 +4,8 @@ Laboratory datalogging for USB and Serial devices
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
-    @version 1.0.2
-    @date 01/10/2020
+    @version 1.0.3
+    @date 22/11/2020
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -106,6 +106,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Ranger 5000 Load Cell Amp via RS232-to-USB adapter **
     - Omega iSeries temperature process controllers, via generic RS-485 or RS-232 adapter **
     - Status SEM1600/B Load Cell Amplifier (contains and internal FTDI Serial-to-USB bridge)
+    - Omron K3HB-VLC load cell process controller with FLK1B RS-232/485 comms option board
 
         ** Double asterisk denotes the need for a TTL-UART type adapter without flow control lines.
            Testing with generic RS-232 to USB adapters indicated that when the PC attempts to take control of the flow control
