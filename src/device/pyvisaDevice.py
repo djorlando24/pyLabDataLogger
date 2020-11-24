@@ -106,7 +106,10 @@ class pyvisaDevice(device):
     def activate(self,quiet=False):
     
         try:
-            self.inst = self.rm.open_resource(self.params['resource'],timeout=30000)
+            if 'eezbb3' in self.driver:
+                self.inst = self.rm.open_resource(self.params['resource'],timeout=5000,write_termination = '\n',read_termination='\n') # SOCKET mode
+            else:
+                self.inst = self.rm.open_resource(self.params['resource'],timeout=30000) # INSTR mode
         except:
             raise pyLabDataLoggerIOError("Could not connect to VISA resource %s" % self.params['resource'])
         
@@ -120,7 +123,7 @@ class pyvisaDevice(device):
 
     # Deactivate connection to device (close serial port)
     def deactivate(self):
-        
+        self.inst.close()
         del self.inst
         self.driverConnected=False
         return
@@ -316,17 +319,21 @@ class pyvisaDevice(device):
             self.serialQuery=[]
             self.config['channel_names']=[]
             self.params['n_channels']=7*4
-            for n in range(self.params['n_channels']):
+            for n in range(1,5):
                 self.config['channel_names'].extend(['CH%1i_Voltage' % n,'CH%1i_Current' % n,'CH%1i_Power' % n,\
-                                           'CH%1i_Voltage_Set' % n,'CH%1i_Current_Set' % n,'CH%1i_Power_Set' % n, 'CH%1i_Mode' % n])
-                self.serialQuery.extend(['MEAS:SCAL:VOLT? CH%1i' % n,'MEAS:SCAL:CURR? CH%1i' % n,'MEAS:SCAL:POW? CH%1i' % n,\
-                                         'SOUR%1i:VOLT:LEV?' % n, 'SOUR%1i:CURR:LEV?' % n, 'SOUR%1i:POW:LEV?' % n, 'OUTP:MODE? CH%1i' % n ])
-                self.config['scale'].extend([1.,1.,1.,1.,1.,1.,None])
-                self.config['offset'].extend([0.,0.,0.,0.,0.,0.,None])
+                                           'CH%1i_Voltage_Set' % n,'CH%1i_Current_Set' % n,'CH%1i_Power_Limit' % n, 'CH%1i_Mode' % n])
+                self.serialQuery.extend([':MEAS:SCAL:VOLT? CH%1i' % n,':MEAS:SCAL:CURR? CH%1i' % n,':MEAS:SCAL:POW? CH%1i' % n,\
+                                         ':SOUR%1i:VOLT:LEV?' % n, ':SOUR%1i:CURR:LEV?' % n, ':SOUR%1i:POW:LIM?' % n, ':OUTP:MODE? CH%1i' % n ])
+                self.config['scale'].extend([1.,1.,1.,1.,1.,1.,1.])
+                self.config['offset'].extend([0.,0.,0.,0.,0.,0.,0.])
                 self.params['raw_units'].extend(['V','A','W','V','A','W',''])
                 self.config['eng_units'].extend(['V','A','W','V','A','W',''])
             
+            time.sleep(.2)
             self.instrumentWrite("SYST:BEEP") # beep the interface
+            time.sleep(.2)
+            self.config['Unit ID'] = self.instrumentQuery('*IDN?').strip()
+            cprint('\tIDN: %s' % self.config['Unit ID'],'green')
             
         else:
             print self.__doc__
@@ -365,6 +372,7 @@ class pyvisaDevice(device):
                     else:
                         # Other simple data, floats and strings etc.
                         d=self.instrumentQuery(q).strip().strip('\"').strip('\'') # remove newlines, quotes, etc.
+                        #print(q,d) # debugging!
                         if delimiter in d: data.extend(d.split(delimiter)) # try to split on delimiter.
                         else: data.append(d)
                 except:
@@ -386,6 +394,7 @@ class pyvisaDevice(device):
                 self.lastValue.append(None)
             else:
                 try:
+                    #print(data) #debugging!
                     if (' ' in data[n]) and (self.subdriver!='ds1000z'):
                         d0=''.join(data[n].split(' ')[:-1])
                         d1=data[n].split(' ')[-1]
