@@ -47,7 +47,7 @@ if __name__ == '__main__':
     device_descriptors = [ {'resource':'TCPIP0::192.168.0.123::INSTR','driver':'pyvisa/dg1000z'},\
                            {'resource':'TCPIP0::192.168.0.124::INSTR','driver':'pyvisa/ds1000z'},\
                            {'resource':'TCPIP0::192.168.0.125::INSTR','driver':'pyvisa/33220a' },\
-                           {'resource':'TCPIP0::192.168.10.106::INSTR','driver':'pyvisa/eezbb3'} ]
+                           {'resource':'TCPIP0::192.168.10.106::5025::INSTR','driver':'pyvisa/eezbb3'} ]
     
     devices=[]
     for dd in device_descriptors:

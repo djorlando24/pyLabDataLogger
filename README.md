@@ -5,7 +5,7 @@ Laboratory datalogging for USB and Serial devices
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 1.0.3
-    @date 22/11/2020
+    @date 24/11/2020
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -57,6 +57,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Rigol DG1000Z series delay generators
     - Rigol DS1000Z series oscilloscopes
     - Agilent 33220A waveform generator
+    - EEZ BB3 programmable power supply
 
 - Microcontrollers using FTDI or CP2102 serial over USB chips
        that push strings with format "VARNAME=VALUE, VARNAME=..."
