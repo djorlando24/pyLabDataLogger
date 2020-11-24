@@ -7,7 +7,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.0.3
-    @date 28/02/2019
+    @date 24/11/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -58,6 +58,7 @@ class pyvisaDevice(device):
             'pyvisa/dg1000z' : Rigol DG1000Z programmable delay/function generator
             'pyvisa/ds1000z' : Rigol DS1000Z oscilloscope
             'pyvisa/33220a'  : Agilent 33220A programmable delay/function generator
+            'pyvisa/eezbb3'  : Envox Experimental Zone BB3 programmable power supply
     """
 
     def __init__(self,params={},quiet=True,**kwargs):
@@ -134,6 +135,10 @@ class pyvisaDevice(device):
             if self.subdriver=='dg1000z':
                 # currently no writeable options supported.
                 # in future could alter the DG settings from here.
+                pass
+            elif self.subdriver=='eezbb3':
+                # currently no writeable options supported.
+                # in future could set voltages and currents and turn channels on/off.
                 pass
             elif self.subdriver=='ds1000z':
                 # in future could alter the time/voltage range/acq settings from here.
@@ -302,6 +307,27 @@ class pyvisaDevice(device):
             # Get some other parameters that won't change often.
             self.params['Trigger source'] = self.instrumentQuery("TRIG:SOUR?")
 
+        elif self.subdriver == 'eezbb3':
+            
+            self.params['raw_units']=[]
+            self.config['eng_units']=[]
+            self.config['scale']=[]
+            self.config['offset']=[]
+            self.serialQuery=[]
+            self.config['channel_names']=[]
+            self.params['n_channels']=7*4
+            for n in range(self.params['n_channels']):
+                self.config['channel_names'].extend(['CH%1i_Voltage' % n,'CH%1i_Current' % n,'CH%1i_Power' % n,\
+                                           'CH%1i_Voltage_Set' % n,'CH%1i_Current_Set' % n,'CH%1i_Power_Set' % n, 'CH%1i_Mode' % n])
+                self.serialQuery.extend(['MEAS:SCAL:VOLT? CH%1i' % n,'MEAS:SCAL:CURR? CH%1i' % n,'MEAS:SCAL:POW? CH%1i' % n,\
+                                         'SOUR%1i:VOLT:LEV?' % n, 'SOUR%1i:CURR:LEV?' % n, 'SOUR%1i:POW:LEV?' % n, 'OUTP:MODE? CH%1i' % n ])
+                self.config['scale'].extend([1.,1.,1.,1.,1.,1.,None])
+                self.config['offset'].extend([0.,0.,0.,0.,0.,0.,None])
+                self.params['raw_units'].extend(['V','A','W','V','A','W',''])
+                self.config['eng_units'].extend(['V','A','W','V','A','W',''])
+            
+            self.instrumentWrite("SYST:BEEP") # beep the interface
+            
         else:
             print self.__doc__
             raise KeyError("Unknown device subdriver for pyvisa-py")

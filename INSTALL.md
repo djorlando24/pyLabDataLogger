@@ -86,7 +86,7 @@ From here on, all these modules are optional. They only need to be installed for
 - For I2C devices, you will need smbus module:
   and driver specific modules i.e. Adafruit_ADS1x15
 
-- For VISA over TCP/IP for networked devices, pyvisa-py module is required
+- For VISA over TCP/IP for networked devices, pyvisa & pyvisa-py modules are required
   Install by 'pip install pyvisa-py' and check installed options with
   'python -m visa info'
 

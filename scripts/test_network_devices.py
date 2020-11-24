@@ -9,8 +9,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.2
-    @date 28/02/2019
+    @version 1.0.3
+    @date 24/11/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -35,6 +35,7 @@
 """
 
 from pyLabDataLogger.device import pyvisaDevice
+from pyLabDataLogger.device.device import pyLabDataLoggerIOError
 from pyLabDataLogger.logger import globalFunctions
 import time
 from termcolor import cprint
@@ -43,22 +44,39 @@ if __name__ == '__main__':
     
     globalFunctions.banner()
     
-    devices = [pyvisaDevice.pyvisaDevice({'resource':'TCPIP0::192.168.0.123::INSTR','driver':'pyvisa/dg1000z'}),\
-               pyvisaDevice.pyvisaDevice({'resource':'TCPIP0::192.168.0.124::INSTR','driver':'pyvisa/ds1000z'}),\
-               pyvisaDevice.pyvisaDevice({'resource':'TCPIP0::192.168.0.125::INSTR','driver':'pyvisa/33220a' })]
-
+    device_descriptors = [ {'resource':'TCPIP0::192.168.0.123::INSTR','driver':'pyvisa/dg1000z'},\
+                           {'resource':'TCPIP0::192.168.0.124::INSTR','driver':'pyvisa/ds1000z'},\
+                           {'resource':'TCPIP0::192.168.0.125::INSTR','driver':'pyvisa/33220a' },\
+                           {'resource':'TCPIP0::192.168.10.106::INSTR','driver':'pyvisa/eezbb3'} ]
+    
+    devices=[]
+    for dd in device_descriptors:
+        try:
+            devices.append(pyvisaDevice.pyvisaDevice(dd))
+        except pyLabDataLoggerIOError:
+            pass
+    
     if len(devices) == 0: exit()
    
-    try:
-        while True:
-            for d in devices:
+    
+    while True:
+        for d in devices:
+    
+            try:
                 cprint( d.name, 'magenta', attrs=['bold'] )
                 d.query()
                 d.pprint()
                 d.log('test_log.hdf5')
+                
+            except pyLabDataLoggerIOError:
+                pass
+                
+            except KeyboardInterrupt:
+                print "Stopped."
+                exit()
+            except: # all other errors
+                raise
+
             time.sleep(1)
             print("")
-    except KeyboardInterrupt:
-        print "Stopped."
-    except: # all other errors
-        raise
+    
