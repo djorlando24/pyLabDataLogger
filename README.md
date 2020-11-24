@@ -57,7 +57,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Rigol DG1000Z series delay generators
     - Rigol DS1000Z series oscilloscopes
     - Agilent 33220A waveform generator
-    - EEZ BB3 programmable power supply
+    - Envox Experimental Zone EEZ BB3 modular programmable power supply
 
 - Microcontrollers using FTDI or CP2102 serial over USB chips
        that push strings with format "VARNAME=VALUE, VARNAME=..."
