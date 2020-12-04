@@ -5,7 +5,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.0.3
-    @date 22/11/2020
+    @date 04/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -36,7 +36,8 @@
     Changelog:
         30/07/2020 - add esd508 support
         01/10/2020 - Ranger 5000 support
-        22/11/2020 - Omron K3HB support
+        22/11/2020 - Omron K3HB-VLC support
+        04/12/2020 - Omron K3HB-X support, negative values
 """
 
 from device import device, pyLabDataLoggerIOError
@@ -63,7 +64,8 @@ class serialDevice(device):
             'serial/alicat'            : Alicat Scientific M-series mass flow meter
             'serial/center310'         : CENTER 310 Temperature and Humidity meter
             'serial/esd508'            : Leadshine ES-D508 Easy Servomotor Driver
-            'serial/k3hbvlc'           : Omron K3HB-VLC Load Cell Amplifier with FLK1B communications board
+            'serial/k3hb/vlc'          : Omron K3HB-VLC Load Cell Amplifier with FLK1B communications board
+            'serial/k3hb/x'            : Omron K3HB-X Ammeter with FLK1B communications board
             'serial/mx5060'            : Metrix MX5060 Bench Multimeter 
             'serial/omega-ir-usb'      : Omega IR-USB temperature probe with built in USB to Serial converter
             'serial/omega-iseries/232' : Omega iSeries Process Controller via RS232 transciever
@@ -358,7 +360,7 @@ class serialDevice(device):
                 # The settings are actually passed to the driver when it's queried, rather than in advance.
                 # This could change in future.
                 pass
-            elif subdriver=='k3hbvlc':
+            elif (self.driver=='k3hb/vlc') or (self.driver=='k3hb/x'): 
                 pass
             elif subdriver=='tc08rs232':
                 raise RuntimeError("Need to implement selection of thermocouple types! Contact the developer.")
@@ -837,16 +839,24 @@ class serialDevice(device):
             self.sleeptime=0.5
            
         # ----------------------------------------------------------------------------------------
-        elif subdriver=='k3hbvlc': # Startup config for Omron K3HB-VLC-FLK1B Load Cell Amplifier
+        # Startup config for Omron K3HB-VLC-FLK1B Load Cell Amplifier or K3HB-X ammeter
+        elif (self.driver==['k3hb','vlc']) or (self.driver==['k3hb','x']): 
+            
             # Assume device node number is 1 (factory default)
             # Fixed settings.
-            self.name = "Omron K3HB-VLC Load Cell Amplifier"
-            self.config['channel_names']=['Load','Max','Min']
-            self.params['raw_units']=['kgf']*len(self.config['channel_names'])
-            self.config['eng_units']=['kgf']*len(self.config['channel_names'])
+            if self.driver==['k3hb','vlc']:
+                self.name = "Omron K3HB-VLC Load Cell Amplifier"
+                self.config['channel_names']=['Load','Max','Min']
+            elif self.driver==['k3hb','x']:
+                self.name = "Omron K3HB-X Ammeter"
+                self.config['channel_names']=['Current','Max','Min']
+            else:
+                raise RuntimeError("Unknown K3HB model "+subdriver)
+                
             self.config['scale']=[1.,1.,1.]
             self.config['offset']=[0.,0.,0.]
             self.params['n_channels']=3
+            # CompoWay/F serial communications protocol -- see the PDF in manuals/
             self.serialQuery=['\x02010000101C00002000001\x03','\x02010000101C00003000001\x03','\x02010000101C00004000001\x03']
 
             # Add checksums to end of each query. XOR of every byte following the \x02 start byte.
@@ -861,24 +871,53 @@ class serialDevice(device):
             self.sleeptime=0.1
 
             # Get some fixed parameters. 
+
             # no. decimal places
             cmd='\x02010000101C4000D000001\x03'
             dp = self.blockingRawSerialRequest(cmd+self.k3hbvlc_checksum(cmd),'',maxlen=25,sleeptime=.1)
             self.config['decimal_places'] = int(dp[-10:-2],16)
+
+            # Input channel/mode - determines range
+            cmd='\x02010000101C40001000001\x03'
+            inpA = self.blockingRawSerialRequest(cmd+self.k3hbvlc_checksum(cmd),'',maxlen=25,sleeptime=.1)
+            a=inpA.index('\x02'); b=inpA.index('\x03')
+            self.params['input_type_A'] = int(inpA[a+11:b])
+            if self.driver==['k3hb','vlc']:
+                baseunit='kgf'
+                if self.params['input_type_A'] == 0:   self.params['range'] = '+-199.99mV'
+                elif self.params['input_type_A'] == 1: self.params['range'] = '+-19.999mV'
+                elif self.params['input_type_A'] == 2: self.params['range'] = '+-100mV'
+                elif self.params['input_type_A'] == 3: self.params['range'] = '+-199mV'
+                else: self.params['range']=str(self.params['input_type_A'])
+            elif self.driver==['k3hb','x']:
+                baseunit='mA'
+                if self.params['input_type_A'] == 0:   self.params['range'] = '+-199.99mA'
+                elif self.params['input_type_A'] == 1: self.params['range'] = '+-19.999mA'
+                elif self.params['input_type_A'] == 2: self.params['range'] = '+-1.9999mA'
+                elif self.params['input_type_A'] == 3: self.params['range'] = '4-20mA'
+                else: self.params['range']=str(self.params['input_type_A'])
+            else:
+                raise RuntimeError("Unknown K3HB model "+subdriver)
+            self.params['raw_units']=[baseunit]*len(self.config['channel_names'])
+            self.config['eng_units']=[baseunit]*len(self.config['channel_names'])
+
             # Status
             cmd='\x02010000101C00001000001\x03'
             dp = self.blockingRawSerialRequest(cmd+self.k3hbvlc_checksum(cmd),'',maxlen=25,sleeptime=.1)
             self.config['status'] = int(dp[-10:-2],16)
+
             # Version
             cmd='\x02010000101C00000000001\x03'
             dp = self.blockingRawSerialRequest(cmd+self.k3hbvlc_checksum(cmd),'',maxlen=25,sleeptime=.1)
             self.params['version'] = int(dp[-10:-2],16)
 
-            cprint( "\tReturned Version = %s, Status = %s, Decimal places = %i" % (self.params['version'],\
-                                    self.config['status'],self.config['decimal_places']), 'green')
+            
+
+            cprint( "\tReturned Version = %s, Status = %s, Decimal places = %i, Range = %s" % (self.params['version'],\
+                                    self.config['status'],self.config['decimal_places'],self.params['range']), 'green')
  
         else:
-            raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
+            raise KeyError("I don't know what to do with a device driver %s" % self.driver)
         return
 
     ########################################################################################################################
@@ -1209,25 +1248,20 @@ class serialDevice(device):
                 return [ float(s[start:end-1]) ]
             
             # ----------------------------------------------------------------------------------------
-            if subdriver=='k3hbvlc':
+            elif (self.driver==['k3hb','vlc']) or (self.driver==['k3hb','x']): 
                 vals = []
-                '''
-                Sent:
-                    [   '\x02010000101C00002000001\x03',
-                        '\x02010000101C00003000001\x03',
-                        '\x02010000101C00004000001\x03']
-                Received:
-                        '\x020100000101000000000124\x03'
-                    '\x05\x02010000010100000000012D\x03'
-                       'u\x020100000101000000000123\x03'
-                '''
                     
                 for r in rawData:
                     a=r.index('\x02')
                     b=r.index('\x03')
                     #print(r[-1],self.k3hbvlc_checksum(r[a:b]))
-                    dataframe=r[a+11:b]
-                    vals.append(float(int(dataframe,16))*10**(-self.config['decimal_places']))
+                    #dataframe=r[a+11:b]
+                    dataframe=r[a+11+4:b]
+                    if dataframe[0] == 'F':  # negative value
+                        dataframe = int(dataframe,16) ^ 0xffffffff
+                        vals.append(-float(dataframe)*10**(-self.config['decimal_places']))
+                    else: # positive value
+                        vals.append(float(int(dataframe,16))*10**(-self.config['decimal_places']))
                 
                 return vals
                 

@@ -5,7 +5,7 @@ Laboratory datalogging for USB and Serial devices
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
     @version 1.0.3
-    @date 24/11/2020
+    @date 04/12/2020
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -33,8 +33,10 @@ Laboratory datalogging for USB and Serial devices
 
 ## TLDR
 
-This software is still in early development and cannot be guaranteed to work
-reliably. You may need to tinker with src/device/usbDevice.py if your USB
+This software has only been tested on Raspbian, Ubuntu and MacOS.
+It still uses python 2.7 but I am hoping to port it to python 3.8 soon.
+
+You may need to tinker with src/device/usbDevice.py if your USB
 to Serial adapters have different VID/PIDs to mine.
 
 Try scripts/test_usb_devices.py to poll compatible USB devices.
@@ -108,6 +110,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Omega iSeries temperature process controllers, via generic RS-485 or RS-232 adapter **
     - Status SEM1600/B Load Cell Amplifier (contains and internal FTDI Serial-to-USB bridge)
     - Omron K3HB-VLC load cell process controller with FLK1B RS-232/485 comms option board
+    - Omron K3HB-X ammeter with FLK1B RS-232/485 comms option board
 
         ** Double asterisk denotes the need for a TTL-UART type adapter without flow control lines.
            Testing with generic RS-232 to USB adapters indicated that when the PC attempts to take control of the flow control
