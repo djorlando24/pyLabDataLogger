@@ -9,8 +9,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.3
-    @date 07/12/2020
+    @version 1.0.4
+    @date 08/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -288,7 +288,7 @@ def load_usb_devices(devs=None,**kwargs):
             device_list.append(thorcamDevice.thorcamDevice(params=d,**kwargs))
         elif driverClass == 'status':
             from pyLabDataLogger.device import statusDevice
-            device_list.append(statusDevice.thorcamDevice(params=d,**kwargs))
+            device_list.append(statusDevice.statusDevice(params=d,**kwargs))
             
         else:
             cprint( "\tI don't know what to do with this device" ,'red', attrs=['bold'])

@@ -9,7 +9,7 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.3
+    @version 1.0.4
     @date 24/11/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/

@@ -4,8 +4,8 @@ Laboratory datalogging for USB and Serial devices
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
-    @version 1.0.3
-    @date 04/12/2020
+    @version 1.0.4
+    @date 08/12/2020
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -78,6 +78,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Omega IR-USB thermometer
     - Omega USB-H 'high speed' pressure transducers 
     - Fluke 568 IR thermometer
+    - STATUS SEM1600/B Load cell amplifier
     
 - USB Devices using Linux kernel drivers (not supported on MacOS)
     - USB audio capture devices via ALSA
