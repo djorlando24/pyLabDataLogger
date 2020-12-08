@@ -10,7 +10,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.0.3
-    @date 04/12/2020
+    @date 07/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -89,7 +89,7 @@ usb_device_table = [
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/sd700', 'name':'Extech SD700 Barometric PTH Datalogger'},
     {'vid':0x10c4, 'pid':0xea60, 'driver':'serial/center310', 'name':'CENTER 310 Humidity meter', 'manufacturer':'Silicon Labs'},
     {'vid':0x10c4, 'pid':0xea60, 'driver':'serial/mx5060', 'name':'Metrix MX5060 Multimeter'},
-    {'vid':0x0403, 'pid':0xbab1, 'driver':'serial/sem1600b', 'name':'STATUS SEM1600/B Load Cell Amplifier'},
+    {'vid':0x0403, 'pid':0xbab1, 'driver':'status/sem1600b', 'name':'STATUS SEM1600/B Load Cell Amplifier'},
     
     # Microcontrollers using serial-over-USB
     {'vid':0x2341, 'pid':0x8036, 'driver':'arduino', 'name':'uDuino (Leonardo)'},
@@ -286,6 +286,9 @@ def load_usb_devices(devs=None,**kwargs):
         elif driverClass == 'thorcam':
             from pyLabDataLogger.device import thorcamDevice
             device_list.append(thorcamDevice.thorcamDevice(params=d,**kwargs))
+        elif driverClass == 'status':
+            from pyLabDataLogger.device import statusDevice
+            device_list.append(statusDevice.thorcamDevice(params=d,**kwargs))
             
         else:
             cprint( "\tI don't know what to do with this device" ,'red', attrs=['bold'])
