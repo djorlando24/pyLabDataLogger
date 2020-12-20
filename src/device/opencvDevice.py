@@ -98,7 +98,7 @@ class opencvDevice(device):
             self.params['ID']=-1
             while not self.params['ID'] in validCamRange:
                 try:
-                    self.params['ID']=int(raw_input("\tPlease select OpenCV device %s: " % str(validCamRange)))
+                    self.params['ID']=int(input("\tPlease select OpenCV device %s: " % str(validCamRange)))
                     self.userChoseStream = True
                 except:
                     pass
@@ -122,6 +122,8 @@ class opencvDevice(device):
                                         "import cv2; print(cv2.__version__); dev=cv2.VideoCapture(%i)" % cam_num],\
                                         stdout = subprocess.PIPE, stderr = subprocess.PIPE)
                 stdout, stderr = proc.communicate()
+                stdout = stdout.decode('ascii')
+                stderr = stderr.decode('ascii')
                 if stdout.strip() == '': raise RuntimeError("OpenCV version returned nothing!")
                 elif not quiet and (cam_num==0): cprint( "\tOpenCV Version: "+stdout.strip(), 'green')
                 if not quiet: print("\t",cam_num,':',stderr.strip())
@@ -130,10 +132,10 @@ class opencvDevice(device):
                     or ('Cannot identify device' in stderr):
                     break
         
-        	if ('is not a capture device' in stderr) or ('can\'t open camera by index' in stderr):
-        	    pass
-        	else:
-            	    validCamRange.append( cam_num )    
+            if ('is not a capture device' in stderr) or ('can\'t open camera by index' in stderr):
+                pass
+            else:
+                    validCamRange.append( cam_num )    
 
             # only one camera anyway:
             if len(validCamRange)==1:
@@ -155,7 +157,7 @@ class opencvDevice(device):
         while 'n' in confirmkb:
             if self.userChoseStream and not quiet:
                 cprint( "\tWebcam is now active, record light should be ON if it has one.", 'green', attrs=['bold'])
-                confirmkb = raw_input("\tIs camera correct? [Y/n] ").lower().strip()
+                confirmkb = input("\tIs camera correct? [Y/n] ").lower().strip()
                 if 'n' in confirmkb: user_choose_stream(validCamRange)
         
         # Set up configuration for number of frames to capture per query event

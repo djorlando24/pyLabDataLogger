@@ -202,7 +202,7 @@ def search_for_usb_devices(debugMode=False):
                 n+=1
             while (choose_n<0) | (choose_n>len(found_devices)):
                 try:
-                    choose_n = int(raw_input('> '))
+                    choose_n = int(input('> '))
                 except ValueError:
                     choose_n = -1
                 if choose_n == 0: table_entry = None

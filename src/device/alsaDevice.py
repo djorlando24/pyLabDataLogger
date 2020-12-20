@@ -129,7 +129,7 @@ class alsaDevice(device):
                 for j in range(len(cards)): print("\t\t%i: [card %02i] %s" % (j,cards[j][0], cards[j][1]))
                 j=-1
                 while (j<0) or (j>=len(cards)):
-                    try: j=int(raw_input("Choose audio stream [0-%i]:" % (len(cards)-1)))
+                    try: j=int(input("Choose audio stream [0-%i]:" % (len(cards)-1)))
                     except KeyboardInterrupt: exit(1)
                     except: pass
                 self.alsacard = cards[j][0]

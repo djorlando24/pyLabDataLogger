@@ -40,12 +40,13 @@ import numpy as np
 import datetime, time
 
 try:
-    import v4l2capture, select
+    import select
     from natsort import natsorted
     import matplotlib.pyplot as plt
     import h5py
     import glob
     from termcolor import cprint
+    import v4l2capture
 except ImportError as e:
     cprint( "Please install missing module:", 'red', attrs=['bold'])
     cprint( e, 'red')
@@ -97,7 +98,7 @@ class v4l2Device(device):
                 for m in range(len(video_devices)):
                     print( '\t\t%i: [%s]' % (m,video_devices[m]) )
                 while (n<0) or (n>=len(video_devices)): 
-                    try: n=int(raw_input("Choose video stream [0-%i]: " % (len(video_devices)-1)))
+                    try: n=int(input("Choose video stream [0-%i]: " % (len(video_devices)-1)))
                     except KeyboardInterrupt: exit(1)
                     except: pass
             self.params['dev'] = video_devices[n]

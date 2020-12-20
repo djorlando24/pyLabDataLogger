@@ -252,7 +252,7 @@ class srdevice(device):
         self.params['raw_units'] = []
         self.srdev.open()
         self.driverConnected = True
-        self.sessionReady = 0 # Zero when session not yet created, 1 when created by callback not setup, 2 when good to go.
+        self.sessionReady = 0 # Zero when session not yet created, 1 when created by callback not setup, 2 when good to go, -1 when resetting
         self.has_digital_input = False
                 
         if not self.quiet: print( "\t%s - %s with %d channels: %s" % (self.srdev.driver.name, str.join(' ',\
@@ -338,8 +338,8 @@ class srdevice(device):
     
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self):
-        
-        if self.sessionReady<1:
+        #print("self.sessionReady=",self.sessionReady)
+        if self.sessionReady <1:
             self.srsession = self.srcontext.create_session()
             self.srsession.add_device(self.srdev)
             self.srsession.start()
@@ -368,8 +368,8 @@ class srdevice(device):
             self.srsession.run()
             self.updateTimestamp()
             self.srsession.stop()
-            self.sessionReady = 0
-            del self.srsession
+            self.sessionReady = -1
+            #del self.srsession
             
             # Parse analog values - get buffer
             #if self.debugMode: print '\tOutput buffer =',self.data_buffer
@@ -425,6 +425,7 @@ class srdevice(device):
                 # Assume digital channels always come first in mixed mode devices?
                 self.lastValue = digital_data + self.lastValue
                 self.params['raw_units'] = ['']*len(digital_data) + self.params['raw_units']
+                self.config['eng_units'] = ['']*len(digital_data) + self.config['eng_units']
           
             # Convert analog values to scaled values
             for t in range(self.config['n_samples']):

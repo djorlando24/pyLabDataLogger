@@ -214,7 +214,10 @@ class device:
     # log to HDF5 file
     # max_records specifies the largest size an array can get.
     def log_hdf5(self, filename, max_records=4096):
-        assert(h5py)
+        try:
+            assert(h5py)
+        except AssertionError:
+            cprint( "Install h5py library to enable HDF5 logging support.", 'red', attrs=['bold'])
         
         # Open file
         with h5py.File(filename, 'a') as fh:
@@ -250,7 +253,8 @@ class device:
                 else: cg = dg.create_group(self.config['channel_names'][i])
 
                 # Loop over raw values and scaled values
-                for data, desc, units in [(self.lastValue, "Raw values", self.params['raw_units'][i]),(self.lastScaled, "Scaled values", self.config['eng_units'][i])]:
+                for data, desc, units in [(self.lastValue, "Raw values", self.params['raw_units'][i]),\
+                                          (self.lastScaled, "Scaled values", self.config['eng_units'][i])]:
 
                     # h5py doesn't like unicode strings and nonetypes
                     if isinstance(data[i],str): data[i] = data[i].encode('ascii')
@@ -304,7 +308,8 @@ class device:
         for i in range(self.params['n_channels']):
             fh.write('# CHANNEL = %s, TIMESTAMP = %s, DEV = %s\n' % (self.config['channel_names'][i],self.lastValueTimestamp,self.name))
             # Loop over raw values and scaled values
-            for data, desc, units in [(self.lastValue, "Raw values", self.params['raw_units'][i]),(self.lastScaled, "Scaled values", self.config['eng_units'][i])]:
+            for data, desc, units in [(self.lastValue, "Raw values", self.params['raw_units'][i]),\
+                                      (self.lastScaled, "Scaled values", self.config['eng_units'][i])]:
                 fh.write('# %s, units = %s\n' % (desc,units))
                 if isinstance(data[i],np.ndarray): np.savetxt(fh, data[i].T, delimiter=',')
                 else: fh.write(str(data[i])+'\n')
