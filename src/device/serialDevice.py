@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.4
-    @date 08/12/2020
+    @version 1.1.0
+    @date 20/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -40,7 +40,8 @@
         04/12/2020 - Omron K3HB-X support, negative values
 """
 
-from device import device, pyLabDataLoggerIOError
+from .device import device
+from .device import pyLabDataLoggerIOError
 import numpy as np
 import datetime, time, struct, sys, os
 import binascii
@@ -147,6 +148,13 @@ class serialDevice(device):
                         if not self.quiet: cprint( '\tVID:PID match- location %s == %s' % (search_location,\
                                                   serialport.location) , 'green')
                         return True
+                        
+                    elif ((':' not in search_location) and (':' in serialport.location)): # if '2-1' doesn't match '2-1:1.0' for example.
+                        if search_location in serialport.location:
+                            if not self.quiet: cprint( '\tVID:PID match- location %s == %s' % (search_location,\
+                                                  serialport.location) , 'green')
+                            return True
+                    
                     else:
                         if not self.quiet: cprint( '\tVID:PID match but location %s does not match %s' % (search_location,\
                                                 serialport.location), 'yellow' )
@@ -368,7 +376,7 @@ class serialDevice(device):
                 # No settings can be modified at present. 
                 pass
             else:
-                print self.__doc__
+                print(self.__doc__)
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
     
         except ValueError:

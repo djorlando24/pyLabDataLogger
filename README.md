@@ -4,8 +4,8 @@ Laboratory datalogging for USB and Serial devices
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2019 LTRAC
     @license GPL-3.0+
-    @version 1.0.4
-    @date 08/12/2020
+    @version 1.1.0
+    @date 20/12/2020
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -33,8 +33,9 @@ Laboratory datalogging for USB and Serial devices
 
 ## TLDR
 
-This software has only been tested on Raspbian, Ubuntu and MacOS.
-It still uses python 2.7 but I am hoping to port it to python 3.8 soon.
+**As of v1.1.0 the code has been ported to python3**
+
+This software has been tested on Raspbian, Ubuntu, Debian and MacOS.
 
 You may need to tinker with src/device/usbDevice.py if your USB
 to Serial adapters have different VID/PIDs to mine.
@@ -79,6 +80,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Omega USB-H 'high speed' pressure transducers 
     - Fluke 568 IR thermometer
     - STATUS SEM1600/B Load cell amplifier
+    - Omega Layer N Smart Probes via Omega IF-001 Modbus USB-Serial adapter
     
 - USB Devices using Linux kernel drivers (not supported on MacOS)
     - USB audio capture devices via ALSA

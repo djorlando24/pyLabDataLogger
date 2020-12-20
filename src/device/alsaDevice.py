@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.4
-    @date 08/12/2020
+    @version 1.1.0
+    @date 20/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -32,7 +32,8 @@
 
 """
 
-from device import device, pyLabDataLoggerIOError
+from .device import device
+from .device import pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
 from termcolor import cprint
@@ -125,7 +126,7 @@ class alsaDevice(device):
             elif len(cards)>1:
                 print( "\tFound multiple ALSA cards. The first one may be your internet sound card." )
                 print( "\tPlease choose one of:" )
-                for j in range(len(cards)): print "\t\t%i: [card %02i] %s" % (j,cards[j][0], cards[j][1])
+                for j in range(len(cards)): print("\t\t%i: [card %02i] %s" % (j,cards[j][0], cards[j][1]))
                 j=-1
                 while (j<0) or (j>=len(cards)):
                     try: j=int(raw_input("Choose audio stream [0-%i]:" % (len(cards)-1)))
@@ -272,10 +273,10 @@ class alsaDevice(device):
         # Give some diagnostics on the first time after a reset.
         if reset:
             for chi in range(self.params['n_channels']):
-                if self.lastValue[chi] is None: print "\t%s - empty" % self.config['channel_names'][chi]
-                else: print "\t%s - %i samples captured (%g sec)" % \
+                if self.lastValue[chi] is None: print("\t%s - empty" % self.config['channel_names'][chi])
+                else: print("\t%s - %i samples captured (%g sec)" % \
                     (self.config['channel_names'][chi],len(self.lastValue[chi]),\
-                     float(len(self.lastValue[chi])/float(self.params['samplerate'])))
+                     float(len(self.lastValue[chi])/float(self.params['samplerate']))))
 
         
         if np.all(self.config['scale']==1.) and np.all(self.config['offset']==0.):

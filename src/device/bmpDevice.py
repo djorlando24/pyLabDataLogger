@@ -5,8 +5,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.4
-    @date 08/12/2020
+    @version 1.1.0
+    @date 20/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -30,8 +30,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from i2cDevice import *
-from device import pyLabDataLoggerIOError
+from .i2cDevice import *
+from .device import pyLabDataLoggerIOError
 import datetime, time
 import numpy as np
 from termcolor import cprint

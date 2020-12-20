@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.4
-    @date 08/12/2020
+    @version 1.1.0
+    @date 20/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -135,13 +135,13 @@ class device:
                 sys.stdout.write(lead+'Raw values: ')
                 for n in range(self.params['n_channels']):
 
-                    if isinstance(self.lastValue[n],basestring):
+                    if isinstance(self.lastValue[n],str):
                         if self.params['raw_units'][n] == '':
                             sys.stdout.write(u'%s = %s' % (self.config['channel_names'][n],self.lastValue[n]))
                         else:
                             sys.stdout.write(u'%s = %s %s' % (self.config['channel_names'][n],\
                                                                 self.lastValue[n],\
-                                                                self.params['raw_units'][n].decode('utf-8')))
+                                                                self.params['raw_units'][n]))
                     
                     else: # If numeric, use %g which will format big/smaller numbers in exp. notation.
                         if self.params['raw_units'][n] == '':
@@ -149,7 +149,7 @@ class device:
                         else:
                             sys.stdout.write(u'%s = %g %s' % (self.config['channel_names'][n],\
                                                                 self.lastValue[n],\
-                                                                self.params['raw_units'][n].decode('utf-8')))
+                                                                self.params['raw_units'][n]))
 
                     # Spacing between variables.
                     # New line every 4 vars, commas between them 
@@ -159,12 +159,12 @@ class device:
                 sys.stdout.write('\n')
                 
             else: # I have no idea what is in self.lastValue, print verbatim!
-                print lead+'Raw values:',self.lastValue
+                print(lead+'Raw values:',self.lastValue)
             
             # Only show the scaled units if they exist.
             if show_scaled:
                 for n in range(self.params['n_channels']):
-                    sys.stdout.write(u'%f %s, ' % (self.lastScaled[n],self.config['eng_units'][n].decode('utf-8'))) 
+                    sys.stdout.write(u'%f %s, ' % (self.lastScaled[n],self.config['eng_units'][n])) 
                 sys.stdout.write('\n')
     
         # Vectors (i.e. timeseries data) with units added to the end where present. ####################################
@@ -187,19 +187,19 @@ class device:
                         lv=self.lastValue[n]
                         lvs=self.lastScaled[n]
                         
-                    if ~show_scaled: print lead+u'%i: %s = %s %s %s' % (n,self.config['channel_names'][n],\
-                                                       lv,self.params['raw_units'][n].decode('utf-8'),ismore)
-                    else: print lead+u'%i: %s = %s%s %s \t %s %s %s' % (n,self.config['channel_names'][n],lv,\
-                                                          self.params['raw_units'][n].decode('utf-8'),ismore,\
-                                                        lvs,self.config['eng_units'][n].decode('utf-8'),ismore)
+                    if ~show_scaled: print(lead+u'%i: %s = %s %s %s' % (n,self.config['channel_names'][n],\
+                                                       lv,self.params['raw_units'][n],ismore))
+                    else: print(lead+u'%i: %s = %s%s %s \t %s %s %s' % (n,self.config['channel_names'][n],lv,\
+                                                          self.params['raw_units'][n],ismore,\
+                                                        lvs,self.config['eng_units'][n],ismore))
                 
                 # Don't show N-D arrays where N>1
                 else:
-                    if ~show_scaled: print lead+u'%i: %s = <array of size %s> %s' % (n,self.config['channel_names'][n],\
-                                        self.lastValue[n].shape,self.params['raw_units'][n].decode('utf-8'))
-                    else: print lead+u'%i: %s = <array of size %s> %s \t <array of size %s> %s' % (n,self.config['channel_names'][n],self.lastValue[n].shape,\
-                            self.params['raw_units'][n].decode('utf-8'),\
-                            self.lastScaled[n].shape,self.config['eng_units'][n].decode('utf-8'))
+                    if ~show_scaled: print(lead+u'%i: %s = <array of size %s> %s' % (n,self.config['channel_names'][n],\
+                                        self.lastValue[n].shape,self.params['raw_units'][n]))
+                    else: print(lead+u'%i: %s = <array of size %s> %s \t <array of size %s> %s' % (n,self.config['channel_names'][n],self.lastValue[n].shape,\
+                            self.params['raw_units'][n],\
+                            self.lastScaled[n].shape,self.config['eng_units'][n]))
                     
         return
 
@@ -237,9 +237,9 @@ class device:
             if 'timestamp' in dg:
                 td = dg['timestamp']
                 td.resize([td.shape[0]+1,])
-                td[-1] = str(self.lastValueTimestamp)
+                td[-1] = self.lastValueTimestamp.strftime("%d-%b-%Y (%H:%M:%S.%f)").encode('ascii')
             else:
-                dg.create_dataset('timestamp',data=[str(self.lastValueTimestamp)],maxshape=(max_records,))
+                dg.create_dataset('timestamp',data=[self.lastValueTimestamp.strftime("%d-%b-%Y (%H:%M:%S.%f)").encode('ascii')],maxshape=(max_records,))
 
 
             # Loop all channels of device
@@ -253,7 +253,7 @@ class device:
                 for data, desc, units in [(self.lastValue, "Raw values", self.params['raw_units'][i]),(self.lastScaled, "Scaled values", self.config['eng_units'][i])]:
 
                     # h5py doesn't like unicode strings and nonetypes
-                    if isinstance(data[i],unicode): data[i] = data[i].encode('ascii')
+                    if isinstance(data[i],str): data[i] = data[i].encode('ascii')
                     if data[i] is None: data[i]="None"
                                        
                     if desc in cg:  # Add more

@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.4
-    @date 08/12/2020
+    @@version 1.1.0
+    @date 20/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -29,7 +29,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from device import device, pyLabDataLoggerIOError
+from .device import device
+from .device import pyLabDataLoggerIOError
 import numpy as np
 import datetime, time, subprocess, sys
 from termcolor import cprint
@@ -92,8 +93,8 @@ class opencvDevice(device):
         
         def user_choose_stream(validCamRange):
             if not quiet:
-                print "\n\tMultiple webcams detected. OpenCV cannot automatically identify them."
-                print "\t(Your built-in webcam may be one of them)."
+                print("\n\tMultiple webcams detected. OpenCV cannot automatically identify them.")
+                print("\t(Your built-in webcam may be one of them).")
             self.params['ID']=-1
             while not self.params['ID'] in validCamRange:
                 try:
@@ -118,12 +119,12 @@ class opencvDevice(device):
             validCamRange = []
             for cam_num in range(self.MAX_CAMERAS):
                 proc = subprocess.Popen([sys.executable,"-c",\
-                                        "import cv2; print cv2.__version__; dev=cv2.VideoCapture(%i)" % cam_num],\
+                                        "import cv2; print(cv2.__version__); dev=cv2.VideoCapture(%i)" % cam_num],\
                                         stdout = subprocess.PIPE, stderr = subprocess.PIPE)
                 stdout, stderr = proc.communicate()
                 if stdout.strip() == '': raise RuntimeError("OpenCV version returned nothing!")
                 elif not quiet and (cam_num==0): cprint( "\tOpenCV Version: "+stdout.strip(), 'green')
-                if not quiet: print "\t",cam_num,':',stderr.strip()
+                if not quiet: print("\t",cam_num,':',stderr.strip())
 
                 if ('out device of bound' in stderr) or ('VIDEOIO ERROR' in stderr) or ('HIGHGUI ERROR' in stderr)\
                     or ('Cannot identify device' in stderr):
@@ -136,7 +137,7 @@ class opencvDevice(device):
 
             # only one camera anyway:
             if len(validCamRange)==1:
-                if not quiet: print "Using camera %i (default)" % validCamRange[0]
+                if not quiet: print("Using camera %i (default)" % validCamRange[0])
                 self.params['ID']=validCamRange[0]
                 confirmkb=''
             else:

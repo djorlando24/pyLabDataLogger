@@ -7,8 +7,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.4
-    @date 08/12/2020
+    @version 1.1.0
+    @date 20/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -32,7 +32,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from device import device, pyLabDataLoggerIOError
+from .device import device
+from .device import pyLabDataLoggerIOError
 import numpy as np
 import datetime, time, struct, sys
 from termcolor import cprint
@@ -320,7 +321,7 @@ class usbtmcDevice(device):
             #self.params['averaging'] = self.ask("SENS:AVER:COUNt?") # PM16 does not support
             
         else:
-            print self.__doc__
+            print(self.__doc__)
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         return
 

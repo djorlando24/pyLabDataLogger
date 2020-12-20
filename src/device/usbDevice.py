@@ -1,4 +1,4 @@
-#/usr/bin/env python2.7
+#/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
     USB device support functions for pyLabDataLogger.
@@ -9,8 +9,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.4
-    @date 08/12/2020
+    @version 1.1.0
+    @date 20/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -76,6 +76,7 @@ usb_device_table = [
     {'vid':0x0ce9, 'pid':0x1000, 'driver':'picotc08/usbtc08', 'name':'Picolog USB TC-08 thermocouple datalogger'},
     {'vid':0x0ce9, 'pid':0x1016, 'driver':'picoscope/picoscope2k', 'name':'Picoscope 2000 Series'},
     {'vid':0x0f7e, 'pid':0x9002, 'driver':'fluke/568', 'name':'Fluke 568 IR Thermometer'},
+    {'vid':0x2a72, 'pid':0x0400, 'driver':'omegaSmartProbe', 'name':'Omega Smart Probe (Autodetect)'},
     
     # Multiple devices with same VID and PID are seperated by the serial number as a unique descriptor.
     {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'name':'Thorlabs APT motor driver (generic)'},
@@ -141,7 +142,7 @@ def match_device(dev):
                 if key in match.keys():
                     if match[key] != get_property(dev,key):
                         matching=False
-                        #print match[key], get_property(dev,key)
+                        #print(match[key], get_property(dev,key))
                     elif match[key] is None: matching=True
             if matching: matches.append(match)
     return matches
@@ -161,7 +162,7 @@ def search_for_usb_devices(debugMode=False):
         import usb.core
     except ImportError as e:
         cprint( "Please install pyUSB", 'red', attrs=['bold'])
-        print '\t',e
+        print('\t',e)
         return []
 
     cprint( "Scanning for USB devices..." ,'cyan')
@@ -173,8 +174,8 @@ def search_for_usb_devices(debugMode=False):
         manufacturer = get_property(dev,'manufacturer')
         serial_number = get_property(dev,'serial_number')
         if debugMode:
-            print 'bus=%03i address=%03i : vid=0x%04x pid=0x%04x : class=0x%02x device=0x%04x manufacturer=%s serial_number=%s' %\
-             (dev.bus, dev.address, dev.idVendor, dev.idProduct,dev.bDeviceClass,dev.bcdDevice,manufacturer,serial_number)
+            print('bus=%03i address=%03i : vid=0x%04x pid=0x%04x : class=0x%02x device=0x%04x manufacturer=%s serial_number=%s' %\
+             (dev.bus, dev.address, dev.idVendor, dev.idProduct,dev.bDeviceClass,dev.bcdDevice,manufacturer,serial_number))
 
         # Check if device is a match with any in the supported devices table
         found_devices = match_device(dev)
@@ -289,6 +290,9 @@ def load_usb_devices(devs=None,**kwargs):
         elif driverClass == 'status':
             from pyLabDataLogger.device import statusDevice
             device_list.append(statusDevice.statusDevice(params=d,**kwargs))
+        elif driverClass == 'omegasmartprobe':
+            from pyLabDataLogger.device import omegaSmartProbeDevice
+            device_list.append(omegaSmartProbeDevice.omegaSmartProbeDevice(params=d,**kwargs))
             
         else:
             cprint( "\tI don't know what to do with this device" ,'red', attrs=['bold'])

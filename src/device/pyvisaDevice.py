@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
     pyVISA-py device class
@@ -6,8 +6,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.4
-    @date 08/12/2020
+    @version 1.1.0
+    @date 20/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -31,7 +31,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from device import device, pyLabDataLoggerIOError
+from .device import device
+from .device import pyLabDataLoggerIOError
 import numpy as np
 import datetime, time, sys, struct
 from termcolor import cprint
@@ -95,7 +96,7 @@ class pyvisaDevice(device):
         
         if not 'resource' in self.params:
             cprint( "pyVISA-py: Please specify a resource. Possible resources include but not limited to:", 'yellow', attrs=['bold'])
-            print self.rm.list_resources()
+            print(self.rm.list_resources())
             print( "Network device resources can usually be determined by browsing to the device's IP address or checking the Network Settings control panel on the device." )
             return
         
@@ -163,7 +164,7 @@ class pyvisaDevice(device):
                 # in future could alter the DG settings from here.
                 pass
             else:
-                print self.__doc__
+                print(self.__doc__)
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
         
         except ValueError:
@@ -214,7 +215,7 @@ class pyvisaDevice(device):
     # Send a query to the instrument - no response.
     def instrumentWrite(self,q, *args, **kwargs):
         assert(self.inst)
-        if not self.quiet: print '\t%s' % q
+        if not self.quiet: print('\t%s' % q)
         self.inst.write(q,*args,**kwargs)
         return
             
@@ -336,7 +337,7 @@ class pyvisaDevice(device):
             cprint('\tIDN: %s' % self.config['Unit ID'],'green')
             
         else:
-            print self.__doc__
+            print(self.__doc__)
             raise KeyError("Unknown device subdriver for pyvisa-py")
             return
 
@@ -344,7 +345,7 @@ class pyvisaDevice(device):
     def convert_to_array(self,data):
         if self.subdriver=='ds1000z':
             if not self.quiet:
-                print '\t',len(data),'bytes recieved'
+                print('\t',len(data),'bytes recieved')
                 # unpack scope waveform as 8-bit vector.
             return np.array( struct.unpack('<%ib' % len(data),data), dtype=np.uint8 ).ravel()
             #return np.array(data) # simple list-to-array conversion

@@ -1,4 +1,4 @@
-#/usr/bin/env python2.7
+#/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
     lm-sensors device (monitoring computer temperatures and fan RPM)
@@ -6,8 +6,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.4
-    @date 08/12/2020
+    @version 1.1.0
+    @date 20/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -31,7 +31,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from device import device, pyLabDataLoggerIOError
+from .device import device
+from .device import pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
 from termcolor import cprint
@@ -110,7 +111,7 @@ class lmsensorsDevice(device):
                 self.config['channel_names'].append(adapter + ' ' + output[j].split(':')[0] + ' temp')
                 self.params['raw_units'].append( '°C' )
                 self.config['eng_units'].append( '°C' )
-                if not self.quiet: print '\tDetected: %s' % self.config['channel_names'][-1]
+                if not self.quiet: print('\tDetected: %s' % self.config['channel_names'][-1])
 
         # add fan RPMs
         for j in range(len(output)):
@@ -119,7 +120,7 @@ class lmsensorsDevice(device):
                 self.config['channel_names'].append(adapter + ' ' + output[j].split(':')[0]+ ' RPM')
                 self.params['raw_units'].append( 'RPM' )
                 self.config['eng_units'].append( 'RPM' )
-                if not self.quiet: print '\tDetected: %s' % self.config['channel_names'][-1]
+                if not self.quiet: print('\tDetected: %s' % self.config['channel_names'][-1])
 
         # Set up device
         self.params['n_channels']=len(self.config['channel_names'])

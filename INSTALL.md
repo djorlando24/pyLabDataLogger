@@ -119,6 +119,12 @@ From here on, all these modules are optional. They only need to be installed for
     - libudev-dev libboost-dev libgnutls28-dev openssl libtiff5-dev meson qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5
   There is a test program in tests/test_picamera.py that will confirm libcamera is installed and working.
 
+- for Omega Smart Probes via USB IF-001 adapter or I2C bus, the omega-smartsensor-python library is required.
+  https://github.com/omegaengineering/omega-smartsensor-python
+  
+  If you get an error about "No module named RPi" and you're not on a Rapsberry Pi device, edit
+  omegasensor/smartsensor.py and comment out lines 6 and 7.
+
 ## Optional non-Python dependencies
 
 - Any generic USB serial port drivers that your system does not have. By default Linux has most standard serial to USB device drivers in the kernel. MacOS and Windows may require FTDI, CP2102, etc. driver packages. These should come with the hardware and are also available online.

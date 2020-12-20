@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.4
-    @date 08/12/2020
+    @version 1.1.0
+    @date 20/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -29,7 +29,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from device import device, pyLabDataLoggerIOError
+from .device import device
+from .device import pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
 from termcolor import cprint
@@ -103,7 +104,7 @@ class pyAPTDevice(device):
             for controller in controllers:
                 cprint( controller, 'magenta' )
                 con = pyAPT.Controller(serial_number=controller[2])
-                print '\t',con.info()
+                print('\t',con.info())
                 if fmatch(con,self.bus,self.adds): self.serial_number = controller[2]
             
         if self.serial_number is None:

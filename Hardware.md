@@ -74,6 +74,11 @@ USB video capture device support depends on v4l2 support. A significant number o
 
 To get correct resolution detected for some v4l2 devices, I had to run v4l2-ctl --set-fmt-video=width=720,height=480 then I had to used v4l2ucp to check stream works ok. Those programs should be available through apt or yum, etc.
 
+## Omega Smart Probes
+Support for the Omega IF-001 USB Serial to MODBUS interface adapter is included. It's also possible to use I2C hardware (for example on the Raspberry Pi) with a custom cable, but this isn't supported in code yet.  The USB interface uses the cdc_acm driver in Linux, and you may need permissions to access the /dev/ttyACM0 or similar device without being root. You can do this by copying thirdParty/omega_IF-001.rules with superuser priveliges into /etc/udev/rules.d and issuing 
+
+    udevadm control --reload-rules
+
 
 # Can you add support for my device?
 I can't test and add support for hardware unless I actually have the equipment in my hands to test it, and the time to do so.

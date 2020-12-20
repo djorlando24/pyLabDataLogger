@@ -1,4 +1,4 @@
-#/usr/bin/env python2.7
+#/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
     Test device support - log to file
@@ -6,8 +6,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.0.2
-    @date 30/07/2020
+    @version 1.1.0
+    @date 20/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
