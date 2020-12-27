@@ -1,2 +1,5 @@
+####################################################################################
+# Omega Smart Probe Interface IF-001
+
 SUBSYSTEM=="tty", ATTRS{idVendor}=="2a72", ATTRS{idProduct}=="0400", MODE="0666"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="2a72", ATTRS{idProduct}=="0400", MODE="0666"

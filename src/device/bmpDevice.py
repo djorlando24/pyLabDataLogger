@@ -44,7 +44,7 @@ except ImportError:
 ########################################################################################################################
 class bmpDevice(i2cDevice):
     """ Class providing support for Adafruit's BMP MEMS pressure sensor breakout boards.
-	Works with BMP085 and BMP150.
+    Works with BMP085 and BMP150.
         Specify I2C bus and address on initialisation.
     """
 
@@ -80,7 +80,7 @@ class bmpDevice(i2cDevice):
         """
 
         # Initialise the BMP085
-	self.BMP = BMP085.BMP085(mode=self.params['mode'],\
+        self.BMP = BMP085.BMP085(mode=self.params['mode'],\
                                  address=int(self.params['address'],16),\
                                  busnum=self.params['bus'])
         self.driverConnected=True

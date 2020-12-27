@@ -5,7 +5,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.1.0
-    @date 20/12/2020
+    @date 27/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -38,6 +38,7 @@
         01/10/2020 - Ranger 5000 support
         22/11/2020 - Omron K3HB-VLC support
         04/12/2020 - Omron K3HB-X support, negative values
+        27/12/2020 - DataQ DI-148 support
 """
 
 from .device import device
@@ -64,6 +65,7 @@ class serialDevice(device):
         The 'serial' driver supports the following hardware:
             'serial/alicat'            : Alicat Scientific M-series mass flow meter
             'serial/center310'         : CENTER 310 Temperature and Humidity meter
+            'serial/di148'             : DataQ DI-148 Analog-to-Digital Converter
             'serial/esd508'            : Leadshine ES-D508 Easy Servomotor Driver
             'serial/k3hb/vlc'          : Omron K3HB-VLC Load Cell Amplifier with FLK1B communications board
             'serial/k3hb/x'            : Omron K3HB-X Ammeter with FLK1B communications board
@@ -266,7 +268,17 @@ class serialDevice(device):
         elif self.subdriver=='r5000':
             if not 'timeout' in self.params.keys(): self.params['timeout']=5
             pass
-            
+        elif self.subdriver=='di148':
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=460800 #The default supported by hardware!!!
+            if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.EIGHTBITS
+            if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_NONE
+            if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_ONE
+            if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=False
+            if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
+            if not 'timeout' in self.params.keys(): self.params['timeout']=1. # sec for a single byte read/write
+            self.params['timeout_total']=1.
+
+        
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
         if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.EIGHTBITS
@@ -375,6 +387,9 @@ class serialDevice(device):
             elif subdriver=='mx5060':
                 # No settings can be modified at present. 
                 pass
+            elif subdriver=='di148':
+                # No settings can be modified at present. 
+                pass
             else:
                 print(self.__doc__)
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -415,11 +430,13 @@ class serialDevice(device):
                 if not self.quiet:
                     sys.stdout.write('\t'+self.port+':'+repr(request)+'\t')
                     sys.stdout.flush()
-                self.Serial.write(request)
+                #self.Serial.write(request) #python2
+                self.Serial.write(request.encode('ascii'))
             t_=time.time()
             time.sleep(sleeptime)
             while len(s)<maxlen:
-                s+=self.Serial.read(1)
+                #s+=self.Serial.read(1) #python2
+                s+=self.Serial.read(1).decode('ascii')
                 if len(s) == 0: # response timed out
                     break
                 if (s[-1] == terminationChar) and (len(s)>min_response_length):
@@ -438,13 +455,17 @@ class serialDevice(device):
     # some delay for the direction switching)
     def blockingRawSerialRequest(self,request,terminationChar='\r',maxlen=1024,min_response_length=0,sleeptime=0.01):
         try:
-            #print repr(request) # debugging
-            if len(request)>0: self.Serial.write(request)
+            if not self.quiet:
+                sys.stdout.write('\t'+self.port+':'+repr(request)+'\t')
+                sys.stdout.flush()
+            #if len(request)>0: self.Serial.write(request) # python2
+            if len(request)>0: self.Serial.write(request.encode('ascii'))
             t_=time.time()
             time.sleep(sleeptime)
             data=''
             while len(data)<maxlen:
-                data += self.Serial.read(1)
+                #data += self.Serial.read(1) #python2
+                data += self.Serial.read(1).decode('ascii')
                 if len(data) > 0:
                     if (data[-1] == terminationChar) and (len(data)>min_response_length):
                         break
@@ -662,7 +683,7 @@ class serialDevice(device):
             self.serialCommsFunction=self.blockingRawSerialRequest
             self.params['min_response_length']=1 # bytes
 
-            # Try and establish communication with the device. !!!
+            # Try and establish communication with the device.
             self.params['version']=None
             time.sleep(1.)  #settling time
             while True:
@@ -845,6 +866,30 @@ class serialDevice(device):
             self.params['min_response_length']=3
             self.serialCommsFunction=self.blockingRawSerialRequest
             self.sleeptime=0.5
+
+        # ----------------------------------------------------------------------------------------
+        # Startup config for DataQ DI-148 ADC
+        elif subdriver=='di148': 
+            self.name = "DataQ DI-148 ADC"
+            self.config['channel_names']=['A%i' % n for n in range(1,9)]
+            self.config['channel_names'].extend(['D%i' % n for n in range(1,6)])
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.params['raw_units']=['V']*8
+            self.params['raw_units'].extend(['']*6)
+            self.config['eng_units']=self.params['raw_units']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.serialQuery=[''] 
+            self.queryTerminator=''
+            self.responseTerminator=''
+            self.params['min_response_length']=3
+            self.serialCommsFunction=self.blockingRawSerialRequest
+            self.sleeptime=1.0
+
+            cmd='info 0\r' # Should print 'DATAQ' !!!
+            print( self.blockingRawSerialRequest(cmd,'',maxlen=25,sleeptime=.1) )
+            raise RuntimeError("Breakpoint")
+
            
         # ----------------------------------------------------------------------------------------
         # Startup config for Omron K3HB-VLC-FLK1B Load Cell Amplifier or K3HB-X ammeter

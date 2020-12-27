@@ -59,6 +59,8 @@ To install as root, which you may need to do on raspberry Pis etc:
 
 	sudo python setup.py install
 
+You may need to copy some udev rules for certain USB devices - see Hardware.md for details.
+
 ## building on MacOS
 
 To compile the mcclibusb drivers, you need libusb installed. On MacOS you can get this

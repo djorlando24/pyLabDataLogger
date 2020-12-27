@@ -5,7 +5,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.1.0
-    @date 20/12/2020
+    @date 27/12/2020
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -27,6 +27,10 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+    Changelog:
+        20/12/2020 : python3 support
+        27/12/2020 : python3 bug fixes and buffering bug fixes for fx2lafw
 """
 
 from .device import device
@@ -252,7 +256,7 @@ class srdevice(device):
         self.params['raw_units'] = []
         self.srdev.open()
         self.driverConnected = True
-        self.sessionReady = 0 # Zero when session not yet created, 1 when created by callback not setup, 2 when good to go, -1 when resetting
+        self.sessionReady = 0 # Zero when session not yet created, 1 when created, >1 when good to go
         self.has_digital_input = False
                 
         if not self.quiet: print( "\t%s - %s with %d channels: %s" % (self.srdev.driver.name, str.join(' ',\
@@ -284,7 +288,7 @@ class srdevice(device):
         self.default_samplerate()
         
         # Set default configuration parameters
-        if not 'n_samples' in self.config.keys(): self.config['n_samples']=1
+        if not 'n_samples' in self.config.keys(): self.config['n_samples']=8
         self.params['n_channels']=len(self.srdev.channels)
         self.apply_config()
                
@@ -335,45 +339,61 @@ class srdevice(device):
         return
 
 
+    # Sigrok datafeed_in subroutine
+    def datafeed_in(self, device, packet):
+        if self.has_digital_input: self.data_buffer[1] += self.srdoutput.receive(packet)
+        self.data_buffer[0] += self.sraoutput.receive(packet)
+        return None
+
     
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self):
-        #print("self.sessionReady=",self.sessionReady)
-        if self.sessionReady <1:
-            self.srsession = self.srcontext.create_session()
-            self.srsession.add_device(self.srdev)
-            self.srsession.start()
         
-            if self.has_digital_input:
+        if self.sessionReady <= 0:
+            if self.debugMode: print("\tCreating sigrok session")
+            #if not 'srsession' in dir(self):
+            self.srsession = self.srcontext.create_session()
+            self.srsession.add_device(self.srdev)           
+            self.srsession.start()
+            self.sessionReady = 1            
+        
+            if self.has_digital_input: 
+                #if not 'srdoutput' in dir(self):
                 self.srdoutput = self.srcontext.output_formats['bits'].create_output(self.srdev)
+            
+            #if not 'sraoutput' in dir(self):
             self.sraoutput = self.srcontext.output_formats['analog'].create_output(self.srdev)
-
-            self.sessionReady = 1
+            self.srsession.add_datafeed_callback(self.datafeed_in)
+            self.sessionReady = 2
 
         assert self.sraoutput, self.srsession
-        if self.has_digital_input: assert self.srdoutput
-    
-        def datafeed_in(device, packet):
-            if self.has_digital_input: self.data_buffer[1] += self.srdoutput.receive(packet)
-            self.data_buffer[0] += self.sraoutput.receive(packet)
-            return None
+        if self.has_digital_input: assert self.srdoutput        
         
         try:
-            if self.sessionReady < 2:
-                self.srsession.add_datafeed_callback(datafeed_in)
-                self.sessionReady = 2
             
             # Sample
-            self.data_buffer = ['', '']  
+            self.data_buffer = ['', '']
+            if self.sessionReady<2: 
+                self.srsession.start()
+                self.sessionReady=2
+            
             self.srsession.run()
             self.updateTimestamp()
             self.srsession.stop()
-            self.sessionReady = -1
+            self.sessionReady = 1
+                                    
+            #if self.has_digital_input:
+            #    del self.srdoutput
+            #del self.sraoutput
             #del self.srsession
+            #self.sessionReady = 0
             
             # Parse analog values - get buffer
-            #if self.debugMode: print '\tOutput buffer =',self.data_buffer
+            #if self.debugMode: print('\tOutput buffer =',self.data_buffer)
             delimited_buffer = self.data_buffer[0].split('\n')
+
+            if self.data_buffer == ['', '']: raise pyLabDataLoggerIOError
+
             if 'enabled' in self.config:
                 n_analog_channels = np.sum(self.config['enabled']) - sum(self.params['sr_logic_channel'])
             else:
@@ -381,10 +401,8 @@ class srdevice(device):
 
             # Make list of empty lists to put values in.
             # initialize raw_units to empty strings.
-            self.lastValue = []; self.params['raw_units'] = []
-            for i in range(n_analog_channels):
-                self.lastValue.append([])
-                self.params['raw_units'].append('')
+            self.lastValue = [[]] * n_analog_channels
+            self.params['raw_units'] = [[]] * n_analog_channels
             
             # Loop thru buffer entries
             n = 0
@@ -397,7 +415,7 @@ class srdevice(device):
                         self.params['raw_units'][n] = ' '.join(s[2:]).strip() # save unit
                         n = (n+1)%n_analog_channels               
 
-
+            
             # Check existence of eng_units
             if not 'eng_units' in self.config:
                 self.config['eng_units'] = self.params['raw_units']
@@ -414,27 +432,45 @@ class srdevice(device):
 
             # Parse binary data
             if self.has_digital_input:
-                digital_data = []
-                for dch in self.data_buffer[1].split('\n')[2:]:
-                    if dch != '':
+                digital_data = [[]]*sum(self.params['sr_logic_channel'])
+                j=0
+                for dch in self.data_buffer[1].split('\n'):
+                    if ('D' in dch) and (j<len(digital_data)):
                         # The input is something like D0:010 for 3 samples of D0.
                         # We can break it apart with the list() function and then
                         # run thru a list comprehension to convert to ints.
-                        digital_data.append( [int(val) for val in list(dch.split(':')[1:][0].replace(' ','')) ] )
-            
+                        digital_data[j] = [ int(val) for val in list(dch.split(':')[1:][0].replace(' ','')) ]
+                        j+=1
+
                 # Assume digital channels always come first in mixed mode devices?
                 self.lastValue = digital_data + self.lastValue
                 self.params['raw_units'] = ['']*len(digital_data) + self.params['raw_units']
                 self.config['eng_units'] = ['']*len(digital_data) + self.config['eng_units']
-          
-            # Convert analog values to scaled values
-            for t in range(self.config['n_samples']):
-                self.lastScaled = np.array(self.lastValue)[:,t] * self.config['scale'] + self.config['offset']
+                    
 
             # If only 1 sample, convert self.lastValue to list rather than list of lists with 1 item each.
-            if self.config['n_samples']<2:
-                self.lastValue = [ v[0] for v in self.lastValue ]
-                print( '%s %s' % (self.lastValue, self.params['raw_units'] ) )
+            if self.config['n_samples']<=1:
+                self.lastValue = np.array([ v[-1] for v in self.lastValue ])
+                #print( '%s %s' % (self.lastValue, self.params['raw_units'] ) )
+
+                # Convert analog values to scaled values
+                self.lastScaled=self.lastValue * self.config['scale'] + self.config['offset']
+            
+            lengths=[len(v) for v in self.lastValue]
+            if len(set(lengths)) > 1:
+                # What to do if the number of samples for each var is mis-matched.
+                # This can happen if libsigrok keeps prior samples from digital channels in its buffer.
+                # Take the last min_samples number of values (# analog vals or n_samples whichever less).
+                min_samples = min(lengths)
+                if min_samples>self.config['n_samples']: min_samples=self.config['n_samples']
+                for j in range(len(self.lastValue)):
+                    self.lastValue[j] = self.lastValue[j][-min_samples:]
+
+            if self.config['n_samples']>1:
+                # Convert analog values to scaled values - multi samples
+                self.lastValue = np.array(self.lastValue)
+                self.lastScaled = [ np.array(self.lastValue[j])*self.config['scale'][j] + self.config['offset'][j] for j in range(len(self.lastValue)) ]
+            
 
         except pyLabDataLoggerIOError:
             cprint( "Unable to communicate with %s"  % self.name, 'red', attrs=['bold'])

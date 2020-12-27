@@ -551,11 +551,11 @@ class usbtc08Device(device):
         
         if override_params is not None: self.params = override_params
         
-	# Parse driver parameters
+        # Parse driver parameters
         self.driver = self.params['driver'].lower().split('/')[0]
 
-	if self.driver == 'usbtc08':
-	    # USB: Check device is present on the bus.
+        if self.driver == 'usbtc08':
+            # USB: Check device is present on the bus.
             if 'bcdDevice' in self.params.keys():
                 usbCoreDev = usb.core.find(idVendor=self.params['vid'],idProduct=self.params['pid'],\
                                  bcdDevice=self.params['bcdDevice'])
@@ -565,7 +565,7 @@ class usbtc08Device(device):
                 raise pyLabDataLoggerIOError("USB Device %s not found" % self.params['name'])
             self.bus = usbCoreDev.bus
             self.adds = usbCoreDev.address
-        
+    
         self.activate(quiet=quiet)
         return
 
@@ -687,7 +687,7 @@ class usbtc08Device(device):
 
         # Read values        
         self.dev.get_single()
-     	self.lastValue=[ self.dev.channelbuffer[i] for i in range(0, self.params['n_channels']) ]
+        self.lastValue=[ self.dev.channelbuffer[i] for i in range(0, self.params['n_channels']) ]
       
         # Apply scaling correction to raw values for mA channels.
         for i in range(self.params['n_channels']):

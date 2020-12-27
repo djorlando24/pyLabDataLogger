@@ -1,0 +1,5 @@
+####################################################################################
+# DATAQ instruments 
+
+# DATAQ DI-148U
+ACTION=="add", ATTRS{idVendor}=="0683", ATTRS{idProduct}=="1480", RUN+="/sbin/modprobe ftdi_sio" RUN+="/bin/sh -c 'echo 0683 1480 > /sys/bus/usb-serial/drivers/ftdi_sio/new_id'"

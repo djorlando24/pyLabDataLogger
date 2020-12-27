@@ -183,6 +183,9 @@ class device:
                             ismore='...& %i more values' % (len(self.lastValue[n]) - maxarrayvalues)
                         else:
                             nn=len(self.lastValue[n])
+                            lv=self.lastValue[n]
+                            lvs=self.lastScaled[n]
+
                     else:
                         lv=self.lastValue[n]
                         lvs=self.lastScaled[n]
