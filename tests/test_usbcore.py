@@ -4,7 +4,7 @@
     pyUSB functionality test.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2020 LTRAC
+    @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.0
     @date 20/12/2020

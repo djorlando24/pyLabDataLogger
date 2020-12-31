@@ -4,7 +4,7 @@
     In future can be a generic CSI/CSI2 interface for other SBCs.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-20 LTRAC
+    @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.0
     @date 20/12/2020

@@ -1162,7 +1162,7 @@ class serialDevice(device):
                 time_min = np.nan; time_sec = np.nan
                 flags = None
                 
-                if mode is 'H': # Farenheit mode puts the timer data before the mode string
+                if mode == 'H': # Farenheit mode puts the timer data before the mode string
                     humidity = np.array(struct.unpack('>H', decoded[1:3]))[0]/10.
                     temperature = np.array(struct.unpack('>H', decoded[3:]+'\x00'))[0]/10.
                     if len(prefix_data) > 2:

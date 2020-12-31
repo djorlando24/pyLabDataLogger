@@ -7,7 +7,7 @@
     - Handle VID/PID conflicts for devices that use generic serial ports i.e. FTDI chips.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-20 LTRAC
+    @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.0
     @date 27/12/2020
