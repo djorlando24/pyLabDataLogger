@@ -424,7 +424,7 @@ class serialDevice(device):
     # Works well for most RS-232 devices.
     def blockingSerialRequest(self,request,terminationChar='\r',maxlen=1024,min_response_length=0,sleeptime=0.01):
         try:
-            s=''
+            s=b''
             response=None
             if len(request)>0:
                 if not self.quiet:
@@ -435,8 +435,7 @@ class serialDevice(device):
             t_=time.time()
             time.sleep(sleeptime)
             while len(s)<maxlen:
-                #s+=self.Serial.read(1) #python2
-                s+=self.Serial.read(1).decode('ascii')
+                s+=self.Serial.read(1)#.decode('ascii')
                 if len(s) == 0: # response timed out
                     break
                 if (s[-1] == terminationChar) and (len(s)>min_response_length):
@@ -462,10 +461,9 @@ class serialDevice(device):
             if len(request)>0: self.Serial.write(request.encode('ascii'))
             t_=time.time()
             time.sleep(sleeptime)
-            data=''
+            data=b''
             while len(data)<maxlen:
-                #data += self.Serial.read(1) #python2
-                data += self.Serial.read(1).decode('ascii')
+                data += self.Serial.read(1) #.decode('ascii')
                 if len(data) > 0:
                     if (data[-1] == terminationChar) and (len(data)>min_response_length):
                         break
@@ -567,17 +565,20 @@ class serialDevice(device):
             self.config['scale']=[1.]
             self.config['offset']=[0.]
             self.params['n_channels']=1
-            self.serialQuery=['PC,,PS']
+            self.serialQuery=['PC,,PS'.encode('ascii')]
             self.queryTerminator='\r\n'
             self.responseTerminator=''
             self.serialCommsFunction=self.blockingRawSerialRequest
             # First ensure that streaming is inactive.
-            self.Serial.write('PS')
+            self.Serial.write('PS'.encode('ascii'))
             self.blockingSerialRequest('SNR\r\n','\r') # dummy command to flush buffer
             # Get unit ID and serial
-            self.params['Info'] = self.blockingSerialRequest('ENQ\r\n','\r',min_response_length=36).replace('\r\n',' ')
-            self.params['ID'] = self.blockingSerialRequest('SNR\r\n','\r').split('=')[-1]
-            if self.params['ID'].strip() != '': self.name += ' '+self.params['ID'].strip()
+            self.params['Info'] = self.blockingSerialRequest('ENQ\r\n','\r',min_response_length=36)
+            if self.params['Info'] is not None: self.params['Info'] = self.params['Info'].strip()
+            self.params['ID'] = self.blockingSerialRequest('SNR\r\n','\r')
+            if self.params['ID'] is not None: 
+                self.params['ID'] = self.params['ID'].split('=')[-1]
+                if self.params['ID'].strip() != '': self.name += ' '+self.params['ID'].strip()
             # Get filter settings and sample rate
             for var in ['IFILTER','MFILTER','AVG','RATE']:
                 if not var in self.config:
@@ -1335,17 +1336,17 @@ class serialDevice(device):
     def get_values(self):
         rawData=[]
         for n in range(len(self.serialQuery)):
-            if ',' in self.serialQuery[n]:
+            if ',' in self.serialQuery[n].decode('ascii'):
                 # Multiple commands must be sent. They are seperated by commas.
 
                 # A double comma denotes a long pause dictated by params['sample_period']
                 # The responses will be concatenated.
-                if ',,' in self.serialQuery[n] and not 'sample_period' in self.params:
+                if ',,' in self.serialQuery[n].decode('ascii') and not 'sample_period' in self.params:
                     self.params['sample_period']=1.
                     cprint( "sample_period not set for %s, default to 1 second" % self.name, 'yellow')
 
                 # Split commands,set default values.
-                cmds=self.serialQuery[n].split(',')
+                cmds=self.serialQuery[n].decode('ascii').split(',')
                 resp='' 
                 maxlen = self.maxlen
                 sleeptime = self.sleeptime
@@ -1395,7 +1396,8 @@ class serialDevice(device):
         lastValueSanitized = []
         for v in self.lastValue: 
             if v is None: lastValueSanitized.append(np.nan)
-            elif isinstance(v, basestring): lastValueSanitized.append(np.nan) 
+            #elif isinstance(v, basestring): lastValueSanitized.append(np.nan)  # python2
+            elif isinstance(v, str): lastValueSanitized.append(np.nan)  # python2
             else: lastValueSanitized.append(v)
         self.lastScaled = np.array(lastValueSanitized) * self.config['scale'] + self.config['offset']
         self.updateTimestamp()
