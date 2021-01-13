@@ -4,8 +4,8 @@ Laboratory datalogging for USB and Serial devices
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2019-2021 LTRAC
     @license GPL-3.0+
-    @version 1.1.0
-    @date 20/12/2020
+    @version 1.1.1
+    @date 13/01/2021
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -47,7 +47,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 - Sigrok devices
      confirmed working:
     - Tenma 72-7730A multimeter
-    - Tenma 72-7712 thermometer
+    - Tenma 72-7712 thermometer [on some systems, not all]
     - Rigol DS-series oscilloscopes
     - USBee/LHT00SU1 ADC & logic analyser via fx2lafw driver
 

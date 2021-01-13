@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.1.0
-    @date 27/12/2020
+    @version 1.1.1
+    @date 13/01/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -39,6 +39,7 @@
         22/11/2020 - Omron K3HB-VLC support
         04/12/2020 - Omron K3HB-X support, negative values
         27/12/2020 - DataQ DI-148 support
+        13/01/2021 - python3 string encoding/decoding bug fixes
 """
 
 from .device import device
@@ -336,8 +337,8 @@ class serialDevice(device):
                 else: raise ValueError
             elif subdriver=='omega-usbh':
                 for var in ['IFILTER','MFILTER','AVG','RATE']:
-                    if self.config[var] != self.blockingSerialRequest(var+'\r\n','\r').split('=')[-1]:
-                        self.config[var] = self.blockingSerialRequest('%s %s\r\n' % (var,self.config[var]),'\r',min_response_length=8).split('=')[-1]
+                    if self.config[var] != self.blockingSerialRequest(var+'\r\n','\r').decode('ascii').split('=')[-1]:
+                        self.config[var] = self.blockingSerialRequest('%s %s\r\n' % (var,self.config[var]),'\r',min_response_length=8).decode('ascii').split('=')[-1]
                 # Write human readable sample rate
                 if int(self.config['RATE'])==0:   self.config['sample_rate_Hz'] = 5
                 elif int(self.config['RATE'])==1: self.config['sample_rate_Hz'] = 10
@@ -438,7 +439,7 @@ class serialDevice(device):
                 s+=self.Serial.read(1)#.decode('ascii')
                 if len(s) == 0: # response timed out
                     break
-                if (s[-1] == terminationChar) and (len(s)>min_response_length):
+                if (s[-1:] == terminationChar.encode('ascii')) and (len(s)>min_response_length):
                     response=s.strip()
                     break
                 if (time.time() - t_) > self.params['timeout_total']: raise pyLabDataLoggerIOError("timeout")
@@ -565,7 +566,7 @@ class serialDevice(device):
             self.config['scale']=[1.]
             self.config['offset']=[0.]
             self.params['n_channels']=1
-            self.serialQuery=['PC,,PS'.encode('ascii')]
+            self.serialQuery=['PC,,PS']
             self.queryTerminator='\r\n'
             self.responseTerminator=''
             self.serialCommsFunction=self.blockingRawSerialRequest
@@ -574,15 +575,15 @@ class serialDevice(device):
             self.blockingSerialRequest('SNR\r\n','\r') # dummy command to flush buffer
             # Get unit ID and serial
             self.params['Info'] = self.blockingSerialRequest('ENQ\r\n','\r',min_response_length=36)
-            if self.params['Info'] is not None: self.params['Info'] = self.params['Info'].strip()
+            if self.params['Info'] is not None: self.params['Info'] = self.params['Info'].decode('utf-8').strip()
             self.params['ID'] = self.blockingSerialRequest('SNR\r\n','\r')
             if self.params['ID'] is not None: 
-                self.params['ID'] = self.params['ID'].split('=')[-1]
+                self.params['ID'] = self.params['ID'].decode('utf-8').split('=')[-1]
                 if self.params['ID'].strip() != '': self.name += ' '+self.params['ID'].strip()
             # Get filter settings and sample rate
             for var in ['IFILTER','MFILTER','AVG','RATE']:
                 if not var in self.config:
-                    self.config[var] = self.blockingSerialRequest(var+'\r\n','\r').split('=')[-1]
+                    self.config[var] = self.blockingSerialRequest(var+'\r\n','\r').decode('ascii').split('=')[-1]
             # Apply user-set filter and sample rate setting to the client device
             self.apply_config()
             # Write human readable sample rate
@@ -1098,9 +1099,9 @@ class serialDevice(device):
                 for i in range(len(rawData)):
                     
                     # first frame beginning point
-                    offset = rawData[i].index('\xaa')
+                    offset = rawData[i].index(b'\xaa')
                     # Remove 0xAAAA and replace with 0xAA (delete the bit stuff)
-                    rawData[i] = rawData[i].replace('\xaa\xaa','\xaa')
+                    rawData[i] = rawData[i].replace(b'\xaa\xaa',b'\xaa')
                     # number of frames to process
                     n_frames = int(np.floor(len(rawData[i][offset:])/6))                   
                     vals.append( np.array( struct.unpack('<'+'xxf'*n_frames,rawData[i][offset:offset+n_frames*6]) ) )
@@ -1137,15 +1138,14 @@ class serialDevice(device):
                     Mode '\x10' happens after some period of continuous running, and I'm not sure what this means exactly. 
                     It might be related to the auto-off feature or when the auto-off is disabled. Otherwise the device behaves as in 'P' mode.
                 '''
-                #print '\t0x'+rawData[0].encode('hex') # Debugging
-                hold=0; minmax=0; prefix_data=''
-                while (rawData[0][0] != '\x02') and (rawData[0][1] < '\x41'):
+                hold=0; minmax=0; prefix_data=b''
+                while (rawData[0][0:1] != '\x02'.encode('ascii')) and (rawData[0][1:2] < '\x41'.encode('ascii')):
                     # Advance forwards in the string until we find 0x02 followed by an ASCII capital letter.
                     # Put everything before this into 'prefix_data' for later processing.
                     prefix_data += rawData[0][0]
                     rawData[0] = rawData[0][1:]
                 # Get the mode string
-                mode = rawData[0][1].strip()
+                mode = rawData[0][1:2].decode('ascii').strip()
                 # Determine the units, hold and minmax values from the mode string
                 if 'P' in mode: self.params['raw_units'][1]='C'
                 elif 'T' in mode: hold=1
@@ -1336,18 +1336,18 @@ class serialDevice(device):
     def get_values(self):
         rawData=[]
         for n in range(len(self.serialQuery)):
-            if ',' in self.serialQuery[n].decode('ascii'):
+            if ',' in self.serialQuery[n]:
                 # Multiple commands must be sent. They are seperated by commas.
 
                 # A double comma denotes a long pause dictated by params['sample_period']
                 # The responses will be concatenated.
-                if ',,' in self.serialQuery[n].decode('ascii') and not 'sample_period' in self.params:
+                if ',,' in self.serialQuery[n] and not 'sample_period' in self.params:
                     self.params['sample_period']=1.
                     cprint( "sample_period not set for %s, default to 1 second" % self.name, 'yellow')
 
                 # Split commands,set default values.
-                cmds=self.serialQuery[n].decode('ascii').split(',')
-                resp='' 
+                cmds=self.serialQuery[n].split(',')
+                resp=b'' 
                 maxlen = self.maxlen
                 sleeptime = self.sleeptime
                 # Loop commands

@@ -9,15 +9,15 @@ queryTerminator='\r\n'
 
 for serialQuery,responseTerminator in zip(['K','A'],responseTerminators):
 
-    print "<sent",serialQuery
-    Serial.write(serialQuery+queryTerminator)
+    print ("<sent",serialQuery)
+    Serial.write((serialQuery+queryTerminator).encode('ascii'))
     time.sleep(0.01)
-    s=''; rawData=[]
+    s=b''; rawData=[]
     while len(s)<1024:
         s+=Serial.read(1)
-        print s[-1].encode('hex')
-        if s[-1] == responseTerminator:
+        print (s[-1:])
+        if s[-1:] == responseTerminator.encode('ascii'):
            rawData.append(s.strip())
            break
 
-    print ">recv",rawData
+    print (">recv",rawData)

@@ -6,8 +6,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.1.0
-    @date 20/12/2020
+    @version 1.1.1
+    @date 13/01/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -32,9 +32,9 @@
 """
 
 __author__="Daniel Duke <daniel.duke@monash.edu>"
-__version__="1.1.0"
+__version__="1.1.1"
 __license__="GPL-3.0+"
-__copyright__="Copyright (c) 2018-20 LTRAC"
+__copyright__="Copyright (c) 2018-21 LTRAC"
 
 
 from distutils.core import setup

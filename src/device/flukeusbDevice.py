@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.1.0
-    @date 20/12/2020
+    @version 1.1.1
+    @date 13/01/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -177,16 +177,16 @@ class flukeusbDevice(device):
     
         if self.subdriver=='568':
             # Send control bytes
-            request = '\x81\x02\x05\x00\x00\x00\x00\x00'
+            request = b'\x81\x02\x05\x00\x00\x00\x00\x00'
             assert self.dev.ctrl_transfer(0x21,0x09,0x0200,0x0000,request)==len(request)
 
             # Read response
-            s=''
+            s=b""
             while len(s)<64:
                 try:
-                    buf = array.array('B','')
+                    buf = array.array('B',b'')
                     buf = self.dev.read(0x81, 64, timeout=100)
-                    s+=''.join(struct.unpack('%ic' % len(buf),buf)) #buf.tostring()
+                    s+=b"".join(struct.unpack('%ic' % len(buf),buf))
                 except usb.core.USBError as e:
                     break
     
@@ -203,7 +203,7 @@ class flukeusbDevice(device):
             delt = struct.unpack('<f',s[54:54+4])[0]
             meas_id = struct.unpack('<L',s[6:6+4])[0]
             # Thermocouple, if present.
-            if s[29]==' ': ttrm = struct.unpack('<f',s[31:31+4])[0]
+            if s[29:30]==b' ': ttrm = struct.unpack('<f',s[31:31+4])[0]
             else: ttrm=np.nan
             # Device ID, if initialising first time
             if self.params['device ID']=='':

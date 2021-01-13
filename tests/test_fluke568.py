@@ -103,7 +103,7 @@ import numpy as np
 dev = usb.core.find(idVendor=0x0f7e, idProduct=0x9002)
 
 # was it found?
-print dev
+print (dev)
 if dev is None: raise ValueError("Device not found.")
 
 # Make sure OS kernel isn't hogging the device
@@ -122,9 +122,9 @@ usb.util.claim_interface(dev, 0)
 #dev.set_configuration()
 
 
-print ''
-print '=+'*40
-print ''
+print ('')
+print ('=+'*40)
+print ('')
 
 
 
@@ -133,21 +133,20 @@ meas_prev=0; meas_num=0
 while True:
 
     # Send control bytes
-    request = '\x81\x02\x05\x00\x00\x00\x00\x00'
+    request = b'\x81\x02\x05\x00\x00\x00\x00\x00'
     assert dev.ctrl_transfer(0x21,0x09,0x0200,0x0000,request)==len(request)
-    print "%i bytes sent: %s" % (len(request),repr(request))
+    print( "%i bytes sent: %s" % (len(request),repr(request)) )
 
-    s=''
+    s=b""
     while len(s)<64:
         try:
-            buf = array.array('B','')
+            buf = array.array('B',b'')
             buf = dev.read(0x81, 64, timeout=100)
-            s+=''.join(struct.unpack('%ic' % len(buf),buf)) #buf.tostring()
+            s+=b"".join(struct.unpack('%ic' % len(buf),buf))
         except usb.core.USBError as e:
             break
     
-    #print repr(s).replace('\\x','')
-
+    #print( repr(s).replace('\\x','') )
     
     if len(s)>=64:
         # Extraction of values. Little endian floats are buried inside the byte string. We'll ignore the checksum for now.
@@ -158,7 +157,7 @@ while True:
         tmax = struct.unpack('<f',s[42:42+4])[0]
         delt = struct.unpack('<f',s[54:54+4])[0]
         meas_id = struct.unpack('<L',s[6:6+4])[0]
-        if s[29]==' ': ttrm = struct.unpack('<f',s[31:31+4])[0]
+        if s[29:30]==b' ': ttrm = struct.unpack('<f',s[31:31+4])[0]
         else: ttrm=np.nan
         flags = struct.unpack('8B',s[56:64])
         if flags[4] == 1: units = 'degC'
@@ -168,20 +167,20 @@ while True:
         if (tmin<-999) | (tmin>999): tmin=np.nan
         if (tmax<-999) | (tmax>999): tmin=np.nan
         if (tcur<-999) | (tcur>999): tmin=np.nan
-        print "%i) Dev=%s Tmin = %f, Tcur = %f, Tmax = %f, e = %f, DeltaT = %f, thermocouple = %f, units = %s" % (meas_id,dvid,tmin,tcur,tmax,emis,delt,ttrm,units)
+        print( "%i) Dev=%s Tmin = %f, Tcur = %f, Tmax = %f, e = %f, DeltaT = %f, thermocouple = %f, units = %s" % (meas_id,dvid,tmin,tcur,tmax,emis,delt,ttrm,units))
         
         '''
         # Debugging
         for n in range(len(s)-3):     # Find floats
             v=struct.unpack('<f',s[n:n+4])[0]
             if (v>0.01) & (v<500):
-                print n,'\t',v 
+                print( n,'\t',v  )
         exit()
         '''
         
-    #print repr(s)
+    #print( repr(s) )
 
     
-    print 
+    print()
     
     #time.sleep(.1)
