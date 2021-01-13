@@ -106,8 +106,12 @@ From here on, all these modules are optional. They only need to be installed for
 - For ALSA audio devices, pyalsaaudio
   https://github.com/larsimmisch/pyalsaaudio.git
 
-- For Video4Linux support, v4l2capture module
-  https://pypi.org/project/v4l2capture/
+- For Video4Linux support, v4l2capture module.
+  This has been replaced in python3 with a new module "python3-v4l2capture" maintaned by a different developer.
+  https://github.com/atareao/python3-v4l2capture.git
+  
+  This package will require libv4l-dev from your package manager to build.  v4l-utils is also useful to install.
+  (for python2, use https://pypi.org/project/v4l2capture was previously used. )
 
 - For Picoscope devices, picopython
   https://github.com/colinoflynn/pico-python.git
