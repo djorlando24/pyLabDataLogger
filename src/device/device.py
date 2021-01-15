@@ -170,39 +170,49 @@ class device:
         # Vectors (i.e. timeseries data) with units added to the end where present. ####################################
         else:
             for n in range(self.params['n_channels']):
-                # show some values of 1-D lists and arrays
-                if (len(self.lastValue[n].shape) <= 1):
-                
-                    # Limit how many values to print
-                    ismore=''
-                    if ( isinstance( self.lastValue[n], list) or isinstance(self.lastValue[n], np.ndarray) ):
-                        if len(self.lastValue[n])>maxarrayvalues:
-                            nn=maxarrayvalues
-                            lv=self.lastValue[n][:nn]
-                            lvs=self.lastScaled[n][:nn]
-                            ismore='...& %i more values' % (len(self.lastValue[n]) - maxarrayvalues)
+                if not isinstance(self.lastValue[n], np.ndarray):
+                    if self.params['raw_units'][n] == '':
+                        sys.stdout.write(u'%s = %g' % (self.config['channel_names'][n],self.lastValue[n]))
+                    else:
+                        sys.stdout.write(u'%s = %g %s' % (self.config['channel_names'][n],\
+                                                          self.lastValue[n],\
+                                                          self.params['raw_units'][n]))
+                    sys.stdout.write('\n')
+                else: 
+                    # show some values of 1-D lists and arrays
+                    if (len(self.lastValue[n].shape) <= 1):
+                    
+                        # Limit how many values to print
+                        ismore=''
+                        if ( isinstance( self.lastValue[n], list) or isinstance(self.lastValue[n], np.ndarray) ):
+                            if len(self.lastValue[n])>maxarrayvalues:
+                                nn=maxarrayvalues
+                                lv=self.lastValue[n][:nn]
+                                lvs=self.lastScaled[n][:nn]
+                                ismore='...& %i more values' % (len(self.lastValue[n]) - maxarrayvalues)
+                            else:
+                                nn=len(self.lastValue[n])
+                                lv=self.lastValue[n]
+                                lvs=self.lastScaled[n]
+
                         else:
-                            nn=len(self.lastValue[n])
                             lv=self.lastValue[n]
                             lvs=self.lastScaled[n]
-
+                            
+                        if ~show_scaled: print(lead+u'%i: %s = %s %s %s' % (n,self.config['channel_names'][n],\
+                                                           lv,self.params['raw_units'][n],ismore))
+                        else: print(lead+u'%i: %s = %s%s %s \t %s %s %s' % (n,self.config['channel_names'][n],lv,\
+                                                              self.params['raw_units'][n],ismore,\
+                                                            lvs,self.config['eng_units'][n],ismore))
+                    
+                    # Don't show N-D arrays where N>1
                     else:
-                        lv=self.lastValue[n]
-                        lvs=self.lastScaled[n]
-                        
-                    if ~show_scaled: print(lead+u'%i: %s = %s %s %s' % (n,self.config['channel_names'][n],\
-                                                       lv,self.params['raw_units'][n],ismore))
-                    else: print(lead+u'%i: %s = %s%s %s \t %s %s %s' % (n,self.config['channel_names'][n],lv,\
-                                                          self.params['raw_units'][n],ismore,\
-                                                        lvs,self.config['eng_units'][n],ismore))
-                
-                # Don't show N-D arrays where N>1
-                else:
-                    if ~show_scaled: print(lead+u'%i: %s = <array of size %s> %s' % (n,self.config['channel_names'][n],\
-                                        self.lastValue[n].shape,self.params['raw_units'][n]))
-                    else: print(lead+u'%i: %s = <array of size %s> %s \t <array of size %s> %s' % (n,self.config['channel_names'][n],self.lastValue[n].shape,\
-                            self.params['raw_units'][n],\
-                            self.lastScaled[n].shape,self.config['eng_units'][n]))
+                        if ~show_scaled: print(lead+u'%i: %s = <array of size %s> %s' % (n,self.config['channel_names'][n],\
+                                            self.lastValue[n].shape,self.params['raw_units'][n]))
+                        else: print(lead+u'%i: %s = <array of size %s> %s \t <array of size %s> %s' % (n,\
+                                self.config['channel_names'][n],self.lastValue[n].shape,\
+                                self.params['raw_units'][n],\
+                                self.lastScaled[n].shape,self.config['eng_units'][n]))
                     
         return
 

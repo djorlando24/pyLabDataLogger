@@ -8,7 +8,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.1
-    @date 13/01/2021
+    @date 15/01/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -57,9 +57,10 @@ class usbtmcDevice(device):
         
         The usbtmc driver provides the following subdriver modules:
             'usbtmc/thorlabs-tsp01' : Thorlabs TSP01 temperature and humidity probe
-            'usbtmc/thorlabs-pm'  : Thorlabs PM series power meters
+            'usbtmc/thorlabs-pm'    : Thorlabs PM series power meters
             'usbtmc/33220a'         : Agilent 33220A function generator via USB
             'usbtmc/rigol-ds'       : Rigol DS series oscilloscopes. Not reliable, suggest using sigrok or pyvisa drivers instead.
+            'usbtmc/dg1000z'        : Rigol DG1000Z programmable delay/function generator
     """
 
     def __init__(self,params={},quiet=True,**kwargs):
@@ -124,7 +125,7 @@ class usbtmcDevice(device):
         try:
             self.params['IDN'] = self.ask("*IDN?")
             cprint( "\tdetected %s" % self.params['IDN'] ,'green')
-            if self.subdriver=='33220a': 
+            if self.subdriver=='33220a' or self.subdriver=='dg1000z': 
                 self.write("SYST:BEEP") # beep the interface
         except KeyboardInterrupt: raise
         except:
@@ -160,6 +161,10 @@ class usbtmcDevice(device):
             if subdriver=='thorlabs-tsp01':
                 # Read only device
                 pass
+            if self.subdriver=='dg1000z':
+                # Currently this is a read-only device. In future we could set the delay time etc. from here.
+                pass
+
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
     
@@ -320,6 +325,25 @@ class usbtmcDevice(device):
             self.params['photodiode response'] =self.ask("SENS:CORR:POW:PDIOde:RESP?")+' A/W'
             #self.params['averaging'] = self.ask("SENS:AVER:COUNt?") # PM16 does not support
             
+        elif self.subdriver=='dg1000z':
+            self.config['channel_names']=[]
+            for n in range(1,3): self.config['channel_names'].extend(['CH%i_type' % n,\
+                                                                    'CH%i_frequency' % n,\
+                                                                    'CH%i_amplitude' % n,\
+                                                                    'CH%i_offset' % n,\
+                                                                    'CH%i_phase' % n,\
+                                                                    'CH%i_pulse_width' % n,\
+                                                                    'CH%i_burst' % n,\
+                                                                    'CH%i_burst_delay' % n])
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.params['raw_units']=['']*self.params['n_channels']
+            self.config['eng_units']=['']*self.params['n_channels']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            # :SOURx:APPL? will return type, frequency, amplitude, offset and phase in one string.
+            self.tmcQuery = [':SOUR1:APPL?',':SOUR1FUNC:PULS:WIDT?',':SOUR1:BURS:STAT?',':SOUR1:BURS:TDEL?',\
+                             ':SOUR2:APPL?',':SOUR2FUNC:PULS:WIDT?',':SOUR2:BURS:STAT?',':SOUR2:BURS:TDEL?']
+            
         else:
             print(self.__doc__)
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -335,6 +359,9 @@ class usbtmcDevice(device):
             return np.array([float(v) for v in data])
         elif self.subdriver=='thorlabs-pm':
             return np.array([float(v) for v in data])
+        elif self.subdriver=='dg1000z':
+            print(data)
+            raise RuntimeError
         else: raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         return None
         

@@ -10,7 +10,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.1
-    @date 13/01/2021
+    @date 15/01/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -48,6 +48,7 @@ usb_device_table = [
     {'vid':0x0957, 'pid':0x0407, 'driver':'usbtmc/33220a', 'name':'Agilent 33220A Waveform Generator'},
     {'vid':0x1313, 'pid':0x80f8, 'driver':'usbtmc/thorlabs-tsp01', 'name':'Thorlabs TSP01 Thermometer/Barometer'},
     {'vid':0x1313, 'pid':0x807b, 'driver':'usbtmc/thorlabs-pm', 'name':'Thorlabs PM16 USB power meter'},
+    {'vid':0x1ab1, 'pid':0x0642, 'driver':'usbtmc/dg1000z', 'name':'Rigol DG1000Z programmable delay/function generator'},
 
     # VISA devices with fixed VID and PID
     {'vid':0x3923, 'pid':0x7269, 'driver':'visa/ni6212', 'name':'National Instruments USB-6212 BNC'},

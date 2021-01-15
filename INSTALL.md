@@ -100,7 +100,7 @@ From here on, all these modules are optional. They only need to be installed for
 - for Picoscope devices, install pico-python
   https://github.com/colinoflynn/pico-python
 
-- For Agilent 33220A, usbtmc driver is required.
+- For Agilent 33220A, thorlabs TSP01 and power meters, Rigol DG1000Z via usb, usbtmc driver is required.
   See thirdParty/usbtmc or download yourself from https://github.com/python-ivi/python-usbtmc
 
 - For ALSA audio devices, pyalsaaudio

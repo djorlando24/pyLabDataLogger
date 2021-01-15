@@ -1274,7 +1274,7 @@ class serialDevice(device):
                 if rawData[0] is None:
                     pri_val = np.nan
                 else:
-                    s = rawData[0].split(' ',2)
+                    s = rawData[0].decode('ascii').split(' ',2)
                     pri_val = s[0]; pri_unit = s[-1]
                     self.params['raw_units'][0] = pri_unit.strip()
                     if self.config['eng_units'][0] == '': self.config['eng_units'][0] = pri_unit.strip()
@@ -1282,10 +1282,20 @@ class serialDevice(device):
                 if rawData[1] is None: 
                     sec_val = np.nan
                 else:
-                    s = rawData[1].split(' ',2)
+                    s = rawData[1].decode('ascii').split(' ',2)
                     sec_val = s[0]; sec_unit = s[-1]
                     self.params['raw_units'][1] = sec_unit.strip()
                     if self.config['eng_units'][1] == '': self.config['eng_units'][1] = sec_unit.strip()
+                
+                try:
+                    pri_val = float(pri_val)
+                except ValueError:
+                    pri_val = np.nan
+                    
+                try:
+                    sec_val = float(sec_val)
+                except ValueError:
+                    sec_val = np.nan
                 
                 return [ float(pri_val), float(sec_val) ]
             
