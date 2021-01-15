@@ -5,7 +5,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.1.1
-    @date 13/01/2021
+    @date 15/01/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -811,7 +811,7 @@ class serialDevice(device):
 
             # get units & channel names
             for j in range(2,7):
-                descStr = self.blockingSerialRequest(self.params['ID']+'??d%i' % j +self.queryTerminator,'\r')
+                descStr = self.blockingSerialRequest(self.params['ID']+'??d%i' % j +self.queryTerminator,'\r').decode('utf-8')
                 try:
                     unitStr = descStr.split(' ')[-1].replace('`','deg')
                     nameStr = ' '.join(descStr.split(' ')[3:6]).strip()
@@ -935,7 +935,7 @@ class serialDevice(device):
             # Input channel/mode - determines range
             cmd='\x02010000101C40001000001\x03'
             inpA = self.blockingRawSerialRequest(cmd+self.k3hbvlc_checksum(cmd),'',maxlen=25,sleeptime=.1)
-            a=inpA.index('\x02'); b=inpA.index('\x03')
+            a=inpA.index(b'\x02'); b=inpA.index(b'\x03')
             self.params['input_type_A'] = int(inpA[a+11:b])
             if self.driver==['k3hb','vlc']:
                 baseunit='kgf'
@@ -1253,8 +1253,9 @@ class serialDevice(device):
 
             # ----------------------------------------------------------------------------------------
             if subdriver=='alicat':
-                valStrings= [ s for s in rawData[0].split(' ') if s!='' ]
-                if valStrings[0].upper() != self.params['ID'].upper(): raise pyLabDataLoggerIOError("Alicat Device ID mismatch - wrong serial port?")
+                valStrings= [ s for s in rawData[0].decode('utf-8').split(' ') if s!='' ]
+                if valStrings[0].upper() != self.params['ID'].upper():
+                    raise pyLabDataLoggerIOError("Alicat Device ID mismatch - wrong serial port?")
                 cprint( self.config['channel_names'], 'red' )
                 return [ float(valStrings[1]), float(valStrings[2]), float(valStrings[3]), float(valStrings[4]), valStrings[5].strip() ]
 
@@ -1316,8 +1317,8 @@ class serialDevice(device):
                 vals = []
                     
                 for r in rawData:
-                    a=r.index('\x02')
-                    b=r.index('\x03')
+                    a=r.index(b'\x02')
+                    b=r.index(b'\x03')
                     #print(r[-1],self.k3hbvlc_checksum(r[a:b]))
                     #dataframe=r[a+11:b]
                     dataframe=r[a+11+4:b]
