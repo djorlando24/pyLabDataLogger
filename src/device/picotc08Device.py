@@ -7,7 +7,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.1
-    @date 13/01/2021
+    @date 20/01/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -669,7 +669,7 @@ class usbtc08Device(device):
 
         # If first time or reset, get configuration (ie self.units)
         if not 'raw_units' in self.params.keys() or reset:
-            for key, val in self.dev.export_unit_info2().iteritems():
+            for key, val in self.dev.export_unit_info2().items():
                  self.params[key]=val
             if self.params['serial_number'] is None: self.params['serial_number']=self.params['Serial']
             #self.params['channel_names']=self.dev.channel_name.values()
@@ -691,7 +691,7 @@ class usbtc08Device(device):
       
         # Apply scaling correction to raw values for mA channels.
         for i in range(self.params['n_channels']):
-            if 'X' in self.params['channel_config'][i]:
+            if 'X' in list(self.params['channel_config'])[i]:
                 self.lastValue[i] /= self.params['MILLIAMP_SCALING_FACTOR']
         
         '''

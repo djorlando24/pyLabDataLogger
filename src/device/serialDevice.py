@@ -5,7 +5,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.1.1
-    @date 15/01/2021
+    @date 20/01/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -40,6 +40,7 @@
         04/12/2020 - Omron K3HB-X support, negative values
         27/12/2020 - DataQ DI-148 support
         13/01/2021 - python3 string encoding/decoding bug fixes
+        20/01/2021 - python3 string encoding/decoding bug fixes again
 """
 
 from .device import device
@@ -1110,7 +1111,7 @@ class serialDevice(device):
 
             # ----------------------------------------------------------------------------------------
             elif subdriver=='ohaus7k':
-                vals=rawData[0].split(' ')
+                vals=rawData[0].split(b' ')
                 self.params['raw_units']=[vals[-1].strip()]
                 return [float(vals[0])]
 
@@ -1246,7 +1247,7 @@ class serialDevice(device):
                     else:
                         strdata = struct.unpack('%ic' % len(rawData[i]),rawData[i])
                         if len(strdata)>15: strdata = strdata[-15:]
-                    vals.append(float(''.join(strdata[-8:]))*0.1)
+                    vals.append(float((b''.join(strdata[-8:])).decode('utf-8'))*0.1)
                     #debugging:
                     #print repr(''.join(strdata[:9])) # this bit probably indicates -ve sign, units, etc.
                 return vals

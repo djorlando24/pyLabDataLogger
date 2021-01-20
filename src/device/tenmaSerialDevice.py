@@ -5,7 +5,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.1
-    @date 13/01/2021
+    @date 20/01/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -29,7 +29,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from serialDevice import serialDevice
 from .serialDevice import serialDevice
 from .device import pyLabDataLoggerIOError
 import numpy as np
@@ -95,31 +94,31 @@ class tenmaPowerSupplySerialDevice(serialDevice):
         if not 'channel_names' in self.params.keys() or reset:
             reset=True
             
-            self.Serial.write("*IDN?\n")
+            self.Serial.write("*IDN?\n".encode('ascii'))
             time.sleep(0.01)
-            s=''
+            s=b''
             while len(self.name)<64:
                 s += self.Serial.read(1)
-                if s[-1] == '\n':
+                if s[-1] == b'\n':
                     self.params['ID'] = s[:-1]
                     break
     
             # Get setpoints
-            s=''
-            self.Serial.write("VSET1?\n")
+            s=b''
+            self.Serial.write("VSET1?\n".encode('ascii'))
             time.sleep(0.01)
             while len(s)<1024:
                 s+=self.Serial.read(1)
-                if s[-1] == '\n':
+                if s[-1] == b'\n':
                     self.params['set_voltage']=float(s.strip())
                     break
             
-            s=''
-            self.Serial.write("ISET1?\n")
+            s=b''
+            self.Serial.write("ISET1?\n".encode('ascii'))
             time.sleep(0.01)
             while len(s)<1024:
                 s+=self.Serial.read(1)
-                if s[-1] == '\n':
+                if s[-1] == b'\n':
                     self.params['set_current']=float(s.strip())
                     break
             
@@ -130,20 +129,20 @@ class tenmaPowerSupplySerialDevice(serialDevice):
         
         # Get values
         self.lastValue=[]
-        s=''
-        self.Serial.write("VOUT1?\n")
+        s=b''
+        self.Serial.write("VOUT1?\n".encode('ascii'))
         time.sleep(0.01)
         while len(s)<1024:
             s+=self.Serial.read(1)
-            if s[-1] == '\n':
+            if s[-1] == b'\n':
                 self.lastValue.append(float(s.strip()))
                 break
-        s=''
-        self.Serial.write("IOUT1?\n")
+        s=b''
+        self.Serial.write("IOUT1?\n".encode('ascii'))
         time.sleep(0.01)
         while len(s)<1024:
             s+=self.Serial.read(1)
-            if s[-1] == '\n':
+            if s[-1] == b'\n':
                 self.lastValue.append(float(s.strip()))
                 break
     
