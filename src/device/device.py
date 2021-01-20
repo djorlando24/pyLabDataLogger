@@ -172,9 +172,9 @@ class device:
             for n in range(self.params['n_channels']):
                 if not isinstance(self.lastValue[n], np.ndarray):
                     if self.params['raw_units'][n] == '':
-                        sys.stdout.write(u'%s = %g' % (self.config['channel_names'][n],self.lastValue[n]))
+                        sys.stdout.write(u'%s = %s' % (self.config['channel_names'][n],self.lastValue[n]))
                     else:
-                        sys.stdout.write(u'%s = %g %s' % (self.config['channel_names'][n],\
+                        sys.stdout.write(u'%s = %s %s' % (self.config['channel_names'][n],\
                                                           self.lastValue[n],\
                                                           self.params['raw_units'][n]))
                     sys.stdout.write('\n')
@@ -271,21 +271,24 @@ class device:
 
                     # h5py doesn't like unicode strings and nonetypes
                     if isinstance(data[i],str): data[i] = data[i].encode('ascii')
-                    if data[i] is None: data[i]="None"
-                                       
+                    if data[i] is None: data[i]="None".encode('ascii')
+
                     if desc in cg:  # Add more
                         dset = cg[desc]
                         ds = list(dset.shape)
                         ds[-1] += 1
+                        #if isinstance(data[i],list) or isinstance(data[i],np.ndarray):
+                        #    if len(data[i]) > ds[0]: ds[0] = len(data[i])
                         dset.resize(ds)
                         dset[...,ds[-1]-1]=data[i]
 
                     else: # Make new array
-                        ds = list(np.array(data[i]).shape)
-                        ms = ds[:]
+                        ds = list(np.array(data[i]).shape) #;print("new hdf5 array size will be",ds)
+                        ms=ds[:]
                         ds.append(1)
                         ms.append(max_records)
-                        dset = cg.create_dataset(desc, data=np.array(data[i]).reshape(tuple(ds)), maxshape=ms)
+                        thedata=np.array(data[i]).reshape(tuple(ds))
+                        dset = cg.create_dataset(desc, data=thedata, maxshape=ms)
                         dset.attrs['units']=units
 
                 # Debugging output.

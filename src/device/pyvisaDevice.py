@@ -7,7 +7,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.1
-    @date 13/01/2021
+    @date 20/01/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -347,8 +347,11 @@ class pyvisaDevice(device):
             if not self.quiet:
                 print('\t',len(data),'bytes recieved')
                 # unpack scope waveform as 8-bit vector.
-            return np.array( struct.unpack('<%ib' % len(data),data), dtype=np.uint8 ).ravel()
-            #return np.array(data) # simple list-to-array conversion
+            data = np.array( struct.unpack('<%ib' % len(data),data), dtype=np.uint8 ).ravel()
+            # check whether data was truncated. Pad with zeros if so.
+            if len(data)<4096:
+                data = np.pad(data, (0,4096-len(data)), mode='constant')
+            return data
         else:
             return float(data)
         return None
@@ -395,8 +398,9 @@ class pyvisaDevice(device):
                 self.lastValue.append(None)
             else:
                 try:
-                    #print(data) #debugging!
-                    if (' ' in data[n]) and (self.subdriver!='ds1000z'):
+                    if isinstance(data[n],bytes): space = b' '
+                    else: space=' '
+                    if (space in data[n]) and (self.subdriver!='ds1000z'):
                         d0=''.join(data[n].split(' ')[:-1])
                         d1=data[n].split(' ')[-1]
                     else:
@@ -441,7 +445,7 @@ class pyvisaDevice(device):
         lastValueSanitized = []
         for v in self.lastValue: 
             if v is None: lastValueSanitized.append(np.nan)
-            elif isinstance(v,basestring): lastValueSanitized.append(np.nan)
+            elif isinstance(v,str): lastValueSanitized.append(np.nan)
             else: lastValueSanitized.append(v)
 
         self.lastScaled = []

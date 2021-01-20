@@ -44,14 +44,16 @@ if __name__ == '__main__':
     
     globalFunctions.banner()
     
-    device_descriptors = [ {'resource':'TCPIP0::192.168.10.106::5025::SOCKET','driver':'pyvisa/eezbb3'},\
+    device_descriptors = [ #{'resource':'TCPIP0::192.168.0.106::5025::SOCKET','driver':'pyvisa/eezbb3'},\
                            {'resource':'TCPIP0::192.168.0.123::INSTR','driver':'pyvisa/dg1000z'},\
                            {'resource':'TCPIP0::192.168.0.124::INSTR','driver':'pyvisa/ds1000z'},\
-                           {'resource':'TCPIP0::192.168.0.125::INSTR','driver':'pyvisa/33220a' } ]
-    
+                           #{'resource':'TCPIP0::192.168.0.125::INSTR','driver':'pyvisa/33220a' },\
+    ]
+
     devices=[]
     for dd in device_descriptors:
         try:
+            print('\t',dd)
             devices.append(pyvisaDevice.pyvisaDevice(dd))
         except pyLabDataLoggerIOError:
             pass
