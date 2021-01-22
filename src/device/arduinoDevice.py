@@ -5,7 +5,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.1
-    @date 13/01/2021
+    @date 22/01/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -29,7 +29,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from serialDevice import serialDevice
+from .serialDevice import serialDevice
 from .device import pyLabDataLoggerIOError
 import numpy as np
 import datetime, time
@@ -62,7 +62,7 @@ class arduinoSerialDevice(serialDevice):
         nbytes=0
         desc=''
         while nbytes<buffer_limit:
-            desc += self.Serial.read(1)
+            desc += self.Serial.read(1).decode('ascii')
             if desc[-1] == ':':
                 desc=desc[:-1]
                 break
@@ -82,7 +82,7 @@ class arduinoSerialDevice(serialDevice):
             while self.config['eng_units'] == []:
                 nbytes=0; s=''
                 while nbytes<buffer_limit:
-                    s+=self.Serial.read(1)
+                    s+=self.Serial.read(1).decode('ascii')
                     if s[-1] == '=':
                         self.config['channel_names'].append(s[:-2].strip())
                         self.params['n_channels']+=1
@@ -91,7 +91,7 @@ class arduinoSerialDevice(serialDevice):
                 
                 nbytes=0; s=''
                 while nbytes<buffer_limit:
-                    s+=self.Serial.read(1)
+                    s+=self.Serial.read(1).decode('ascii')
                     if ((s[-1] == ' ') or (s[-1] == '\r') or (s[-1] == '\n')) and len(s)>1:
                         values.append( float(s.strip()) )
                         break
@@ -99,7 +99,7 @@ class arduinoSerialDevice(serialDevice):
                 
                 nbytes=0; s=''
                 while nbytes<buffer_limit:
-                    s+=self.Serial.read(1)
+                    s+=self.Serial.read(1).decode('ascii')
                     if s[-1] == ',' or s[-1] == '\r' or s[-1] == '\n':
                         self.params['raw_units'].append( s[:-1].strip() )
                         break
@@ -109,7 +109,7 @@ class arduinoSerialDevice(serialDevice):
                     self.config['eng_units']=self.params['raw_units']
                     break
                 elif s[-1] != ',':
-                    while self.Serial.read(1) != ',': pass
+                    while self.Serial.read(1).decode('ascii') != ',': pass
 
             if not 'scale' in self.config.keys():
                 self.config['scale'] = np.ones(self.params['n_channels'],)
@@ -121,16 +121,16 @@ class arduinoSerialDevice(serialDevice):
             # Repeat query, no need to worry about the description and variable names
             nbytes=0; s=''; invar=False
             while nbytes<buffer_limit:
-                s+=self.Serial.read(1)
+                s+=self.Serial.read(1).decode('ascii')
                 if s[-1] == '=':
                     s=''; nbytes=0
                     invar=True
-                    s+=self.Serial.read(1)
+                    s+=self.Serial.read(1).decode('ascii')
                 if s[-1] == ' ' and invar and len(s) > 1:
                     values.append( float(s.strip()) )
                     s=''; nbytes=0
                     invar=False
-                    s+=self.Serial.read(1)
+                    s+=self.Serial.read(1).decode('ascii')
                 if s[-1] == '\n': break
                 nbytes+=1
     

@@ -5,7 +5,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.1
-    @date 13/01/2021
+    @date 22/01/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -196,10 +196,11 @@ class statusDevice(device):
             empty_responses=0
             while (len(s)<128) or (empty_responses<50):
                 try:
-                    buf = array.array('B','')
+                    buf = b'' #array.array('B','')
                     buf = self.dev.read(0x81, 128, timeout=100)
-                    s+=''.join(struct.unpack('%ic' % len(buf),buf)) #buf.tostring()
-                    if buf == array.array('B',[1,96]): empty_responses+=1 # This is an empty return string
+                    s+=''.join(struct.unpack('%ic' % len(buf), buf.tostring() ))
+                    if buf == array.array('B',[1,96]):
+                        empty_responses+=1 # This is an empty return string
                     else: empty_responses=0
                 except usb.core.USBError as e:
                     break

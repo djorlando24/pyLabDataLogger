@@ -98,6 +98,7 @@ usb_device_table = [
     {'vid':0x2341, 'pid':0x8036, 'driver':'arduino', 'name':'uDuino (Leonardo)'},
     {'vid':0x2341, 'pid':0x0043, 'driver':'arduino', 'name':'Arduino Uno'},
     {'vid':0x16c0, 'pid':0x0483, 'driver':'arduino', 'name':'Teensy uC'},
+    {'vid':0x067b, 'pid':0x2303, 'driver':'arduino', 'name':'Arduino via PL2303'},
     
     # Devices using generic Serial-to-USB adapters whose VID and PID are not correlated specifically to a piece of hardware
     {'vid':0x0557, 'pid':0x2008, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},

@@ -100,8 +100,12 @@ class serialDevice(device):
         if 'debugMode' in kwargs: self.debugMode = kwargs['debugMode']
         else: self.debugMode=False
         
-        self.driver = self.params['driver'].split('/')[1:]
-        self.subdriver = self.driver[0].lower()
+        if '/' in self.params['driver']:
+            self.driver = self.params['driver'].split('/')[1:]
+            self.subdriver = self.driver[0].lower()
+        else:
+            self.driver = self.params['driver']
+            self.subdriver = ''
         
         if self.subdriver=='tc08rs232':
             try:
