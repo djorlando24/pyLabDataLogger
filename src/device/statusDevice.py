@@ -5,7 +5,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.1
-    @date 22/01/2021
+    @date 25/01/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -192,19 +192,20 @@ class statusDevice(device):
             time.sleep(.05)
 
             # Read response
-            s=''
+            s=b''
             empty_responses=0
             while (len(s)<128) or (empty_responses<50):
                 try:
                     buf = b'' #array.array('B','')
                     buf = self.dev.read(0x81, 128, timeout=100)
-                    s+=''.join(struct.unpack('%ic' % len(buf), buf.tostring() ))
+                    s+=buf #struct.unpack('%ic' % len(buf), buf ) # python3 reads buf as byte string so no unpack required yet.
                     if buf == array.array('B',[1,96]):
                         empty_responses+=1 # This is an empty return string
                     else: empty_responses=0
                 except usb.core.USBError as e:
                     break
-    
+            s=bytes(s)
+             
             if len(s) < 25:
                 cprint( "\tStatus SEM1600B communication failed.", 'red', attrs=['bold'])
                 return
