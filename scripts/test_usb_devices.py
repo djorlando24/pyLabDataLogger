@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     globalFunctions.banner()
     
-    usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=False)
+    usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=True)
     
     # kwargs to customise setup of devices
     special_args={'debugMode':True, 'live_preview':True, 'init_tc08_config':['K','K','K','T','T','T','X','X'], 'quiet':False,\

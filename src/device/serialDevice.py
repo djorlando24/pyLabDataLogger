@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.1.1
-    @date 20/01/2021
+    @version 1.1.2
+    @date 16/03/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -41,6 +41,7 @@
         27/12/2020 - DataQ DI-148 support
         13/01/2021 - python3 string encoding/decoding bug fixes
         20/01/2021 - python3 string encoding/decoding bug fixes again
+        16/03/2021 - python3 encoding for Ranger 5000
 """
 
 from .device import device
@@ -870,8 +871,8 @@ class serialDevice(device):
             self.serialQuery=['\x02Kp31\x03'] 
             self.queryTerminator=''
             self.responseTerminator='\x03'
-            self.params['min_response_length']=3
-            self.serialCommsFunction=self.blockingRawSerialRequest
+            self.params['min_response_length']=5
+            #self.serialCommsFunction=self.blockingRawSerialRequest
             self.sleeptime=0.5
 
         # ----------------------------------------------------------------------------------------
@@ -1308,14 +1309,15 @@ class serialDevice(device):
             # ----------------------------------------------------------------------------------------
             if subdriver=='r5000':
                 s=rawData[0].strip()
-                start=s.index('\x02')+1
-                end=s.index('\x03')
-                unit=s[end]
+                start=s.index(b'\x02')+1
+                end=s.index(b'\x03')-1
+                unit=chr(s[end]) # @@@
+                # print(repr(s),repr(s[start:end]),repr(unit));exit()
                 if unit=='G': self.params['raw_units'][0]='kg gross'
                 elif unit=='N': self.params['raw_units'][0]='kg net'
                 else: self.params['raw_units'][0]=unit
                 if self.config['eng_units'][0] == '': self.config['eng_units'][0] = unit
-                return [ float(s[start:end-1]) ]
+                return [ float(s[start:end]) ]
             
             # ----------------------------------------------------------------------------------------
             elif (self.driver==['k3hb','vlc']) or (self.driver==['k3hb','x']): 
