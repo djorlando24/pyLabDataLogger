@@ -5,7 +5,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.1.2
-    @date 16/03/2021
+    @date 22/03/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -42,6 +42,7 @@
         13/01/2021 - python3 string encoding/decoding bug fixes
         20/01/2021 - python3 string encoding/decoding bug fixes again
         16/03/2021 - python3 encoding for Ranger 5000
+        22/03/2021 - multi sample support for some devices with config['samples']
 """
 
 from .device import device
@@ -114,6 +115,8 @@ class serialDevice(device):
             except ImportError:
                 cprint( "Please install the thermocouples_reference module", 'red', attrs=['bold'])
                 raise
+                
+        self.config['samples']=1 # default to 1 sample.
 
         # Apply custom initial configuration settings
         if 'usbh-rate' in kwargs: self.config['RATE'] = kwargs['usbh-rate']
@@ -122,10 +125,10 @@ class serialDevice(device):
         if 'usbh-avg' in kwargs: self.config['AVG'] = kwargs['usbh-avg']
         # More, with same var name
         for k in ['set_emissivity','revolutions','velocity','intermission','repeats','current','reverse','bidirectional','ESD508_ID',\
-                  'pulses_per_rev','encoder_resolution','position_err','encoder_calibration','acceleration']:
+                  'pulses_per_rev','encoder_resolution','position_err','encoder_calibration','acceleration','samples']:
             if k in kwargs: self.config[k] = kwargs[k]
         
-
+        
         if params is not {}: self.scan()
         return
 
@@ -868,7 +871,7 @@ class serialDevice(device):
             self.config['scale']=[1.]
             self.config['offset']=[0.]
             self.params['n_channels']=1
-            self.serialQuery=['\x02Kp31\x03'] 
+            self.serialQuery=['\x02Kp31\x03']
             self.queryTerminator=''
             self.responseTerminator='\x03'
             self.params['min_response_length']=5
@@ -979,6 +982,16 @@ class serialDevice(device):
  
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.driver)
+            
+        # Multi sample support @@@
+        if self.config['samples'] > 1:
+            for n in range(len(self.serialQuery)):
+                if ',' in self.serialQuery[n]:
+                    cprint("Error: samples > 1 not supported for device %s" % self.name,'red')
+                    self.config['samples']=1
+                else:
+                    self.serialQuery[n] = ','.join(self.serialQuery[n] * self.config['samples'])
+            
         return
 
     ########################################################################################################################
@@ -1405,7 +1418,7 @@ class serialDevice(device):
         # If first time or reset, get configuration
         if not 'raw_units' in self.params.keys() or reset:
             self.configure_device()
-
+        
         # Read values        
         self.get_values()
         if self.lastValue is None: self.lastValue=[np.nan]*self.params['n_channels']
