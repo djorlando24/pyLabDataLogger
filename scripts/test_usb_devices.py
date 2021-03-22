@@ -44,7 +44,7 @@ if __name__ == '__main__':
     
     # kwargs to customise setup of devices
     special_args={'debugMode':True, 'live_preview':True, 'init_tc08_config':['K','K','K','T','T','T','X','X'], 'quiet':False,\
-                 'samples':1,\
+                 'samples':2,\
                  'init_tc08_chnames':['Cold Junction','K1','K2','K3','T4','T5','T6','420mA_P1','420mA_P2'],\
                   'usbh-rate':3 } 
 

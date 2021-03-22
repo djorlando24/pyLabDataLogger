@@ -876,7 +876,7 @@ class serialDevice(device):
             self.responseTerminator='\x03'
             self.params['min_response_length']=5
             #self.serialCommsFunction=self.blockingRawSerialRequest
-            self.sleeptime=0.5
+            self.sleeptime=0.001
 
         # ----------------------------------------------------------------------------------------
         # Startup config for DataQ DI-148 ADC
@@ -983,15 +983,17 @@ class serialDevice(device):
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.driver)
             
-        # Multi sample support @@@
+        '''
+        # Multi-sampling support for devices that need only a single serial command to cause data to be sent back.
         if self.config['samples'] > 1:
             for n in range(len(self.serialQuery)):
                 if ',' in self.serialQuery[n]:
                     cprint("Error: samples > 1 not supported for device %s" % self.name,'red')
                     self.config['samples']=1
                 else:
-                    self.serialQuery[n] = ','.join(self.serialQuery[n] * self.config['samples'])
-            
+                    self.serialQuery[n] = ','.join([self.serialQuery[n]] * self.config['samples'])
+        '''
+        
         return
 
     ########################################################################################################################
@@ -1324,13 +1326,13 @@ class serialDevice(device):
                 s=rawData[0].strip()
                 start=s.index(b'\x02')+1
                 end=s.index(b'\x03')-1
-                unit=chr(s[end]) # @@@
+                unit=chr(s[end])
                 # print(repr(s),repr(s[start:end]),repr(unit));exit()
                 if unit=='G': self.params['raw_units'][0]='kg gross'
                 elif unit=='N': self.params['raw_units'][0]='kg net'
                 else: self.params['raw_units'][0]=unit
                 if self.config['eng_units'][0] == '': self.config['eng_units'][0] = unit
-                return [ float(s[start:end]) ]
+                return [ float(s[start:end].replace(b' ',b'')) ]
             
             # ----------------------------------------------------------------------------------------
             elif (self.driver==['k3hb','vlc']) or (self.driver==['k3hb','x']): 
