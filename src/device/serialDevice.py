@@ -5,7 +5,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.1.2
-    @date 22/03/2021
+    @date 05/04/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -43,6 +43,7 @@
         20/01/2021 - python3 string encoding/decoding bug fixes again
         16/03/2021 - python3 encoding for Ranger 5000
         22/03/2021 - multi sample support for some devices with config['samples']
+        05/04/2021 - support for Newport P6000A Freq Counter
 """
 
 from .device import device
@@ -80,6 +81,7 @@ class serialDevice(device):
             'serial/omega-usbh         : Omega USB-H 'high speed' pressure transducers with built in USB to Serial converter
             'serial/ohaus7k'           : OHAUS 7000 series scientific scales via RS232
             'serial/r5000'             : Ranger 5000 series load cell amplifier via RS232
+            'serial/p6000a'            : Newport P6000A Frequency meter/counter/timer
             'serial/tc08rs232'         : Pico TC08 RS-232 thermocouple datalogger (USB version has a seperate driver 'picotc08')
             'serial/tds220gpib'        : Tektronix TDS22x series oscilloscopes via the RS-232 port
             'serial/wtb'               : Radwag WTB precision balance/scale
@@ -277,6 +279,14 @@ class serialDevice(device):
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=4800
         elif self.subdriver=='r5000':
             if not 'timeout' in self.params.keys(): self.params['timeout']=5
+        elif self.subdriver=='p6000a':
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=1200 # or 9600 depending on jumpers
+            if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.SEVENBITS
+            if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_EVEN
+            if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_ONE
+            if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=False
+            if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
+            if not 'timeout' in self.params.keys(): self.params['timeout']=1.
             pass
         elif self.subdriver=='di148':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=460800 #The default supported by hardware!!!
@@ -389,6 +399,10 @@ class serialDevice(device):
             elif subdriver=='esd508':
                 # The settings are actually passed to the driver when it's queried, rather than in advance.
                 # This could change in future.
+                pass
+            elif self.subdriver=='p6000a':
+                # No settings can be modified at present. In future we could send a program to set the mode
+                # from software, such as timer/freq counter/totaliser etc.
                 pass
             elif (self.driver=='k3hb/vlc') or (self.driver=='k3hb/x'): 
                 pass
@@ -899,9 +913,25 @@ class serialDevice(device):
 
             cmd='info 0\r' # Should print 'DATAQ' !!!
             print( self.blockingRawSerialRequest(cmd,'',maxlen=25,sleeptime=.1) )
-            raise RuntimeError("Breakpoint")
+            raise RuntimeError("Driver not yet implemented, contact software maintainer")
 
-           
+        # ----------------------------------------------------------------------------------------
+        # Startup config for Newport P6000A
+        elif self.subdriver=='p6000a':
+            self.name = "Newport P6000A Frequency Counter"
+            self.config['channel_names']=['Freq']
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.params['raw_units']=['Hz']
+            self.config['eng_units']=self.params['raw_units']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.serialQuery=['@U?R'] 
+            self.queryTerminator='\r'
+            self.responseTerminator='\r'
+            self.params['min_response_length']=8
+            #self.serialCommsFunction=self.blockingRawSerialRequest
+            self.sleeptime=0.1
+
         # ----------------------------------------------------------------------------------------
         # Startup config for Omron K3HB-VLC-FLK1B Load Cell Amplifier or K3HB-X ammeter
         elif (self.driver==['k3hb','vlc']) or (self.driver==['k3hb','x']): 
@@ -1141,6 +1171,11 @@ class serialDevice(device):
                 self.params['raw_units']=[vals[-1]]
                 if self.config['eng_units'][0] == '?': self.config['eng_units']=[vals[-1]]
                 return [float(vals[-2])]
+
+            # ----------------------------------------------------------------------------------------
+            elif self.subdriver=='p6000a':
+                print(repr(rawData))
+                raise RuntimeError("Not yet implemented!!!")
 
             # ----------------------------------------------------------------------------------------
             elif subdriver=='center310':
