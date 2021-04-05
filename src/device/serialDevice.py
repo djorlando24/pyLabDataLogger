@@ -286,7 +286,7 @@ class serialDevice(device):
             if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_ONE
             if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=False
             if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
-            if not 'timeout' in self.params.keys(): self.params['timeout']=0.33 # for 9600 bps.
+            if not 'timeout' in self.params.keys(): self.params['timeout']=0.25 # depends on set gate time.
             pass
         elif self.subdriver=='di148':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=460800 #The default supported by hardware!!!
