@@ -280,13 +280,13 @@ class serialDevice(device):
         elif self.subdriver=='r5000':
             if not 'timeout' in self.params.keys(): self.params['timeout']=5
         elif self.subdriver=='p6000a':
-            if not 'baudrate' in self.params.keys(): self.params['baudrate']=1200 # or 9600 depending on jumpers
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600 # or 1200 depending on config bits
             if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.SEVENBITS
             if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_EVEN
             if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_ONE
             if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=False
             if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
-            if not 'timeout' in self.params.keys(): self.params['timeout']=1.
+            if not 'timeout' in self.params.keys(): self.params['timeout']=0.33 # for 9600 bps.
             pass
         elif self.subdriver=='di148':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=460800 #The default supported by hardware!!!
@@ -401,8 +401,8 @@ class serialDevice(device):
                 # This could change in future.
                 pass
             elif self.subdriver=='p6000a':
-                # No settings can be modified at present. In future we could send a program to set the mode
-                # from software, such as timer/freq counter/totaliser etc.
+                # No settings can be modified at present. In future we could send a string to set the mode
+                # from software. This is explained in the manual.
                 pass
             elif (self.driver=='k3hb/vlc') or (self.driver=='k3hb/x'): 
                 pass
@@ -503,6 +503,42 @@ class serialDevice(device):
         from pyLabDataLogger.device import esd508Device
         return esd508Device.move_servomotor(self.Serial, debugMode=self.debugMode, verbose=~self.quiet, \
                                             sleeptime=sleeptime, maxlen=maxlen, **self.config)
+
+    ########################################################################################################################
+    # Special function to handle manual RTS communication for Newport P6000A devices.  For getting setup data or controlling
+    # the meter settings, specify a request string. To read normal data, no command need be sent, only
+    # holding the RTS line high for long enough to receive an ASCII string terminated with \r.
+    def p6000SerialRequest(self, request=b'',terminationChar=None,maxlen=None,min_response_length=None,sleeptime=None): 
+        data=b''
+        if len(request) == 0:  # read data only
+            self.Serial.rts=True; self.Serial.dtr=True
+            time.sleep(0.05) # it takes at least 15 ms for the meter to respond, and it only updates every 1s or so.
+            # The meter won't transmit if the gate is closed (ie no signal), this generates a timeout.
+            t=time.time()
+            while (not b'\r' in data) and ((time.time() - t)<self.params['timeout']):
+                data+=self.Serial.read(1)
+            if not self.quiet:
+                sys.stdout.write('\t'+self.port+':'+repr(data)+'\t')
+                sys.stdout.flush()
+            self.Serial.rts=False; self.Serial.dtr=False
+
+        else: # send command and check result (new settings)
+            self.Serial.rts=False; self.Serial.dtr=False
+            time.sleep(0.01);print(repr(request))
+            self.Serial.write(request)
+            if not self.quiet:
+                sys.stdout.write('\t'+self.port+':'+repr(request)+'\t')
+                sys.stdout.flush()
+            time.sleep(0.01)
+            self.Serial.rts=True; self.Serial.dtr=True
+            time.sleep(0.015)
+            while not b'\r' in data:    
+                data+=self.Serial.read(1)
+            if not self.quiet:
+                sys.stdout.write('\t'+self.port+':'+repr(data)+'\t')
+                sys.stdout.flush()
+
+        return data
 
     ########################################################################################################################
     # Special function to calculate XOR checksum for Omron K3HB CompoWay/F serial communications.
@@ -919,18 +955,22 @@ class serialDevice(device):
         # Startup config for Newport P6000A
         elif self.subdriver=='p6000a':
             self.name = "Newport P6000A Frequency Counter"
-            self.config['channel_names']=['Freq']
+            self.config['channel_names']=['Displayed_Value']
             self.params['n_channels']=len(self.config['channel_names'])
-            self.params['raw_units']=['Hz']
-            self.config['eng_units']=self.params['raw_units']
+            self.params['raw_units']=[''] # will be set when first data is read in.	
+            self.config['eng_units']=['?']
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
-            self.serialQuery=['@U?R'] 
-            self.queryTerminator='\r'
-            self.responseTerminator='\r'
+            self.serialQuery=[''] # manually set inside p6000SerialRequest
+            self.queryTerminator='' # manually set inside p6000SerialRequest
+            self.responseTerminator='' # manually set inside p6000SerialRequest
             self.params['min_response_length']=8
-            #self.serialCommsFunction=self.blockingRawSerialRequest
+            self.serialCommsFunction=self.p6000SerialRequest
             self.sleeptime=0.1
+
+            # get current setup
+            setup_data = self.serialCommsFunction(b'@U?G\r')
+            self.config['P6000A setup string'] = setup_data.decode('ascii')
 
         # ----------------------------------------------------------------------------------------
         # Startup config for Omron K3HB-VLC-FLK1B Load Cell Amplifier or K3HB-X ammeter
@@ -1174,8 +1214,17 @@ class serialDevice(device):
 
             # ----------------------------------------------------------------------------------------
             elif self.subdriver=='p6000a':
-                print(repr(rawData))
-                raise RuntimeError("Not yet implemented!!!")
+                rawString = rawData[0].decode('ascii')#.strip()
+                if len(rawString)>=9:
+                    # Valid response received, should be 10 to 12 characters ASCII.
+                    val=float(rawString[:9])
+                    if (len(rawString)>=11): # There is a mode bit that can turn off unit transmission.
+                        self.params['raw_units'][0]=rawString[9:].strip()
+                        if (self.config['eng_units'][0] == '?') | (self.config['eng_units'][0] == ''):
+                            self.params['eng_units']=self.params['raw_units'][0]
+                else:
+                    val=np.nan # No value was received.                    
+                return [val]
 
             # ----------------------------------------------------------------------------------------
             elif subdriver=='center310':

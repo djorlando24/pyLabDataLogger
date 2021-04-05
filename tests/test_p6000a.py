@@ -36,11 +36,11 @@ import sys
 import time
 
 port = '/dev/ttyUSB0'
-baudrate = 1200#9600		
+baudrate = 9600		
 bytesize = serial.SEVENBITS
 parity = serial.PARITY_EVEN
-stopbits = serial.STOPBITS_ONE
-timeout = 1.
+stopbits = serial.STOPBITS_ONE	
+timeout = 10.
 
 print( "Attempt to communicate with P6000A on",port)	
 
@@ -48,7 +48,8 @@ s = serial.Serial(port, baudrate, bytesize, parity, stopbits, timeout, rtscts=Fa
 s.rts=False
 s.dtr=False
 
-serialQuery  =   [b'@U?R\r']
+serialQuery  =   [b'@U?G\r']
+
 
 for q in serialQuery:
     print("Tx:",repr(q))
@@ -57,18 +58,29 @@ for q in serialQuery:
     time.sleep(0.010)
     s.write(q	)
     sys.stdout.write( "Rx: " )
-    c=b''; str=b''
+    c=b''; respstr=b''
     time.sleep(0.050)
     s.rts=True
     s.dtr=True
-    time.sleep(0.010)
+    time.sleep(0.015)
     while not b'\r' in c:    
         c=s.read(1)
         sys.stdout.write(c.decode('ascii'))
         sys.stdout.flush()
-        str+=c
+        respstr+=c
+    #print(repr(respstr))	
     print("")
-    
+
+print("Try read normal value: ")
+time.sleep(.5)
+s.rts=True
+s.dtr=True
+time.sleep(0.05)
+for n in range(255):
+    sys.stdout.write(repr(s.read(12)))
+    sys.stdout.flush()
+s.rts=False
+s.dtr=False
 
 print("Close",port)
 s.close()
