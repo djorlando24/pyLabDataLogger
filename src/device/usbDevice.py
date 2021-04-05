@@ -11,7 +11,7 @@
     @license GPL-3.0+
     @version 1.1.2
     @date 05/04/2021
-        __   ____________    ___    ______
+        __   ____________    ___    ______	
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
      / /___ / /   / _, _/ / ___ |/ /_________
@@ -106,6 +106,7 @@ usb_device_table = [
     {'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/tds220gpib', 'name':'Tektronix TDS220 via usb-GPIB'},
     {'vid':0x0403, 'pid':0x6015, 'serial':0x3, 'driver':'serial/p6000a', 'name':'Newport P6000A Freq Counter'},
     {'vid':0x067b, 'pid':0x2303, 'driver':'serial/tc08rs232', 'name':'Picolog RS-232 TC-08 thermocouple datalogger'},
+    {'vid':0x0403, 'pid':0x6001, 'driver':'serial/pt200m', 'name':'PT Ltd. PT200M Load Cell'},
     {'vid':0x0403, 'pid':0x6015, 'driver':'serial/alicat', 'name':'Alicat Scientific M-series mass flow meter'},
     #{'vid':0x1a86, 'pid':0x7523, 'driver':'serial/alicat', 'name':'Alicat Scientific M-series mass flow meter'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/wtb', 'name':'Radwag WTB series precision balance'},

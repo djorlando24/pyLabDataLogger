@@ -43,7 +43,7 @@
         20/01/2021 - python3 string encoding/decoding bug fixes again
         16/03/2021 - python3 encoding for Ranger 5000
         22/03/2021 - multi sample support for some devices with config['samples']
-        05/04/2021 - support for Newport P6000A Freq Counter
+        05/04/2021 - support for Newport P6000A Freq Counter, PT200M load cell
 """
 
 from .device import device
@@ -82,6 +82,7 @@ class serialDevice(device):
             'serial/ohaus7k'           : OHAUS 7000 series scientific scales via RS232
             'serial/r5000'             : Ranger 5000 series load cell amplifier via RS232
             'serial/p6000a'            : Newport P6000A Frequency meter/counter/timer
+            'serial/pt200m'            : PT Ltd. PT200M load cell amplifier (ptglobal.com)
             'serial/tc08rs232'         : Pico TC08 RS-232 thermocouple datalogger (USB version has a seperate driver 'picotc08')
             'serial/tds220gpib'        : Tektronix TDS22x series oscilloscopes via the RS-232 port
             'serial/wtb'               : Radwag WTB precision balance/scale
@@ -255,7 +256,7 @@ class serialDevice(device):
     # Establish connection to device (ie open serial port)
     def activate(self):
     
-        # Over-ride serial comms parameters for special devices
+        # Over-ride serial comms parameters for special devices (default is 9600 8N1 as set below)
         if self.subdriver=='omega-iseries':
             if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.SEVENBITS
             if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_ODD
@@ -279,6 +280,8 @@ class serialDevice(device):
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=4800
         elif self.subdriver=='r5000':
             if not 'timeout' in self.params.keys(): self.params['timeout']=5
+        elif self.subdriver=='pt200m':
+            if not 'timeout' in self.params.keys(): self.params['timeout']=0.1
         elif self.subdriver=='p6000a':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600 # or 1200 depending on config bits
             if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.SEVENBITS
@@ -357,7 +360,8 @@ class serialDevice(device):
             elif subdriver=='omega-usbh':
                 for var in ['IFILTER','MFILTER','AVG','RATE']:
                     if self.config[var] != self.blockingSerialRequest(var+'\r\n','\r').decode('ascii').split('=')[-1]:
-                        self.config[var] = self.blockingSerialRequest('%s %s\r\n' % (var,self.config[var]),'\r',min_response_length=8).decode('ascii').split('=')[-1]
+                        self.config[var] = self.blockingSerialRequest('%s %s\r\n' % (var,self.config[var]),'\r',\
+                                           min_response_length=8).decode('ascii').split('=')[-1]
                 # Write human readable sample rate
                 if int(self.config['RATE'])==0:   self.config['sample_rate_Hz'] = 5
                 elif int(self.config['RATE'])==1: self.config['sample_rate_Hz'] = 10
@@ -403,6 +407,9 @@ class serialDevice(device):
             elif self.subdriver=='p6000a':
                 # No settings can be modified at present. In future we could send a string to set the mode
                 # from software. This is explained in the manual.
+                pass
+            elif self.subdriver=='pt200m':
+                # No settings can be modified at present. In future, could force zero or tare mode.
                 pass
             elif (self.driver=='k3hb/vlc') or (self.driver=='k3hb/x'): 
                 pass
@@ -952,7 +959,7 @@ class serialDevice(device):
             raise RuntimeError("Driver not yet implemented, contact software maintainer")
 
         # ----------------------------------------------------------------------------------------
-        # Startup config for Newport P6000A
+        # Startup config for Newport P6000A frequency counter/timer
         elif self.subdriver=='p6000a':
             self.name = "Newport P6000A Frequency Counter"
             self.config['channel_names']=['Displayed_Value']
@@ -966,11 +973,34 @@ class serialDevice(device):
             self.responseTerminator='' # manually set inside p6000SerialRequest
             self.params['min_response_length']=8
             self.serialCommsFunction=self.p6000SerialRequest
-            self.sleeptime=0.1
+            self.sleeptime=0.1 # has no effect but set >0 in case it causes errors elsewhere.
 
             # get current setup
             setup_data = self.serialCommsFunction(b'@U?G\r')
             self.config['P6000A setup string'] = setup_data.decode('ascii')
+
+        # ----------------------------------------------------------------------------------------
+        # Startup config for PT Ltd. PT200M load cell amplifier
+        elif self.subdriver=='pt200m':
+            self.name = "PT200M Load Cell"
+            #self.params['serial_address']=31 # default value - for multiple devices on the one bus.
+            self.config['channel_names']=['Gross','Net','Setpoint/value','Status','Error','Setpoint/type','Setpoint/source']
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.params['raw_units']=['']*self.params['n_channels']
+            self.config['eng_units']=['']*self.params['n_channels']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.serialQuery=['20050026:','20050027:','20050172:','20050021:','20050022:','20050170:','20050171:']
+            self.queryTerminator='\r'
+            self.responseTerminator='\r'
+            #self.serialCommsFunction=self.blockingRawSerialRequest
+            self.params['min_response_length']=8
+            self.sleeptime=0.01
+            self.params['timeout']=0.1
+
+            # get current setup
+            #print(self.serialCommsFunction('3F110005:',terminationChar='\r\n',min_response_length=8,sleeptime=0.01))
+            #raise RuntimeError("Not yet implemented")
 
         # ----------------------------------------------------------------------------------------
         # Startup config for Omron K3HB-VLC-FLK1B Load Cell Amplifier or K3HB-X ammeter
@@ -1225,6 +1255,24 @@ class serialDevice(device):
                 else:
                     val=np.nan # No value was received.                    
                 return [val]
+
+            # ----------------------------------------------------------------------------------------
+            elif self.subdriver=='pt200m':
+                vals = [np.nan]*len(rawData)
+                for n in range(len(vals)):
+                    if b':' in rawData[n]:
+                        rr=rawData[n].split(b':')[1]
+                        if n<3:  # numeric values
+                            vals[n] = float(rr[:8])
+                            self.params['raw_units'][n]=rr[8:].strip().decode('ascii')
+                        else:  # string values
+                            vals[n] = rr.strip().decode('ascii')
+                
+                for n in range(4): # update eng_units if they are empty.
+                    if (self.config['eng_units'][n] == '?') | (self.config['eng_units'][n] == ''):
+                            self.params['eng_units']=self.params['raw_units'][n]
+                return vals
+                
 
             # ----------------------------------------------------------------------------------------
             elif subdriver=='center310':
@@ -1514,8 +1562,9 @@ class serialDevice(device):
         for v in self.lastValue: 
             if v is None: lastValueSanitized.append(np.nan)
             #elif isinstance(v, basestring): lastValueSanitized.append(np.nan)  # python2
-            elif isinstance(v, str): lastValueSanitized.append(np.nan)  # python2
-            else: lastValueSanitized.append(v)
+            elif isinstance(v, str): lastValueSanitized.append(np.nan)  # python3
+            elif isinstance(v, bytes): lastValueSanitized.append(np.nan)  # python3
+            else:    lastValueSanitized.append(v)
         self.lastScaled = np.array(lastValueSanitized) * self.config['scale'] + self.config['offset']
         self.updateTimestamp()
         return self.lastValue
