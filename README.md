@@ -5,7 +5,7 @@ Laboratory datalogging for USB and Serial devices
     @copyright (c) 2019-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.2
-    @date 22/03/2021
+    @date 17/04/2021
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -81,6 +81,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Fluke 568 IR thermometer
     - STATUS SEM1600/B Load cell amplifier
     - Omega Layer N Smart Probes via Omega IF-001 Modbus USB-Serial adapter
+    - Status SEM1600/B Load Cell Amplifier
     
 - USB Devices using Linux kernel drivers (not supported on MacOS)
     - USB audio capture devices via ALSA
@@ -111,7 +112,6 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Radwag WTB series digital lab balance/scale via RS232-to-USB UART adapter **
     - Ranger 5000 Load Cell Amp via RS232-to-USB adapter **
     - Omega iSeries temperature process controllers, via generic RS-485 or RS-232 adapter **
-    - Status SEM1600/B Load Cell Amplifier (contains and internal FTDI Serial-to-USB bridge)
     - Omron K3HB-VLC load cell process controller with FLK1B RS-232/485 comms option board
     - Omron K3HB-X ammeter with FLK1B RS-232/485 comms option board
 

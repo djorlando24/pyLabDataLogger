@@ -5,7 +5,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.2
-    @date 22/03/2021
+    @date 17/04/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -55,7 +55,7 @@ class statusDevice(device):
         self.name = "uninitialized status device"
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
-        
+        self.quiet=quiet 
         self.driver = self.params['driver'].split('/')[1:]
         self.subdriver = self.driver[0].lower()
         
@@ -158,11 +158,11 @@ class statusDevice(device):
     # this point we might need to poll the device to check a setting.
     def configure_device(self):
         if self.subdriver=='sem1600b':
-            self.name = "STATUS SEM1600B Load Cel Amplifier"
+            self.name = "STATUS SEM1600B Load Cell Amplifier"
             #Raw=%f, Input=%f, Filtered Input=%f, Process=%f, PercentOutput=%f, OutputSignal
             self.config['channel_names']=['Raw','Input','Filtered_Input','Process_Output','Percent_Output','Output_Signal']
-            self.params['raw_units']=['cts','mV','mV','PV','%','mA']
-            self.config['eng_units']=['cts','mV','mV','PV','%','mA']
+            self.params['raw_units']=['mV','mV','mV','mV','%','mA']
+            self.config['eng_units']=['mV','mV','mV','mV','%','mA']
             self.config['scale']=[1.]*len(self.config['channel_names'])
             self.config['offset']=[0.]*len(self.config['channel_names'])
             self.params['n_channels']=len(self.config['channel_names'])
@@ -175,59 +175,52 @@ class statusDevice(device):
     
         if self.subdriver=='sem1600b':
 
-            # Send control bytes
-            assert self.dev.ctrl_transfer(0x40,0,0x0001,0x0000,8,timeout=100) == 8
-            time.sleep(.01)
-            assert self.dev.ctrl_transfer(0x40,3,0x809c,0x0000,8,timeout=100) == 8
-            time.sleep(.01)
-            assert self.dev.ctrl_transfer(0x40,4,0x0008,0x0000,8,timeout=100) == 8
-            time.sleep(.01)
-            assert self.dev.ctrl_transfer(0x40,2,0x0000,0x0000,8,timeout=100) == 8
-            time.sleep(.01)
-            assert self.dev.ctrl_transfer(0x40,9,0x0003,0x0000,8,timeout=100) == 8
-            time.sleep(.01)
+          # Send control bytes
+          assert self.dev.ctrl_transfer(      0x40,          0,        0x0001,   0x0000, 8,timeout=100) == 8
+          time.sleep(.05)
+          assert self.dev.ctrl_transfer(      0x40,          3,        0x809c,   0x0000, 8,timeout=100) == 8
+          time.sleep(.05)
+          assert self.dev.ctrl_transfer(      0x40,          4,        0x0008,   0x0000, 8,timeout=100) == 8
+          time.sleep(.05)
+          assert self.dev.ctrl_transfer(      0x40,          2,        0x0000,   0x0000, 8,timeout=100) == 8
+          time.sleep(.05)
+          assert self.dev.ctrl_transfer(      0x40,          9,        0x0003,   0x0000, 8,timeout=100) == 8
+          time.sleep(.05)
+
+          for RPTS in range(5): # How many times to attempt
 
             # Send bulk URB_OUT to initiate data transfer
-            self.dev.write(0x02, "\x01\x04\x28\x00\x00\x98\xf8\x00", 100)
-            time.sleep(.05)
+            self.dev.write(0x02, b'\x01\x04\x28\x00\x00\x98\xf8\x00', 100)
+            time.sleep(.01)
 
             # Read response
-            s=b''
-            empty_responses=0
-            while (len(s)<128) or (empty_responses<50):
+            s=b''; empties=0
+            while len(s)<14:
                 try:
-                    buf = b'' #array.array('B','')
+                    buf = b''
                     buf = self.dev.read(0x81, 128, timeout=100)
-                    s+=buf #struct.unpack('%ic' % len(buf), buf ) # python3 reads buf as byte string so no unpack required yet.
-                    if buf == array.array('B',[1,96]):
-                        empty_responses+=1 # This is an empty return string
-                    else: empty_responses=0
+                    s+=buf
+                    if buf == b'': #array.array('B',[1,96]): 
+                        empties+=1 # This is an empty return string
+                    else:
+                        empties=0
+                    if empties>1000: break
                 except usb.core.USBError as e:
+                    cprint( "\tStatus SEM1600B communication failed.", 'red', attrs=['bold'])
+                    print('\t',e)
                     break
-            s=bytes(s)
-             
-            if len(s) < 25:
-                cprint( "\tStatus SEM1600B communication failed.", 'red', attrs=['bold'])
+            
+            if not self.quiet: print('\t',len(s),'bytes received')#:\n\t', repr(s))
+ 
+            if (len(s)>=26):
+                nn=int((len(s)-2)/4)
+                data=struct.unpack('<%if' % nn,s[2:2+4*nn])            
+                self.lastValue = data[:6]
+                #if not self.quiet: print('\t',data)
                 return
-            
-            # Extraction of values. Little endian floats are buried inside the byte string.
-            raw = struct.unpack('<f',s[ 5: 5+4])[0]
-            inp = struct.unpack('<f',s[ 9: 9+4])[0]
-            pro = struct.unpack('<f',s[13:13+4])[0]
-            per = struct.unpack('<f',s[17:17+4])[0]
-            ous = struct.unpack('<f',s[21:21+4])[0]
-            flt = struct.unpack('<f',s[25:25+4])[0]
-            
-            # Validate values
-            #if (raw<-9) | (emis>1.): emis=np.nan
-            #if (tmin<-999) | (tmin>999): tmin=np.nan
-            #if (tmax<-999) | (tmax>999): tmin=np.nan
-            #f (tcur<-999) | (tcur>999): tmin=np.nan
 
-            # Save values for recall
-            #['Raw','Input','Filtered_Input','Process_Output','Percent_Output','Output_Signal']
-            self.lastValue = [ raw, inp, flt, pro, per, ous ]
-            
+            time.sleep(0.1)
+ 
         else:
             raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
         
