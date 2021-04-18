@@ -105,7 +105,7 @@ import numpy as np
 dev = usb.core.find(idVendor=0x0403, idProduct=0xbab1)
 
 # was it found?
-print dev
+print(dev)
 if dev is None: raise ValueError("Device not found.")
 
 
@@ -126,9 +126,9 @@ dev.reset()
 #dev.set_configuration()
 
 
-print ''
-print '=+'*40
-print ''
+print('')
+print('=+'*40)
+print('')
 
 
 
@@ -136,19 +136,20 @@ print ''
 meas_prev=0; meas_num=0
 while True:
 
-
+    
     # Send control bytes
-    #         ctrl_transfer(self, bmRequestType, bRequest, wValue=0, wIndex=0, data_or_wLength=None, timeout=None)
-    assert dev.ctrl_transfer(      0x40,          0,        0x0001,   0x0000, 8,timeout=100) == 8
-    time.sleep(.05)
-    assert dev.ctrl_transfer(      0x40,          3,        0x809c,   0x0000, 8,timeout=100) == 8
-    time.sleep(.05)
-    assert dev.ctrl_transfer(      0x40,          4,        0x0008,   0x0000, 8,timeout=100) == 8
-    time.sleep(.05)
-    assert dev.ctrl_transfer(      0x40,          2,        0x0000,   0x0000, 8,timeout=100) == 8
-    time.sleep(.05)
-    assert dev.ctrl_transfer(      0x40,          9,        0x0003,   0x0000, 8,timeout=100) == 8
-    time.sleep(.05)
+    if meas_num==0:
+        #         ctrl_transfer(self, bmRequestType, bRequest, wValue=0, wIndex=0, data_or_wLength=None, timeout=None)
+        assert dev.ctrl_transfer(      0x40,          0,        0x0001,   0x0000, 8,timeout=100) == 8
+        time.sleep(.05)
+        assert dev.ctrl_transfer(      0x40,          3,        0x809c,   0x0000, 8,timeout=100) == 8
+        time.sleep(.05)
+        assert dev.ctrl_transfer(      0x40,          4,        0x0008,   0x0000, 8,timeout=100) == 8
+        time.sleep(.05)
+        assert dev.ctrl_transfer(      0x40,          2,        0x0000,   0x0000, 8,timeout=100) == 8
+        time.sleep(.05)
+        assert dev.ctrl_transfer(      0x40,          9,        0x0003,   0x0000, 8,timeout=100) == 8
+        time.sleep(.05)
 
     #data=[]
 
@@ -156,64 +157,71 @@ while True:
     
     # Sent URB_BULK out
     #   write(self, endpoint, data, timeout=None)
-    dev.write(0x02, "\x01\x04\x28\x00\x00\x98\xf8\x00", 100)
-    time.sleep(.05)
+    #dev.write(0x02, "\x01\x04\x28\x00\x00\x98\xf8\x00", 100)
+    dev.write(0x02, b'\x01\x04\x28\x00\x00\x98\xf8\x00', 100)
+    time.sleep(.01)
     
     # Read data back
-    s=''; empties=0
-    while empties<50:
+    s=b''; empties=0
+    while len(s)<14:
         try:
-            buf = array.array('B','')
-            buf = dev.read(0x81, 128, timeout=1000)
-            time.sleep(.01)
-            s+=''.join(struct.unpack('%ic' % len(buf),buf)) #buf.tostring()
+            buf = b'' #array.array('B','')
+            buf = dev.read(0x81, 128, timeout=100)
+            #time.sleep(.01)
+            s+=buf #struct.unpack('%ic' % len(buf),buf)) #buf.tostring()
             #data.append(buf)
             #sys.stdout.write(repr(buf))
             #sys.stdout.write('\n')
             #sys.stdout.flush()
-            if buf == array.array('B',[1,96]): empties+=1 # This is an empty return string
-            else: empties=0
-            #if empties>100: break
+            if buf == b'': #array.array('B',[1,96]): 
+                empties+=1 # This is an empty return string
+            else: 
+                empties=0
+            if empties>1000: break
         except usb.core.USBError as e:
-            print e
+            print(e)
             break
     
-    print ""
+    print("")
     time.sleep(.1)
-    '''
-    Example of useful PV data frame!  no#3197
-    >> print struct.unpack('ccf','\x01\x60\xe7\x41\xd6\xee\xe7\x41')
-        ('\x01', '`', 28.991619110107422)
-    '''
+
+    print(len(s),'bytes received:', repr(s))
+    #s=s[2:] # discard \x01 \x60 header
   
-    '''
-    for d in data:
-        # as string
-        stringd= ''.join([str(s) for s in struct.unpack('%ic' % (len(d)-2), d[2:])]) 
-        # look for numbers
-        if len(d)>=8:
-            print repr(stringd)
-            for i in (5,9,13,17,21,25):
-                print '\t',i,'\t',struct.unpack('f',d[i:i+4])[0]
+    ''' 
+    for offset_byte in range(8): 
+       for endianness in ('<','>'):
+         for typ,so in (('h',2),('H',2),('i',4),('I',4),('l',4),('L',4),('q',8),('Q',8),('f',4),('d',8)):
+            n=int(len(s)/so)
+            print(offset_byte,endianness,typ,':',struct.unpack('%s%i%s' % (endianness, n,typ),s[:so*n]))
+       s=s[1:]
     '''
 
-    print(len(s),'bytes received')
-    
+    #if len(s)>=14:
+    #    print(struct.unpack('<HHff',s[1:1+12]))
 
-    if len(s)>=25:
+    if len(s)>=26:
         # Extraction of values. Little endian floats are buried inside the byte string. We'll ignore the checksum for now.
+        '''
         raw = struct.unpack('<f',s[ 5: 5+4])[0]
         inp = struct.unpack('<f',s[ 9: 9+4])[0]
         pro = struct.unpack('<f',s[13:13+4])[0]
         per = struct.unpack('<f',s[17:17+4])[0]
         out = struct.unpack('<f',s[21:21+4])[0]
         flt = struct.unpack('<f',s[25:25+4])[0]
+       
+        print("Raw=%f, Input=%f, Filtered Input=%f, Process=%f, PercentOutput=%f, OutputSignal=%f" % (raw,inp,flt,pro,per,out))
+        '''
+        o=2
+        n=int((len(s)-o)/4)
+        data=struct.unpack('<%if' % n,s[o:o+4*n])
         
-        print "Raw=%f, Input=%f, Filtered Input=%f, Process=%f, PercentOutput=%f, OutputSignal=%f" % (raw,inp,flt,pro,per,out)
-        
-        
+        #data=struct.unpack('<8f',s[2:2+4*8])
+        #print(data[:8],b''.join(data[8:]))
+        print(data)
     
-    print 
+    print() 
 
-    
-    #time.sleep(.1)
+    meas_num+=1
+    #break 
+    time.sleep(.25)
