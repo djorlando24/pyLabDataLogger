@@ -174,8 +174,10 @@ class uniTDevice(device):
         if self.subdriver=='ut32x':
             
             #  Send the packets to tell the device to start transmitting on loop.
-            
-            dev.ctrl_transfer(
+            timeout_ms=300
+            bytes_to_read=512
+
+            self.dev.ctrl_transfer(
                   0x21,  # REQUEST_TYPE_CLASS | RECIPIENT_INTERFACE | ENDPOINT_OUT
                   9,     # SET_REPORT
                   0x300, # "Vendor" Descriptor Type + 0 Descriptor Index
@@ -184,19 +186,20 @@ class uniTDevice(device):
             )
 
             s=b''
-            dev.write(0x02, b"\x02\x5a\x00\x00\x00\x00\x00\x00", timeout_ms) # USBHID SET_REPORT Request
-            s += dev.read(0x82, 8, timeout_ms) # USBHID SET_REPORT Response
-            dev.write(0x02, b"\x01\x01\x00\x00\x00\x00\x00\x00", timeout_ms) # URB_INTERRUPT out
+            self.dev.write(0x02, b"\x02\x5a\x00\x00\x00\x00\x00\x00", timeout_ms) # USBHID SET_REPORT Request
+            s += self.dev.read(0x82, 8, timeout_ms) # USBHID SET_REPORT Response
+            self.dev.write(0x02, b"\x01\x01\x00\x00\x00\x00\x00\x00", timeout_ms) # URB_INTERRUPT out
 
             # Loop to read streaming data back until we get an acceptable result or time runs out.
-            meas_prev=0; meas_num=0; timeout_ms=500; bytes_to_read=4096
+            meas_num=0
             mode=""; tempVal=np.nan; tempUnit=np.nan; nStored=np.nan; timeString=""; whichInput=""
-            
+            minutes=0; seconds=-1
+
             while ((meas_num<30) & np.isnan(tempVal)):
 
                 # Read URB_INTERRUPT in
                 s=b''
-                s += dev.read(0x82, bytes_to_read, timeout_ms)
+                s += self.dev.read(0x82, bytes_to_read, timeout_ms)
                 
                 i=0
                 buf=b''
@@ -214,7 +217,7 @@ class uniTDevice(device):
 
                     # debugging
                     if not self.quiet:
-                        print("Extracted %i bytes payload from %i of %i raw bytes received" % (len(buf),i,len(s)))
+                        print("\tExtracted %i bytes payload from %i of %i raw bytes received" % (len(buf),i,len(s)))
                     
                     # decode payload
                     if len(buf)>=17:
@@ -244,8 +247,6 @@ class uniTDevice(device):
             if (nStored<0) | (nStored>99999): tmin=np.nan
             if (seconds<0) | (seconds>999999): tmin=np.nan
             if (minutes<0) | (minutes>999999): tmin=np.nan
-            if (tcur<-999) | (tcur>999): tmin=np.nan
-            
 
             # Save values for recall
             #                ['Temperature','Timer','Timer String','InputChannel','Mode','Stored Record Count']
@@ -283,6 +284,7 @@ class uniTDevice(device):
         lastValueSanitized = []
         for v in self.lastValue: 
             if v is None: lastValueSanitized.append(np.nan)
+            elif isinstance(v,str): lastValueSanitized.append(np.nan)
             else: lastValueSanitized.append(v)
         self.lastScaled = np.array(lastValueSanitized) * self.config['scale'] + self.config['offset']
         self.updateTimestamp()
