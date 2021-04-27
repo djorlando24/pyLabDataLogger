@@ -29,4 +29,6 @@
 #        You should have received a copy of the GNU General Public License
 #        along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
+
+# 2020+ versions of sigrok seem to be having trouble talking to this device using hidraw
 sigrok-cli -d uni-t-ut32x:conn=1a86.e008 --samples 3 -O analog -l 5
