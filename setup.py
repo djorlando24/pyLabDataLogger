@@ -6,7 +6,7 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.1.2
+    @version 1.1.3
     @date 22/03/2021
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -32,7 +32,7 @@
 """
 
 __author__="Daniel Duke <daniel.duke@monash.edu>"
-__version__="1.1.2"
+__version__="1.1.3"
 __license__="GPL-3.0+"
 __copyright__="Copyright (c) 2018-21 LTRAC"
 

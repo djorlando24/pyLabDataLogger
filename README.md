@@ -4,7 +4,7 @@ Laboratory datalogging for USB and Serial devices
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2019-2021 LTRAC
     @license GPL-3.0+
-    @version 1.1.2
+    @version 1.1.3
     @date 28/04/2021
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
@@ -49,6 +49,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Tenma 72-7730A multimeter
     - Rigol DS-series oscilloscopes
     - USBee/LHT00SU1 ADC & logic analyser via fx2lafw driver
+    - Tenma 72-7712 and UNI-T UT32x thermometers are supported with their own driver (See below)
 
 - USBTMC devices that use SCPI command set
     - Agilent 33220A waveform generator,
