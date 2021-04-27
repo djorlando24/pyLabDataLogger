@@ -147,41 +147,65 @@ if __name__=='__main__':
 
     
     # Loop to read streaming data back
-    meas_prev=0; meas_num=0; timeout_ms=50
+    meas_prev=0; meas_num=0; timeout_ms=500; bytes_to_read=4096
+
     while True:
 
-        s=b''
-        
+        s=b''      
         if meas_num==0 :
-            dev.write(0x02, b"\x02\x5a\x00\x00\x00\x00\x00\x00", timeout_ms)
-            s += dev.read(0x82, 8, timeout_ms)
-        
-            dev.write(0x02, b"\x01\x01\x00\x00\x00\x00\x00\x00", timeout_ms)
-        
-        s += dev.read(0x82, 2048, timeout_ms)
-        
-        
-        print("")
-        time.sleep(.1)
+            dev.write(0x02, b"\x02\x5a\x00\x00\x00\x00\x00\x00", timeout_ms) # USBHID SET_REPORT Request
+            s += dev.read(0x82, 8, timeout_ms) # USBHID SET_REPORT Response       
+            dev.write(0x02, b"\x01\x01\x00\x00\x00\x00\x00\x00", timeout_ms) # USB_INTERRUPT out
 
-        #print(len(s),'bytes received:', repr(s))
+        elif meas_num==-1 :
+            # this puts the device into debugging mode
+            dev.write(0x02, b"\x60\x09\x00\x00\x03\x00\x00\x00", timeout_ms) # USBHID SET_REPORT Request
+            s += dev.read(0x82, 8, timeout_ms) # USBHID SET_REPORT Response       
+            dev.write(0x02, b"\x01\x02\x00\x00\x00\x00\x00\x00", timeout_ms) # USB_INTERRUPT out
+
+        elif meas_num>=9999:
+            exit(0)
         
-
-
-        if len(s)>=19:
-            i=0
-            buf=b''
+        if len(s)>0:
+            print('\n>>',repr(s))        
+        
+        # Read URB_INTERRUPT in
+        s=b''        
+        s += dev.read(0x82, bytes_to_read, timeout_ms)
+        
+        i=0
+        buf=b''
+        if len(s)>=50:
+            if not b'\n' in s: break
+            i=s.index(b'\n')+7 # denotes end of last packet (in case first packet truncated)
             while (i<len(s)):
                 # packet decoding
-                nbyte = s[i] - 0xf0
-                buf += s[i+1:i+1+nbyte]
-                i+=8
-                # escape on CRLF
-                if b'\n' in buf:
-                    buf = buf.split(b'\n')[0]
+                nbyte = s[i] - 0xf0 # calculate n bytes payload in this packet
+                if nbyte>0: buf += s[i+1:i+1+nbyte] # extract the data to buf
+                i+=8 # move to next packet
+                if b'\r\n' in buf: # escape on CRLF
+                    buf = buf.split(b'\r\n')[0]
                     break
+
             # decode payload
-            print(repr(buf), buf[1:5])
+            print("Extracted %i bytes payload from %i of %i raw bytes received" % (len(buf),i,len(s)))
+            if len(buf)>=17:
+                mode, tempString, tempUnit, nStored, minutes, hours, whichInput = struct.unpack('c4sc2sx2s2scxxx',buf[:17])
+                if mode == b'0': mode='memory'
+                elif mode == b'1': mode='realtime'
+                else: mode = mode.decode('ascii')
+                tempVal = float(tempString.decode('ascii').replace(':',''))*0.1
+                if tempUnit == b'1': tempUnit = 'degC'
+                elif tempUnit == b'2': tempUnit = 'degF'
+                elif tempUnit == b'3': tempUnit = 'K'
+                else: tempUnit = '?'
+                if whichInput == b'0': whichInput = 'T1'
+                elif whichInput == b'1': whichInput = 'T2'
+                elif whichInput == b'2': whichInput = 'T1-T2'
+                elif whichInput == b'3': whichInput = 'T1-T2'
+                else: whichInput='?'
+                nStored = int(nStored.decode('ascii'))
+                timeString = '%02i:%02i' % (int(hours.decode('ascii')),int(minutes.decode('ascii')))
+                print(mode, tempVal, tempUnit, nStored, timeString, whichInput)
 
         meas_num+=1
-        time.sleep(0.001)
