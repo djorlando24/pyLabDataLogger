@@ -5,7 +5,7 @@ Laboratory datalogging for USB and Serial devices
     @copyright (c) 2019-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.2
-    @date 17/04/2021
+    @date 28/04/2021
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -47,7 +47,6 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 - Sigrok devices
      confirmed working:
     - Tenma 72-7730A multimeter
-    - Tenma 72-7712 thermometer [on some systems, not all]
     - Rigol DS-series oscilloscopes
     - USBee/LHT00SU1 ADC & logic analyser via fx2lafw driver
 
@@ -82,6 +81,8 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - STATUS SEM1600/B Load cell amplifier
     - Omega Layer N Smart Probes via Omega IF-001 Modbus USB-Serial adapter
     - Status SEM1600/B Load Cell Amplifier
+    - Tenma 72-7712 thermometer
+    - Uni-T UT32x thermometer
     
 - USB Devices using Linux kernel drivers (not supported on MacOS)
     - USB audio capture devices via ALSA

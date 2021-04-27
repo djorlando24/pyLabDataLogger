@@ -133,7 +133,6 @@ class flukeusbDevice(device):
         
         except ValueError:
             cprint( "%s - Invalid setting requested" % self.name, 'red', attrs=['bold'])
-            cprint( "\t(V="+self.params['set_voltage']+" I="+self.params['set_current']+")" , 'red')
         
         return
 

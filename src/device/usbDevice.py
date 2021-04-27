@@ -10,7 +10,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.2
-    @date 05/04/2021
+    @date 27/04/2021
         __   ____________    ___    ______	
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -39,10 +39,10 @@ usb_device_table = [
 
     # Sigrok devices with fixed VID and PID
     {'vid':0x1a86, 'pid':0xe008, 'driver':'sigrok/tenma-72-7730', 'name':'Tenma 72-7730A Multimeter'},
-    {'vid':0x1a86, 'pid':0xe008, 'driver':'sigrok/uni-t-ut32x', 'name':'Tenma 72-7712 Thermometer'},
     {'vid':0x1ab1, 'pid':0x04ce, 'driver':'sigrok/rigol-ds', 'name':'Rigol DS Oscilloscope'},
     {'vid':0x08a9, 'pid':0x0014, 'driver':'sigrok/fx2lafw', 'name':'LHT00SU1 logic analyzer'},
-                 
+    #{'vid':0x1a86, 'pid':0xe008, 'driver':'sigrok/uni-t-ut32x', 'name':'Tenma 72-7712 Thermometer'}, # replaced with usbhid driver
+    
     # USBTMC/SCPI devices with fixed VID and PID
     #{'vid':0x1ab1, 'pid':0x04ce, 'driver':'usbtmc/rigol-ds', 'name':'Rigol DS Oscilloscope'}, # not reliable
     {'vid':0x0957, 'pid':0x0407, 'driver':'usbtmc/33220a', 'name':'Agilent 33220A Waveform Generator'},
@@ -78,6 +78,7 @@ usb_device_table = [
     {'vid':0x0ce9, 'pid':0x1016, 'driver':'picoscope/picoscope2k', 'name':'Picoscope 2000 Series'},
     {'vid':0x0f7e, 'pid':0x9002, 'driver':'fluke/568', 'name':'Fluke 568 IR Thermometer'},
     {'vid':0x2a72, 'pid':0x0400, 'driver':'omegaSmartProbe', 'name':'Omega Smart Probe (Autodetect)'},
+    {'vid':0x1a86, 'pid':0xe008, 'driver':'uni-t/ut32x', 'name':'UT32x or 72-7712 Thermocouple Reader'},
     
     # Multiple devices with same VID and PID are seperated by the serial number as a unique descriptor.
     {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'name':'Thorlabs APT motor driver (generic)'},
@@ -298,6 +299,9 @@ def load_usb_devices(devs=None,**kwargs):
         elif driverClass == 'omegasmartprobe':
             from pyLabDataLogger.device import omegaSmartProbeDevice
             device_list.append(omegaSmartProbeDevice.omegaSmartProbeDevice(params=d,**kwargs))
+        elif driverClass == 'uni-t':
+            from pyLabDataLogger.device import uniTDevice
+            device_list.append(uniTDevice.uniTDevice(params=d,**kwargs))
             
         else:
             cprint( "\tI don't know what to do with this device" ,'red', attrs=['bold'])

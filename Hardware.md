@@ -1,9 +1,13 @@
 # Hardware setup instructions
 
 Most hardware is designed to work with the default factory settings.
+
 If you want to change the baud rate, etc, you can over-ride the default settings when initialising the PyLabDataLogger device class instance.
+
 Some devices will require special user setup/configuration to be in a mode that makes them compatible with pyLabDataLogger.
+
 Some devices also require manual configuration in the runtime script because they can't be autodetected (mainly, non-USB devices and devices that use a generic USB-to-Serial adapter that can't be uniquely identified).
+
 Those special configurations are explained below.
 
 ## Omega iSeries Process Controllers
@@ -16,15 +20,27 @@ The iSeries process controllers need to be set in the following mode. How to do 
 - For RS485, echo on. For RS232, echo off.
 - bus address 001 (in future this could be variable to support >1 controller on an RS-485 bus).
 
-## Tenma thermometer and multimeters via Sigrok driver
-- Support for Tenma thermometers and multimeters via sigrok's UNI-T drivers using the UNI-T D04 USB to serial cables with the WCH.CN ships can require a bus reset on Linux before they'll work. To get around this you can run scripts/reset-WCH.CN.sh. 
-
-- Modern MacOS doesn't allow userspace drivers to access USB HID devices for security
-  reasons, so devices that use USB HID like sigrok's UNI-T drivers don't work.
+## Tenma thermometer and multimeters 
+- In order to get the Tenma multimeters to work they might have to be put into SEND mode (there will be a button for it on the front panel). You will see "USB" or "SEND" on the LCD display.
 
 - The generic HID serial adapters are easily confused as their VID/PID are the same. Information that might be useful to identify them doesn't always read the same on every machine (MacOS sees they have unique bcdDevice strings but Linux kernel doesn't). If pyLabDataLogger sees one of these generic HID adapters it will ask you what device it corresponds to, if not sure. You can enforce selection by specifying the bus & address variables of the device. Beware that these change every time you unplug & plug the USB device.
 
-- In order to get these Tenma thermometers and multimeters to work they have to be put into SEND mode (there will be a button for it on the front panel). You will see "USB" or "SEND" on the LCD display.
+- Did you get an error `USBError: [Errno 13] Access denied (insufficient permissions)`? Read below to see how to fix it.
+
+- macOS doesn't allow userspace drivers to access USB HID devices for security
+  reasons, so devices that use USB HID like sigrok's UNI-T drivers don't work at all right now. Sorry! You might want to run a Linux virtual machine.
+
+- On Linux, you may need to modify your udev rules to get user-level access to the WCH.CN chips used in the Tenma and Uni-T thermometers and multimeters.
+
+    - If sigrok is installed, you may simply need to modify line 30 of `/etc/udev/rules.d/61-libsigrok-uaccess.rules`  to make it `ENV{ID_SIGROK}=="1", TAG+="uaccess", MODE="0666"`.
+    
+    - if sigrok is not installed, create a new file in `/etc/udev/rules.d` and add `SUBSYSTEM=="usb", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="e008", MODE="0666"`.
+    
+    - Once modified, reload the rules with `sudo udevadm control -R` and `sudo udevadm trigger` 
+    
+    - If your user still lacks permissions, do `sudo usermod -a -G dialout $(whoami)` and then log out and in again.
+
+- On Linux, if these devices sometimes fail to respond until they get unplugged & replugged, they might require a bus reset to avoid the physical unplugging. To get around this you can run `scripts/reset-WCH.CN.sh`. 
 
 ## Thorlabs TSP01 and PM16 devices
 Make sure the usbtmc rules are added in /etc/udev/rules.d as per INSTALL.md
