@@ -74,13 +74,16 @@ if __name__ == '__main__':
     ax.grid(alpha=.33)
     plt.title("pyLabDataLogger")
     plt.xlabel("Time [s]")
+    plt.ylabel("Process Variables")
     sampledTimes=[0.]
     
     # Set which channels to plot (default 1 per device for testing)
     for d in devices:
         d.plotCh=0
         d.history=[np.nan]
-        d.plotHandle,=ax.plot(sampledTimes,d.history,marker='o',lw=1,label='%s %s [%s]' % (d.name,d.config['channel_names'][d.plotCh],d.config['eng_units'][d.plotCh]))
+        d.plotHandle,=ax.plot(sampledTimes,d.history,marker='o',markersize=2,\
+                              lw=1,label='%s %s [%s]' % (d.name,d.config['channel_names'][d.plotCh],\
+                              d.config['eng_units'][d.plotCh]))
     plt.legend(loc=1)
     plt.ion()
     plt.draw()
@@ -103,8 +106,10 @@ if __name__ == '__main__':
                 d.history.append(d.lastScaled[d.plotCh])
                 d.plotHandle.set_xdata(sampledTimes)
                 d.plotHandle.set_ydata(d.history)
-                if np.nanmin(d.history)<yrange[0]: yrange[0]=np.nanmin(d.history)
-                if np.nanmax(d.history)>yrange[1]: yrange[1]=np.nanmax(d.history)
+                if np.nanmin(d.history)<yrange[0]: yrange[0]=np.nanmin(d.history)*0.95
+                if np.nanmin(d.history)<yrange[0]: yrange[0]=np.nanmin(d.history)*1.05
+                if np.nanmax(d.history)>yrange[1]: yrange[1]=np.nanmax(d.history)*1.05
+                if np.nanmax(d.history)>yrange[1]: yrange[1]=np.nanmax(d.history)*0.95
                 ax.set_xlim(np.min(sampledTimes),np.max(sampledTimes))
                 ax.set_ylim(*yrange)
                 plt.draw()
