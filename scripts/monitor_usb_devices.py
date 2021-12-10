@@ -53,16 +53,17 @@ if __name__ == '__main__':
 
     devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
     
-    from pyLabDataLogger.device import dummyDevice
-    
     # Create some fake devices to fill the plot up with stuff. TESTING ONLY
-    devices.append(dummyDevice.dummyDevice(params={'period':10.}, **special_args))
+    if (len(devices)==0):
+        from pyLabDataLogger.device import dummyDevice
+            
+        devices.append(dummyDevice.dummyDevice(params={'period':10.}, **special_args))
     
-    devices.append(dummyDevice.dummyDevice(params={'period':10., 'n_channels':2}, **special_args))
+        devices.append(dummyDevice.dummyDevice(params={'period':10., 'n_channels':2}, **special_args))
     
-    devices[-1].name='Dummy2'
-    devices[-1].config['eng_units'][0] = 'V'
-    devices[-1].config['scale'][0]=2.0
+        devices[-1].name='Dummy2'
+        devices[-1].config['eng_units'][0] = 'V'
+        devices[-1].config['scale'][0]=2.0
 
     if len(devices) == 0: exit()
     
@@ -79,7 +80,12 @@ if __name__ == '__main__':
     
     # Set which channels to plot (default 1 per device for testing)
     for d in devices:
-        d.plotCh=0
+        
+        if d.driver == 'sigrok/fx2lafw':
+            d.plotCh=9
+        else:
+            d.plotCh=0
+            
         d.history=[np.nan]
         d.plotHandle,=ax.plot(sampledTimes,d.history,marker='o',markersize=2,\
                               lw=1,label='%s %s [%s]' % (d.name,d.config['channel_names'][d.plotCh],\
