@@ -163,8 +163,10 @@ class device:
             
             # Only show the scaled units if they exist.
             if show_scaled:
+                sys.stdout.write(lead+'Scaled: ')
                 for n in range(self.params['n_channels']):
-                    sys.stdout.write(u'%f %s, ' % (self.lastScaled[n],self.config['eng_units'][n])) 
+                    sys.stdout.write(u'%s = %f %s' % (self.config['channel_names'][n], self.lastScaled[n],self.config['eng_units'][n]))
+                    if (n<self.params['n_channels']-1): sys.stdout.write(', ')
                 sys.stdout.write('\n')
     
         # Vectors (i.e. timeseries data) with units added to the end where present. ####################################

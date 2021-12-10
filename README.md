@@ -33,9 +33,15 @@ Laboratory datalogging for USB and Serial devices
 
 ## TLDR
 
-**As of v1.1.0 the code has been ported to python3**
+Dec-2021: There is a new script `monitor_devices.py` which will live-graph the first channel of every device to the screen while also logging to HDF5.
 
-This software has been tested on Raspbian, Ubuntu, Debian and MacOS.
+**As of v1.1.3 Windows Subsystem for Linux 2 is confirmed supported**
+Windows support, finally! :-)
+
+**As of v1.1.0 the code has been ported to python3**
+Python2 support is no longer guaranteed, new drivers may break it.
+
+This software has been tested on Raspbian, Ubuntu, Debian, Windows System For Linux 2 and MacOS.
 
 You may need to tinker with src/device/usbDevice.py if your USB
 to Serial adapters have different VID/PIDs to mine.
@@ -138,6 +144,8 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     
 - Firewire machine vision cameras (libdc1394)
   [https://damien.douxchamps.net/ieee1394/cameras/]
+  
+
 
 ## Notes
 - Most devices require additional python modules or third party open source
