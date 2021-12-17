@@ -1021,8 +1021,10 @@ class serialDevice(device):
             self.config['offset']=[0.,0.,0.]
             self.params['n_channels']=3
             # CompoWay/F serial communications protocol -- see the PDF in manuals/
-            self.serialQuery=['\x02010000101C00002000001\x03','\x02010000101C00003000001\x03','\x02010000101C00004000001\x03']
-
+            if self.driver==['k3hb','x']:
+                self.serialQuery=['\x02010000101C00002000001\x03','\x02010000101C00003000001\x03','\x02010000101C00004000001\x03']
+            else:
+                self.serialQuery=['\x02010000101C00002000001\x03','\x02010000101C00003000001\x03','\x02010000101C00004000001\x03']
             # Add checksums to end of each query. XOR of every byte following the \x02 start byte.
             for i in range(len(self.serialQuery)):
                 self.serialQuery[i] += self.k3hbvlc_checksum(self.serialQuery[i])
@@ -1473,10 +1475,8 @@ class serialDevice(device):
                 for r in rawData:
                     a=r.index(b'\x02')
                     b=r.index(b'\x03')
-                    #print(r[-1],self.k3hbvlc_checksum(r[a:b]))
-                    #dataframe=r[a+11:b]
                     dataframe=r[a+11+4:b]
-                    if dataframe[0] == 'F':  # negative value
+                    if (dataframe[0] == 'F') or (dataframe[0] == 70):  # negative value
                         dataframe = int(dataframe,16) ^ 0xffffffff
                         vals.append(-float(dataframe)*10**(-self.config['decimal_places']))
                     else: # positive value
