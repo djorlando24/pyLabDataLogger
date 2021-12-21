@@ -81,8 +81,8 @@ if __name__ == '__main__':
     # Set which channels to plot (default 1 per device for testing)
     for d in devices:
         
-        if d.driver == 'sigrok/fx2lafw':
-            d.plotCh=9
+        if 'fx2lafw' in d.subdriver:
+            d.plotCh=8
         else:
             d.plotCh=0
             
@@ -109,7 +109,10 @@ if __name__ == '__main__':
                 d.pprint()
                 d.log(logfilename)
                 
-                d.history.append(d.lastScaled[d.plotCh])
+                if (isinstance(d.lastScaled[d.plotCh],np.ndarray) or isinstance(d.lastScaled[d.plotCh],list)):
+                    d.history.append(np.nanmean(d.lastScaled[d.plotCh][-1])) # plot average of time series.
+                else:
+                    d.history.append(d.lastScaled[d.plotCh])
                 d.plotHandle.set_xdata(sampledTimes)
                 d.plotHandle.set_ydata(d.history)
                 if np.nanmin(d.history)<yrange[0]: yrange[0]=np.nanmin(d.history)*0.95
