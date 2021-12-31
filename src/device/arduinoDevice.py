@@ -59,6 +59,8 @@ class arduinoSerialDevice(serialDevice):
         # The serial arduino device should report repeated strings with the structure
         # DESCRIPTION: VARIABLE = VALUE UNITS, VARIABLE = VALUE UNITS\n
         
+        self.Serial.timeout=10
+        
         nbytes=0
         desc=''
         while nbytes<buffer_limit:
