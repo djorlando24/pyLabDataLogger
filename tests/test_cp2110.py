@@ -60,10 +60,10 @@ if __name__ == '__main__':
     
     for stop_bits in [cp2110.STOP_BITS.SHORT, cp2110.STOP_BITS.LONG ]:
       for flow_control in [cp2110.FLOW_CONTROL.DISABLED,cp2110.FLOW_CONTROL.ENABLED]:
-        for parity in [cp2110.PARITY.EVEN, cp2110.PARITY.MARK, cp2110.PARITY.ODD, cp2110.PARITY.SPACE ]:
-          for data_bits in [ cp2110.DATA_BITS.EIGHT, cp2110.DATA_BITS.FIVE,\
-                             cp2110.DATA_BITS.SEVEN, cp2110.DATA_BITS.SIX]:
-            for baud in np.arange(1200,256001,1200):
+    #    for parity in [cp2110.PARITY.EVEN, cp2110.PARITY.MARK, cp2110.PARITY.ODD, cp2110.PARITY.SPACE ]:
+    #      for data_bits in [ cp2110.DATA_BITS.EIGHT, cp2110.DATA_BITS.FIVE,\
+    #                         cp2110.DATA_BITS.SEVEN, cp2110.DATA_BITS.SIX]:
+    #        for baud in np.arange(1200,256001,1200):
 
                 # The UART settings are dictated by the device that embeds the CP2110.  It
                 # may be configured correctly by default, or you may need to set manually.
