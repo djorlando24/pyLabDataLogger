@@ -1,0 +1,5 @@
+####################################################################################
+# Silicon Labs CP2110 HID UART Bridge (UNI-T D09 adapter)
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea80", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea80", MODE="0666"

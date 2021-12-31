@@ -80,11 +80,11 @@ if __name__ == '__main__':
     
     # Set which channels to plot (default 1 per device for testing)
     for d in devices:
-        
-        if 'fx2lafw' in d.subdriver:
-            d.plotCh=8
-        else:
-            d.plotCh=0
+      
+        d.plotCh=0
+        if 'subdriver' in dir(d):
+            if 'fx2lafw' in d.subdriver:
+                d.plotCh=8
             
         d.history=[np.nan]
         d.plotHandle,=ax.plot(sampledTimes,d.history,marker='o',markersize=2,\

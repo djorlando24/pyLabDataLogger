@@ -10,18 +10,16 @@ Some devices also require manual configuration in the runtime script because the
 
 Those special configurations are explained below.
 
-## Omega iSeries Process Controllers
-The iSeries process controllers need to be set in the following mode. How to do this is explained in the manual.
-- 9600 baud
-- 7 data bits
-- 1 stop bit
-- odd parity
-- command mode (not continuous)
-- For RS485, echo on. For RS232, echo off.
-- bus address 001 (in future this could be variable to support >1 controller on an RS-485 bus).
+## LHT00SU1 logic analyser
+
+- This unit works via sigrok and must be flashed with fx2lafw firmware to work.
+
+- If you see "Unable to communicate with LHT00SU1 logic analyzer" error, try first `./tests/test_LHT00SU1.sh` a few times. 
 
 ## Tenma thermometer and multimeters 
-- In order to get the Tenma multimeters to work they might have to be put into SEND mode (there will be a button for it on the front panel). You will see "USB" or "SEND" on the LCD display.
+- In order to get the devices work they might have to be put into SEND mode (there will be a button for it on the front panel). You will see "USB" or "SEND" on the LCD display.
+
+- *Tenma 72-771x and UNI-T UT32x thermocouple readers* now have a custom HID driver that is more reliable than using sigrok. If it does not detect, run `python3 tests/test_tenma72-7712.py` first.
 
 - The generic HID serial adapters are easily confused as their VID/PID are the same. Information that might be useful to identify them doesn't always read the same on every machine (MacOS sees they have unique bcdDevice strings but Linux kernel doesn't). If pyLabDataLogger sees one of these generic HID adapters it will ask you what device it corresponds to, if not sure. You can enforce selection by specifying the bus & address variables of the device. Beware that these change every time you unplug & plug the USB device.
 
@@ -41,6 +39,17 @@ The iSeries process controllers need to be set in the following mode. How to do 
     - If your user still lacks permissions, do `sudo usermod -a -G dialout $(whoami)` and then log out and in again.
 
 - On Linux, if these devices sometimes fail to respond until they get unplugged & replugged, they might require a bus reset to avoid the physical unplugging. To get around this you can run `scripts/reset-WCH.CN.sh`. 
+
+## Omega iSeries Process Controllers
+The iSeries process controllers need to be set in the following mode. How to do this is explained in the manual.
+- 9600 baud
+- 7 data bits
+- 1 stop bit
+- odd parity
+- command mode (not continuous)
+- For RS485, echo on. For RS232, echo off.
+- bus address 001 (in future this could be variable to support >1 controller on an RS-485 bus).
+
 
 ## Thorlabs TSP01 and PM16 devices
 Make sure the usbtmc rules are added in /etc/udev/rules.d as per INSTALL.md

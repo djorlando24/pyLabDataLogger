@@ -29,4 +29,10 @@
 #        You should have received a copy of the GNU General Public License
 #        along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
-sudo sigrok-cli -d fx2lafw --samples 3
+sigrok-cli --scan
+echo
+echo
+sigrok-cli -d fx2lafw --show
+echo
+echo
+sigrok-cli -d fx2lafw --samples 3 

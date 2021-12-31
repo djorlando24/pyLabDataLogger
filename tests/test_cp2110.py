@@ -53,21 +53,24 @@ if __name__ == '__main__':
     #    print(usb_info.as_dict())
     
     
-    print("Trying different UART settings...")
-    for baud in np.arange(300,115200,300):
-      for stop_bits in [cp2110.STOP_BITS.SHORT, cp2110.STOP_BITS.LONG ]:
+    #19200 7O1 expected for UNI-T D02 type cables
+    baud=115200 #19200
+    parity=cp2110.PARITY.ODD
+    data_bits=cp2110.DATA_BITS.SEVEN
+    
+    for stop_bits in [cp2110.STOP_BITS.SHORT, cp2110.STOP_BITS.LONG ]:
+      for flow_control in [cp2110.FLOW_CONTROL.DISABLED,cp2110.FLOW_CONTROL.ENABLED]:
         for parity in [cp2110.PARITY.EVEN, cp2110.PARITY.MARK, cp2110.PARITY.ODD, cp2110.PARITY.SPACE ]:
-        
-            for data_bits in [ cp2110.DATA_BITS.EIGHT, cp2110.DATA_BITS.FIVE,\
-                               cp2110.DATA_BITS.SEVEN, cp2110.DATA_BITS.SIX]:
-            
+          for data_bits in [ cp2110.DATA_BITS.EIGHT, cp2110.DATA_BITS.FIVE,\
+                             cp2110.DATA_BITS.SEVEN, cp2110.DATA_BITS.SIX]:
+            for baud in np.arange(1200,256001,1200):
 
                 # The UART settings are dictated by the device that embeds the CP2110.  It
                 # may be configured correctly by default, or you may need to set manually.
                 d.set_uart_config(cp2110.UARTConfig(
                     baud=int(baud),
                     parity=parity,
-                    flow_control=cp2110.FLOW_CONTROL.DISABLED,
+                    flow_control=flow_control,
                     data_bits=data_bits,
                     stop_bits=stop_bits))
                     
@@ -82,18 +85,22 @@ if __name__ == '__main__':
 
                 # The UART in your device may need to be explicitly enabled, particularly if
                 # you've already explicitly disabled it as in this example.
-                if not d.is_uart_enabled(): d.enable_uart()
-
+                #if not d.is_uart_enabled(): d.enable_uart()
+                d.enable_uart()
+                
                 # The write method accepts byte strings or arrays of ints.
-                d.write([0x06,0xab,0xcd,0x03,0x5e,0x01,0xd9])
+                d.write(b'\x06\xab\xcd\x03\x5e\x01\xd9')
+                #d.write([0x06,0xab,0xcd,0x03,0x5e,0x01,0xd9])
 
                 # The default read size will return 63 bytes (at most), which is the maximum
                 # supported by this chip.  Reads do not block.
                 rv = d.read()
+                print(c.__dict__)
                 if len(rv) > 0:
-                    print(c.__dict__)
-                    print(repr(rv))
+                    print("\t",repr(rv))
                     print("")
+                    d.disable_uart()
+                    exit(1)
                 
                 # If you ever need to disable the UART, you can.
-                d.disable_uart()
+                #d.disable_uart()

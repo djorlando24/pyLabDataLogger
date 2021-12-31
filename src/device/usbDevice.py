@@ -66,6 +66,7 @@ usb_device_table = [
     {'vid':0x045e, 'pid':0x00f5, 'driver':'opencv', 'name':'Microsoft Webcam'},
     {'vid':0x1908, 'pid':0x2311, 'driver':'opencv', 'name':'Gembird Webcam'},
     {'vid':0x534d, 'pid':0x2109, 'driver':'opencv', 'name':'HDMI video capture'},
+    #{'vid':0x046d, 'pid':0x0825, 'driver':'opencv', 'name':'Logitech Webcam'},
     #{'vid':0x04f2, 'pid':0xb084, 'driver':'opencv', 'name':'Chicony Internal Webcam'},
     #{'vid':0x04f2, 'pid':0xb5d7, 'driver':'opencv', 'name':'Chicony Internal Webcam'},
     
@@ -78,7 +79,8 @@ usb_device_table = [
     {'vid':0x0ce9, 'pid':0x1016, 'driver':'picoscope/picoscope2k', 'name':'Picoscope 2000 Series'},
     {'vid':0x0f7e, 'pid':0x9002, 'driver':'fluke/568', 'name':'Fluke 568 IR Thermometer'},
     {'vid':0x2a72, 'pid':0x0400, 'driver':'omegaSmartProbe', 'name':'Omega Smart Probe (Autodetect)'},
-    {'vid':0x1a86, 'pid':0xe008, 'driver':'uni-t/ut32x', 'name':'UT32x or 72-7712 Thermocouple Reader'},
+    {'vid':0x1a86, 'pid':0xe008, 'driver':'uni-t/ut32x', 'name':'UT32x or 72-771x Thermocouple Reader'},
+    {'vid':0x10c4, 'pid':0xea80, 'driver':'multicomp/mp730679', 'name':'Multicomp Pro MP730679 Multimeter'},
     
     # Multiple devices with same VID and PID are seperated by the serial number as a unique descriptor.
     {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'name':'Thorlabs APT motor driver (generic)'},
