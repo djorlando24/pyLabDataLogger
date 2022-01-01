@@ -59,11 +59,16 @@ class arduinoSerialDevice(serialDevice):
         # The serial arduino device should report repeated strings with the structure
         # DESCRIPTION: VARIABLE = VALUE UNITS, VARIABLE = VALUE UNITS\n
         
+<<<<<<< HEAD
         # Increase the default timeout in case we have to wait a few seconds for the next full update.
         self.Serial.timeout=10
               
               
         # Get device name
+=======
+        self.Serial.timeout=10
+        
+>>>>>>> aa830a3ddaee2384cd96d54ab07aa08b576c70f7
         nbytes=0
         desc=''
         first_loop = (not 'channel_names' in self.config.keys()) or reset
