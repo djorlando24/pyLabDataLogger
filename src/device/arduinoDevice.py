@@ -5,7 +5,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.1.3
-    @date 22/03/2021
+    @date 01/01/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -59,16 +59,32 @@ class arduinoSerialDevice(serialDevice):
         # The serial arduino device should report repeated strings with the structure
         # DESCRIPTION: VARIABLE = VALUE UNITS, VARIABLE = VALUE UNITS\n
         
+        # Increase the default timeout in case we have to wait a few seconds for the next full update.
+        self.Serial.timeout=10
+              
+              
+        # Get device name
         nbytes=0
         desc=''
-        while nbytes<buffer_limit:
-            desc += self.Serial.read(1).decode('ascii')
-            if desc[-1] == ':':
+        first_loop = (not 'channel_names' in self.config.keys()) or reset
+        while True: #nbytes<buffer_limit:
+            desc += self.Serial.read(1).decode('ascii') # read char
+            if (desc[-1] == ':') and (not first_loop): # only get the channel name after the first loop in case the buffer was half-full
                 desc=desc[:-1]
                 break
+            if (desc[-1] == '\r') or (desc[-1] == '\n'): # reset in case the buffer had the last half of a string in it
+                desc=''
+                nbytes=0
+                first_loop=False
             nbytes+=1
 
-        # First pass?
+        # Update device name? 
+        if len(desc)>0:
+            if (desc != self.name):
+                self.name = desc
+
+
+        # First pass to get channel names and units.
         values=[]
         if not 'channel_names' in self.config.keys() or reset:
             reset=True
@@ -76,7 +92,7 @@ class arduinoSerialDevice(serialDevice):
             self.params['raw_units']=[]
             self.config['eng_units']=[]
             self.params['n_channels']=0
-            self.name = desc
+            #self.name = desc
             cprint( '\t'+self.name, 'green')
     
             while self.config['eng_units'] == []:
