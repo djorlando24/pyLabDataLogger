@@ -6,8 +6,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2021 LTRAC
     @license GPL-3.0+
-    @version 0.0.1
-    @date DD/MM/YYYY
+    @version 1.2
+    @date 19/01/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /

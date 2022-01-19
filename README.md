@@ -4,8 +4,8 @@ Laboratory datalogging for USB and Serial devices
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2019-2021 LTRAC
     @license GPL-3.0+
-    @version 1.1.3
-    @date 11/12/2021
+    @version 1.2
+    @date 19/01/2022
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -33,7 +33,12 @@ Laboratory datalogging for USB and Serial devices
 
 ## TLDR
 
-*Dec-2021:* There is a new script `monitor_devices.py` which will live-graph the first channel of every device to the screen while also logging to HDF5.
+**Version 1.2**
+
+- There is a new script `monitor_devices.py` which will live-graph the first channel of every device to the screen while also logging to HDF5.
+- Improved handling of Arduino serial devices
+- Bug fixes for Omron K3HB series process meters
+- Added support for BK Precision 168xx power supplies
 
 **As of v1.1.3 Windows Subsystem for Linux 2 is confirmed supported**
 
@@ -110,6 +115,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 
 - RS-232 Serial devices via Serial-to-USB adapters. pyLabDataLogger may not be able to auto-identify the USB VID & PID and you might be asked to select from a list of supported devices.
     - Tenma 72-2710 USB programmable bench power supply
+    - BK Precision 168xx series programmable bench power supply
     - Pico RS-232 TC-08 thermocouple logger via generic RS-232 adpater
     - CENTER 310 humidity meter via model-specific serial to USB dongle
     - OHAUS digital lab scales via generic RS-232 adapter

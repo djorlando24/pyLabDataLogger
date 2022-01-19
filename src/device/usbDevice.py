@@ -9,8 +9,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.1.3
-    @date 27/04/2021
+    @version 1.2
+    @date 19/01/2022
         __   ____________    ___    ______	
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -94,6 +94,7 @@ usb_device_table = [
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/sd700', 'name':'Extech SD700 Barometric PTH Datalogger'},
     {'vid':0x10c4, 'pid':0xea60, 'driver':'serial/center310', 'name':'CENTER 310 Humidity meter', 'manufacturer':'Silicon Labs'},
     {'vid':0x10c4, 'pid':0xea60, 'driver':'serial/mx5060', 'name':'Metrix MX5060 Multimeter'},
+    {'vid':0x10c4, 'pid':0xea60, 'driver':'serial/bkp168', 'name':'BK Precision 168xx Power Supply'},
     {'vid':0x0683, 'pid':0x1480, 'driver':'serial/di148', 'name':'DataQ DI-148 ADC'},
     {'vid':0x0403, 'pid':0xbab1, 'driver':'status/sem1600b', 'name':'STATUS SEM1600/B Load Cell Amplifier'},
     

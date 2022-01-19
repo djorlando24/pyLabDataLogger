@@ -6,8 +6,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.1.3
-    @date 20/12/2020
+    @version 1.2
+    @date 19/01/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -58,7 +58,7 @@ if __name__ == '__main__':
                 cprint( d.name, 'magenta', attrs=['bold'] )
                 d.query()
                 d.pprint()
-            time.sleep(1)
+            time.sleep(.01)
     except KeyboardInterrupt:
         print("Stopped.")
     except: # all other errors

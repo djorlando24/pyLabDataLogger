@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.1.3
-    @date 01/01/2022
+    @version 1.2
+    @date 19/01/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -46,6 +46,38 @@ class arduinoSerialDevice(serialDevice):
     """ Class defining an Arduino type microcontroller that communicates over the serial
         port, typically via USB. """
 
+    # Parse serial data
+    def readArduinoString(self):
+        try:
+            s1 = self.Serial.readline()
+            while (not b':' in s1) or (len(s1)<=3): s1 = self.Serial.readline()
+            l = s1.decode('utf-8').split(':')
+            desc=l[0]; varstr=l[1]
+            if ',' in varstr: varlist=[s.strip() for s in varstr.split(',')]
+            else: varlist=[varstr.strip()]
+            
+            #print(desc)
+            varnames=[]
+            values=[]
+            varunits=[]
+            
+            for v in varlist:
+                varname,valstr = v.split('=')
+                value,units = valstr.strip().split(' ')
+                value=float(value)
+                #print('\t',[varname,value,units])
+                varnames.append(varname)
+                values.append(value)
+                varunits.append(units)
+            
+        except UnicodeDecodeError:
+            return None,None,None,None
+        
+        except:
+            raise
+            
+        return desc,varnames,values,varunits
+
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self, reset=False, buffer_limit=1024):
     
@@ -61,95 +93,49 @@ class arduinoSerialDevice(serialDevice):
         
         # Increase the default timeout in case we have to wait a few seconds for the next full update.
         self.Serial.timeout=10
-              
-              
-        # Get device name
-        nbytes=0
-        desc=''
+
+        # Check if we need to do setup
         first_loop = (not 'channel_names' in self.config.keys()) or reset
-        while True: #nbytes<buffer_limit:
-            desc += self.Serial.read(1).decode('ascii') # read char
-            if (desc[-1] == ':') and (not first_loop): # only get the channel name after the first loop in case the buffer was half-full
-                desc=desc[:-1]
-                break
-            if (desc[-1] == '\r') or (desc[-1] == '\n'): # reset in case the buffer had the last half of a string in it
-                desc=''
-                nbytes=0
-                first_loop=False
-            nbytes+=1
+        if first_loop: 
+            for n in range(2): 
+                self.Serial.readline()
+             
+        # Attempt to get data
+        desc=None
+        while desc is None:
+            desc,varnames,values,varunits = self.readArduinoString()
 
-        # Update device name? 
-        if len(desc)>0:
-            if (desc != self.name):
-                self.name = desc
+        # Do we update the device name?  (first time, or if string was broken during 1st reading)
+        if first_loop or ((self.name in desc) and (len(desc)>len(self.name))):
+            self.name=desc
 
-
-        # First pass to get channel names and units.
-        values=[]
-        if not 'channel_names' in self.config.keys() or reset:
-            reset=True
-            self.config['channel_names']=[]
-            self.params['raw_units']=[]
-            self.config['eng_units']=[]
-            self.params['n_channels']=0
-            #self.name = desc
-            cprint( '\t'+self.name, 'green')
-    
-            while self.config['eng_units'] == []:
-                nbytes=0; s=''
-                while nbytes<buffer_limit:
-                    s+=self.Serial.read(1).decode('ascii')
-                    if s[-1] == '=':
-                        self.config['channel_names'].append(s[:-2].strip())
-                        self.params['n_channels']+=1
-                        break
-                    nbytes+=1
-                
-                nbytes=0; s=''
-                while nbytes<buffer_limit:
-                    s+=self.Serial.read(1).decode('ascii')
-                    if ((s[-1] == ' ') or (s[-1] == '\r') or (s[-1] == '\n')) and len(s)>1:
-                        values.append( float(s.strip()) )
-                        break
-                    nbytes+=1
-                
-                nbytes=0; s=''
-                while nbytes<buffer_limit:
-                    s+=self.Serial.read(1).decode('ascii')
-                    if s[-1] == ',' or s[-1] == '\r' or s[-1] == '\n':
-                        self.params['raw_units'].append( s[:-1].strip() )
-                        break
-                    nbytes+=1
-                
-                if s[-1] == '\n' or s[-1] == '\r':
-                    self.config['eng_units']=self.params['raw_units']
-                    break
-                elif s[-1] != ',':
-                    while self.Serial.read(1).decode('ascii') != ',': pass
-
+        # update the channel names and units first time
+        if first_loop:
+            self.config['channel_names']=varnames
+            self.params['n_channels']=len(varnames)
+            self.params['raw_units']=varunits
+            if not 'eng_units' in self.config.keys():
+                self.config['eng_units']=varunits
             if not 'scale' in self.config.keys():
                 self.config['scale'] = np.ones(self.params['n_channels'],)
             if not 'offset' in self.config.keys():
                 self.config['offset'] = np.zeros(self.params['n_channels'],)
-
-
-        else:
-            # Repeat query, no need to worry about the description and variable names
-            nbytes=0; s=''; invar=False
-            while nbytes<buffer_limit:
-                s+=self.Serial.read(1).decode('ascii')
-                if s[-1] == '=':
-                    s=''; nbytes=0
-                    invar=True
-                    s+=self.Serial.read(1).decode('ascii')
-                if s[-1] == ' ' and invar and len(s) > 1:
-                    values.append( float(s.strip()) )
-                    s=''; nbytes=0
-                    invar=False
-                    s+=self.Serial.read(1).decode('ascii')
-                if s[-1] == '\n': break
-                nbytes+=1
-    
+                
+        # update channel names and units if there was a channel missing previous run due to a broken string
+        if len(varnames)>len(self.config['channel_names']):
+            self.config['channel_names']=varnames
+            self.params['n_channels']=len(varnames)
+            self.params['raw_units']=varunits
+            for n in range(self.config['eng_units'], len(varnames)):
+                self.config['eng_units'].append(varunits[n])
+                self.config['scale'].append(1)
+                self.config['offset'].append(0)
+        
+        # check size of arrays - pad with NaN if there was some IO error and data cut off.
+        if len(values) != len(self.config['scale']):
+            for n in range(len(values),len(self.config['scale'])):
+                values.append(np.nan)
+        
         self.lastValue = np.array(values)
         self.lastScaled = np.array(self.lastValue) * self.config['scale'] + self.config['offset']
         self.updateTimestamp()

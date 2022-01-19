@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.1.3
-    @date 22/03/2021
+    @version 1.2
+    @date 19/01/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -228,7 +228,7 @@ class device:
 
     # log to HDF5 file
     # max_records specifies the largest size an array can get.
-    def log_hdf5(self, filename, max_records=4096):
+    def log_hdf5(self, filename, max_records=100000):
         try:
             assert(h5py)
         except AssertionError:

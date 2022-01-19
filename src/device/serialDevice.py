@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.1.3
-    @date 05/04/2021
+    @version 1.2
+    @date 19/01/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -44,6 +44,7 @@
         16/03/2021 - python3 encoding for Ranger 5000
         22/03/2021 - multi sample support for some devices with config['samples']
         05/04/2021 - support for Newport P6000A Freq Counter, PT200M load cell
+        19/01/2022 - support for BK Precision 168xx power supplies
 """
 
 from .device import device
@@ -69,6 +70,7 @@ class serialDevice(device):
         
         The 'serial' driver supports the following hardware:
             'serial/alicat'            : Alicat Scientific M-series mass flow meter
+            'serial/bkp168'            : BK Precision 168xx series power supply
             'serial/center310'         : CENTER 310 Temperature and Humidity meter
             'serial/di148'             : DataQ DI-148 Analog-to-Digital Converter
             'serial/esd508'            : Leadshine ES-D508 Easy Servomotor Driver
@@ -419,6 +421,9 @@ class serialDevice(device):
                 # No settings can be modified at present. 
                 pass
             elif subdriver=='di148':
+                # No settings can be modified at present. 
+                pass
+            elif subdriver=='bkp168':
                 # No settings can be modified at present. 
                 pass
             else:
@@ -1082,6 +1087,25 @@ class serialDevice(device):
             cprint( "\tReturned Version = %s, Status = %s, Decimal places = %i, Range = %s" % (self.params['version'],\
                                     self.config['status'],self.config['decimal_places'],self.params['range']), 'green')
  
+ 
+        # ----------------------------------------------------------------------------------------
+        # Startup config for BK Precision 168xx power supply
+        elif subdriver=='bkp168': 
+            self.name = "BK Precision 168xx Power Supply"
+            self.config['channel_names']=['voltage','current','set_voltage','set_current','mode']
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.params['raw_units']=['V','A','V','A','']
+            self.config['eng_units']=self.params['raw_units']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.queryTerminator='\r'
+            self.responseTerminator='\r'
+            self.params['min_response_length']=1
+            #self.serialCommsFunction=self.blockingRawSerialRequest
+            self.sleeptime=0.01
+            
+            self.serialQuery=['GETD','','GETS','']
+ 
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.driver)
             
@@ -1469,7 +1493,7 @@ class serialDevice(device):
                 return [ float(s[start:end].replace(b' ',b'')) ]
             
             # ----------------------------------------------------------------------------------------
-            elif (self.driver==['k3hb','vlc']) or (self.driver==['k3hb','x']): 
+            if (self.driver==['k3hb','vlc']) or (self.driver==['k3hb','x']): 
                 vals = []
                     
                 for r in rawData:
@@ -1481,6 +1505,23 @@ class serialDevice(device):
                         vals.append(-float(dataframe)*10**(-self.config['decimal_places']))
                     else: # positive value
                         vals.append(float(int(dataframe,16))*10**(-self.config['decimal_places']))
+                
+                return vals
+                
+            # ----------------------------------------------------------------------------------------
+            if subdriver=='bkp168': 
+                if len(rawData)<4: return [np.nan, np.nan, np.nan, np.nan]
+
+                if (len(rawData[0])<9) or (not b'OK' in rawData[1]): return [np.nan, np.nan, np.nan, np.nan]
+                mode = rawData[0][8:]
+                vals = [float(rawData[0][:4])/100., float(rawData[0][4:8])/100.]
+                
+                if (len(rawData[2])<6) or (not b'OK' in rawData[3]): return [np.nan, np.nan, np.nan, np.nan]
+                vals.extend([ float(rawData[2][:3])/10., float(rawData[2][3:6])/10.])
+                      
+                if mode == b'0': vals.append('CV')                              
+                elif mode == b'1': vals.append('CC')
+                else: vals.append('?')
                 
                 return vals
                 
