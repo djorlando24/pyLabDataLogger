@@ -60,7 +60,7 @@ c_libraries = [
 
 
 setup(name="pyLabDataLogger",
-      version="1.0.1",
+      version="1.2",
       description="Laboratory datalogging for USB and Serial devices.",
       author="Daniel Duke",
       author_email="daniel.duke@monash.edu",

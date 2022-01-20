@@ -5,7 +5,7 @@ Laboratory datalogging for USB and Serial devices
     @copyright (c) 2019-2021 LTRAC
     @license GPL-3.0+
     @version 1.2
-    @date 19/01/2022
+    @date 20/01/2022
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -38,7 +38,7 @@ Laboratory datalogging for USB and Serial devices
 - There is a new script `monitor_devices.py` which will live-graph the first channel of every device to the screen while also logging to HDF5.
 - Improved handling of Arduino serial devices
 - Bug fixes for Omron K3HB series process meters
-- Added support for BK Precision 168xx power supplies
+- Added support for BK Precision 168xx power supplies, AND G-series precision balances.
 
 **As of v1.1.3 Windows Subsystem for Linux 2 is confirmed supported**
 

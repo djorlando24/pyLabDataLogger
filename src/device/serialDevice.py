@@ -45,6 +45,7 @@
         22/03/2021 - multi sample support for some devices with config['samples']
         05/04/2021 - support for Newport P6000A Freq Counter, PT200M load cell
         19/01/2022 - support for BK Precision 168xx power supplies
+        20/01/2022 - support for AND G[XF]-K series balances
 """
 
 from .device import device
@@ -70,6 +71,7 @@ class serialDevice(device):
         
         The 'serial' driver supports the following hardware:
             'serial/alicat'            : Alicat Scientific M-series mass flow meter
+            'serial/andg'              : AND GX-K and GF-K series precision balances
             'serial/bkp168'            : BK Precision 168xx series power supply
             'serial/center310'         : CENTER 310 Temperature and Humidity meter
             'serial/di148'             : DataQ DI-148 Analog-to-Digital Converter
@@ -302,7 +304,14 @@ class serialDevice(device):
             if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
             if not 'timeout' in self.params.keys(): self.params['timeout']=1. # sec for a single byte read/write
             self.params['timeout_total']=1.
-
+        elif self.subdriver=='andg': # Factory defaults
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=2400
+            if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.SEVENBITS
+            if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_EVEN
+            if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_TWO
+            if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=False
+            if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
+            if not 'timeout' in self.params.keys(): self.params['timeout']=1. # sec for a single byte read/write
         
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -425,6 +434,9 @@ class serialDevice(device):
                 pass
             elif subdriver=='bkp168':
                 # No settings can be modified at present. 
+                pass
+            elif subdriver=='andg':
+                # No settings can be modified at present.
                 pass
             else:
                 print(self.__doc__)
@@ -1105,7 +1117,28 @@ class serialDevice(device):
             self.sleeptime=0.01
             
             self.serialQuery=['GETD','','GETS','']
- 
+
+        # ----------------------------------------------------------------------------------------
+        # Startup config for AND G[XF]-K balance
+        elif subdriver=='andg':
+            self.config['Model'] = self.serialCommsFunction('?TN\r\n').decode('ascii').split(',')[-1].strip()
+            if (self.config['Model'] is None) or (self.config['Model'] == ''):
+                self.name = "AND G Series Balance"
+            else: 
+                self.name = "AND Balance %s" % self.config['Model']
+            self.config['channel_names']=['weight','state']
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.params['raw_units']=['?','']
+            self.config['eng_units']=self.params['raw_units']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.queryTerminator='\r\n'
+            self.responseTerminator='\n'
+            self.params['min_response_length']=1
+            self.config['ID']=str(self.serialCommsFunction('?ID\r\n').decode('ascii').strip().split(',')[1:])
+            self.config['Serial Number']=str(self.serialCommsFunction('?SN\r\n').decode('ascii').strip().split(',')[1:])
+            self.serialQuery=['Q']
+
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.driver)
             
@@ -1524,7 +1557,26 @@ class serialDevice(device):
                 else: vals.append('?')
                 
                 return vals
-                
+            
+
+            # ----------------------------------------------------------------------------------------
+            if subdriver=='andg':
+                if not b',' in rawData[0]: return [np.nan,np.nan]
+                state,reading=rawData[0].decode('ascii').strip().split(',')
+                units='?'
+                if ' ' in reading:
+                    value,units=reading.split()
+                else:
+                    value=reading.strip()
+
+                # update units?
+                if (self.params['raw_units'][0] == '?') or (self.params['raw_units'][0] == ''):
+                    self.params['raw_units'] = [units.strip(),'']
+                if (self.config['eng_units'][0] == '?') or (self.config['eng_units'][0] == ''):
+                    self.config['eng_units']=self.params['raw_units']
+            
+                return [ np.float(value), state ]
+
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         except ValueError:

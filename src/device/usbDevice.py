@@ -120,6 +120,7 @@ usb_device_table = [
     {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/k3hb/x', 'name':'Omron K3HB-X Ammeter'},
     #{'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-iseries/485', 'name':'Omega iSeries via RS-485'}, # needs work
     #{'vid':0x1a86, 'pid':0x7523, 'driver':'serial/omega-iseries/232', 'name':'Omega iSeries via RS-232'}, # needs work
+    {'vid':0x067b, 'pid':0x2303, 'driver':'serial/andg', 'name':'AND GX-K and GF-K series balance'}
 
     # Known but unsupported or generic
     #{'vid':0x1d6b, 'pid':0x0104, 'driver':'beaglebone', 'name':'Beaglebone Black'},

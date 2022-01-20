@@ -73,6 +73,10 @@ Oscilloscopes using the GPIB-USB adapter (http://dangerousprototypes.com/blog/20
 ## Extech USB-RS232 adapters
 The Extech brand USB to RS232 adapters are multifunction and some have a switch to choose between mode 1 & 2. You must select mode 2 for the communications to work.
 
+## AND G-series precision balances
+The software assumes default serial port settings of 2400 baud, 7 data bits, even parity, 2 stop bits, no flow control.
+You can modify these in the software if you wish.
+
 ## Leadshine ES-D508 servomotor controller
 The RJ-12 to RS-232 adapter supplied for tuning the ES-D508 servomotor controller can be used to move the motor and poll the encoder to get the current position. The tuning constants may need adjustment depending on choice of motor, which can be determined using the tuning software supplied by the manufacturer.
 
