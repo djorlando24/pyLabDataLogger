@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.2
-    @date 19/01/2022
+    @version 1.2.1
+    @date 03/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -46,6 +46,7 @@
         05/04/2021 - support for Newport P6000A Freq Counter, PT200M load cell
         19/01/2022 - support for BK Precision 168xx power supplies
         20/01/2022 - support for AND G[XF]-K series balances
+        03/02/2022 - support for Radwag R series balances
 """
 
 from .device import device
@@ -85,6 +86,7 @@ class serialDevice(device):
             'serial/omega-usbh         : Omega USB-H 'high speed' pressure transducers with built in USB to Serial converter
             'serial/ohaus7k'           : OHAUS 7000 series scientific scales via RS232
             'serial/r5000'             : Ranger 5000 series load cell amplifier via RS232
+            'serial/radwag-r'          : RADWAG R-series balance
             'serial/p6000a'            : Newport P6000A Frequency meter/counter/timer
             'serial/pt200m'            : PT Ltd. PT200M load cell amplifier (ptglobal.com)
             'serial/tc08rs232'         : Pico TC08 RS-232 thermocouple datalogger (USB version has a seperate driver 'picotc08')
@@ -284,6 +286,8 @@ class serialDevice(device):
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=4800
         elif self.subdriver=='r5000':
             if not 'timeout' in self.params.keys(): self.params['timeout']=5
+        elif self.subdriver=='radwag-r':
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=4800
         elif self.subdriver=='pt200m':
             if not 'timeout' in self.params.keys(): self.params['timeout']=0.1
         elif self.subdriver=='p6000a':
@@ -406,6 +410,9 @@ class serialDevice(device):
                 pass
             elif subdriver=='r5000':
                 # No settings can be modified at present. In future, we could allow zero/tare remotely.
+                pass
+            elif subdriver=='radwag-r':
+                # No settings can be modified at present. In future we could force certain units/mode.
                 pass
             elif subdriver=='alicat':
                 # No settings can be modified at present. In future we could set units and gas type
@@ -951,6 +958,32 @@ class serialDevice(device):
             self.params['min_response_length']=5
             #self.serialCommsFunction=self.blockingRawSerialRequest
             self.sleeptime=0.001
+
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='radwag-r': # Startup config for RADWAG R-series
+            self.name = "Radwag R-Series Balance"
+            self.config['channel_names']=['Current reading','Tare value']
+            self.params['raw_units']=['','']
+            self.config['eng_units']=['','']
+            self.config['scale']=[1.,1.]
+            self.config['offset']=[0.,0.]
+            self.params['n_channels']=2
+            self.serialQuery=['SUI','OT']
+            self.queryTerminator='\r\n'
+            self.responseTerminator='\r'
+            self.params['min_response_length']=3
+            self.sleeptime=0.001
+
+            # Use device info to update name and units.
+            get_name = self.blockingSerialRequest('BN\r\n','\r',sleeptime=self.sleeptime)
+            if b'BN' in get_name: self.name+=' '+get_name.decode('ascii').split('"')[1].strip()
+            self.config['Serial_Number']=self.blockingSerialRequest('NB\r\n','\r',sleeptime=self.sleeptime)
+            unit_str=self.blockingSerialRequest('UG\r\n','\r',sleeptime=self.sleeptime)
+            if b'OK' in unit_str:
+                unit=unit_str.decode('ascii').split(' ')[1].strip()
+                self.params['raw_units']=[unit, unit]
+                self.config['eng_units']=[unit, unit]
+
 
         # ----------------------------------------------------------------------------------------
         # Startup config for DataQ DI-148 ADC
@@ -1524,7 +1557,22 @@ class serialDevice(device):
                 else: self.params['raw_units'][0]=unit
                 if self.config['eng_units'][0] == '': self.config['eng_units'][0] = unit
                 return [ float(s[start:end].replace(b' ',b'')) ]
-            
+           
+            # ----------------------------------------------------------------------------------------
+            if subdriver=='radwag-r':
+                values=[]
+                for n in range(2):
+                    if self.serialQuery[n].encode('ascii') in rawData[n]:
+                        s=rawData[n].decode('ascii').split() # split on whitespace
+                        try: values.append(float(s[1]))
+                        except ValueError: values.append(np.nan)
+                        unit=s[2].strip()
+                        if self.params['raw_units'][n] != unit:
+                            if self.config['eng_units'][n] == self.params['raw_units'][n]:
+                                self.config['eng_units'][n] = unit
+                            self.params['raw_units'][n] = unit
+                return values 
+
             # ----------------------------------------------------------------------------------------
             if (self.driver==['k3hb','vlc']) or (self.driver==['k3hb','x']): 
                 vals = []

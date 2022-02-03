@@ -4,8 +4,8 @@ Laboratory datalogging for USB and Serial devices
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2019-2021 LTRAC
     @license GPL-3.0+
-    @version 1.2
-    @date 20/01/2022
+    @version 1.2.1
+    @date 03/02/2022
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -97,7 +97,8 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Status SEM1600/B Load Cell Amplifier
     - Tenma 72-7712 thermometer
     - Uni-T UT32x thermometer
-    
+    - RADWAG R-series balance via USB port
+
 - USB Devices using Linux kernel drivers (not supported on MacOS)
     - USB audio capture devices via ALSA
     - Video4Linux capture interfaces (i.e. video capture cards, see Hardware.md for details)
@@ -126,6 +127,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Leadshine ES-D508 servomotor controller
     - Metrix MX5060 Bench multimeter (contains an internal generic CP210x Serial-to-USB bridge)
     - Radwag WTB series digital lab balance/scale via RS232-to-USB UART adapter **
+    - Radwag AS 62.R2 analytical balance (contains an internal Serial-to-USB bridge)
     - Ranger 5000 Load Cell Amp via RS232-to-USB adapter **
     - Omega iSeries temperature process controllers, via generic RS-485 or RS-232 adapter **
     - Omron K3HB-VLC load cell process controller with FLK1B RS-232/485 comms option board
