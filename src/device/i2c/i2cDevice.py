@@ -29,8 +29,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from .device import device
-from .device import pyLabDataLoggerIOError
+from ..device import device
+from ..device import pyLabDataLoggerIOError
 import datetime, time
 import numpy as np
 from termcolor import cprint
@@ -73,26 +73,39 @@ def load_i2c_devices(devices=None,bus=1,**kwargs):
     if devices is None: devices=scan_for_devices(bus)
     device_list=[]
     for address in devices:
-        if ((address=='0x5a') or (address=='0x5b')):
-           from pyLabDataLogger.device import ccs811Device
+        if address=='0x57':
+            cprint("IIC: Ignoring clock EEPROM at "+str(address), 'white')
+        
+        elif ((address=='0x70') or (address=='0x71') or (address=='0x72') or (address=='0x73') 
+                or (address=='0xe0') or (address=='0xe2') or (address=='0xe4') or (address=='0xe6') ):
+            cprint("IIC: Acknowledged output device at address %s but won't add this as an input device" % str(address), 'white')
+        
+        elif ((address=='0x5a') or (address=='0x5b')):
+           from pyLabDataLogger.device.i2c import ccs811Device
            device_list.append(ccs811Device.ccs811Device(params={'address':address, 'bus':bus},**kwargs))
-        if address=='0x68':
-            from pyLabDataLogger.device import ds3231Device
+         
+        elif address=='0x68':
+            from pyLabDataLogger.device.i2c import ds3231Device
             device_list.append(ds3231.ds3231Device(params={'address':address, 'bus':bus},**kwargs))
-        if ((address=='0x6a') or (address=='0x6c') or (address=='0x6e')):
-            from pyLabDataLogger.device import mcp3424Device
+        
+        elif ((address=='0x6a') or (address=='0x6c') or (address=='0x6e')):
+            from pyLabDataLogger.device.i2c import mcp3424Device
             device_list.append(mcp3424Device.mcp3424Device(params={'address':address, 'bus':bus},**kwargs))
-        if address=='0x73':
-            from pyLabDataLogger.device import i2cO2Device
+        
+        elif address=='0x73':
+            from pyLabDataLogger.device.i2c import i2cO2Device
             device_list.append(i2cO2Device.i2cO2Device(params={'address':address, 'bus':bus},**kwargs))
-        if address=='0x48' or address=='0x49':
-            from pyLabDataLogger.device import ads1x15Device
+        
+        elif address=='0x48' or address=='0x49':
+            from pyLabDataLogger.device.i2c import ads1x15Device
             device_list.append(ads1x15Device.ads1x15Device(params={'address':address, 'bus':bus},**kwargs))
+        
         elif address=='0x77':
-            from pyLabDataLogger.device import bmpDevice
+            from pyLabDataLogger.device.i2c import bmpDevice
             device_list.append(bmpDevice.bmpDevice(params={'address':address, 'bus':bus},**kwargs))
+        
         else:
-            cprint( "Ignoring unsupported I2C device at address "+str(address), 'yellow')
+            cprint( "IIC: Ignoring unsupported device at address "+str(address), 'yellow')
     return device_list
 
 

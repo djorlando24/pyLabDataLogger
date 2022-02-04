@@ -409,8 +409,10 @@ class serialDevice(device):
                 pass
             elif subdriver=='cozir':
                 # No settings can be modified at present.
+                pass
             elif subdriver=='hpma':
                 # No settings can be modified at present.
+                pass
             elif subdriver=='omega-iseries':
                 # No settings can be modified at present. In future we could allow changing of
                 # set points.
