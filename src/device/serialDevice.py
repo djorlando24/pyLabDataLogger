@@ -5,7 +5,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.2.1
-    @date 03/02/2022
+    @date 04/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -47,6 +47,7 @@
         19/01/2022 - support for BK Precision 168xx power supplies
         20/01/2022 - support for AND G[XF]-K series balances
         03/02/2022 - support for Radwag R series balances
+        04/02/2022 - Alicat bug fixes
 """
 
 from .device import device
@@ -875,10 +876,10 @@ class serialDevice(device):
             self.name = "Alicat Scientific M-series mass flow meter" # update w/model number later
             self.params['n_channels']=5
             self.config['channel_names']=['','','','',''] # will be obtained by query below
-            self.params['raw_units']=['','','','',''] # will be obtained by query below
-            self.config['eng_units']=['','','','',''] # will be obtained by query below
-            self.config['scale']=[1.,1.,1.,1.,np.nan]
-            self.config['offset']=[0.,0.,0.,0.,np.nan]
+            self.params['raw_units']    =['','','','',''] # will be obtained by query below
+            self.config['eng_units']    =['','','','',''] # will be obtained by query below
+            self.config['scale']        =[1.,1.,1.,1.,1.]
+            self.config['offset']       =[0.,0.,0.,0.,0.]
             if not 'ID' in self.params.keys(): self.params['ID']='A' # default unit ID is 'A'
             self.serialQuery=[self.params['ID']] # one command returns all the variables.
             self.queryTerminator='\r'
@@ -901,10 +902,10 @@ class serialDevice(device):
 
             # get units & channel names
             for j in range(2,7):
-                descStr = self.blockingSerialRequest(self.params['ID']+'??d%i' % j +self.queryTerminator,'\r').decode('utf-8')
+                descStr = self.blockingSerialRequest(self.params['ID']+'??d%i' % j +self.queryTerminator,'\r').decode('utf-8').strip('\x08').strip()
                 try:
-                    unitStr = descStr.split(' ')[-1].replace('`','deg')
-                    nameStr = ' '.join(descStr.split(' ')[3:6]).strip()
+                    unitStr = descStr.split()[-1].replace('`','deg')
+                    nameStr = descStr.split()[3].strip()
                     if j<6: # skip units for 'gas type'
                         self.params['raw_units'][j-2] = unitStr
                         self.config['eng_units'][j-2] = unitStr
@@ -1501,7 +1502,7 @@ class serialDevice(device):
                 valStrings= [ s for s in rawData[0].decode('utf-8').split(' ') if s!='' ]
                 if valStrings[0].upper() != self.params['ID'].upper():
                     raise pyLabDataLoggerIOError("Alicat Device ID mismatch - wrong serial port?")
-                cprint( self.config['channel_names'], 'red' )
+                #cprint( self.config['channel_names'], 'red' )
                 return [ float(valStrings[1]), float(valStrings[2]), float(valStrings[3]), float(valStrings[4]), valStrings[5].strip() ]
 
             # ----------------------------------------------------------------------------------------

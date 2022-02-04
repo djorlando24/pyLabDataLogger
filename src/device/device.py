@@ -5,7 +5,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.2
-    @date 19/01/2022
+    @date 04/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -31,6 +31,7 @@
     Changes:
         22/02/2019 - Added logging options
         30/07/2020 - handle mixed array and float types
+        04/02/2022 - Truncate really long channel names when printing
 """
 
 import datetime
@@ -121,6 +122,11 @@ class device:
         if ('opencv' in self.driver) or ('v4l2' in self.driver): return True
         else: return False
     
+    # Truncate a really long string when printing to the terminal.
+    def truncateName(self,s):
+        if len(s)>23: return "%s...%s" % (s[:10],s[-10:])
+        else: return s
+
 
     ###########################################################################################################################################
     # Print values with units in a nice readable format.
@@ -137,17 +143,17 @@ class device:
 
                     if isinstance(self.lastValue[n],str):
                         if self.params['raw_units'][n] == '':
-                            sys.stdout.write(u'%s = %s' % (self.config['channel_names'][n],self.lastValue[n]))
+                            sys.stdout.write(u'%s = %s' % (self.truncateName(self.config['channel_names'][n]),self.lastValue[n]))
                         else:
-                            sys.stdout.write(u'%s = %s %s' % (self.config['channel_names'][n],\
+                            sys.stdout.write(u'%s = %s %s' % (self.truncateName(self.config['channel_names'][n]),\
                                                                 self.lastValue[n],\
                                                                 self.params['raw_units'][n]))
                     
                     else: # If numeric, use %g which will format big/smaller numbers in exp. notation.
                         if self.params['raw_units'][n] == '':
-                            sys.stdout.write(u'%s = %g' % (self.config['channel_names'][n],self.lastValue[n]))
+                            sys.stdout.write(u'%s = %g' % (self.truncateName(self.config['channel_names'][n]),self.lastValue[n]))
                         else:
-                            sys.stdout.write(u'%s = %g %s' % (self.config['channel_names'][n],\
+                            sys.stdout.write(u'%s = %g %s' % (self.truncateName(self.config['channel_names'][n]),\
                                                                 self.lastValue[n],\
                                                                 self.params['raw_units'][n]))
 
@@ -165,7 +171,7 @@ class device:
             if show_scaled:
                 sys.stdout.write(lead+'Scaled: ')
                 for n in range(self.params['n_channels']):
-                    sys.stdout.write(u'%s = %f %s' % (self.config['channel_names'][n], self.lastScaled[n],self.config['eng_units'][n]))
+                    sys.stdout.write(u'%s = %f %s' % (self.truncateName(self.config['channel_names'][n]), self.lastScaled[n],self.config['eng_units'][n]))
                     if (n<self.params['n_channels']-1): sys.stdout.write(', ')
                 sys.stdout.write('\n')
     
@@ -174,9 +180,9 @@ class device:
             for n in range(self.params['n_channels']):
                 if not isinstance(self.lastValue[n], np.ndarray):
                     if self.params['raw_units'][n] == '':
-                        sys.stdout.write(u'%s = %s' % (self.config['channel_names'][n],self.lastValue[n]))
+                        sys.stdout.write(u'%s = %s' % (self.truncateName(self.config['channel_names'][n]),self.lastValue[n]))
                     else:
-                        sys.stdout.write(u'%s = %s %s' % (self.config['channel_names'][n],\
+                        sys.stdout.write(u'%s = %s %s' % (self.truncateName(self.config['channel_names'][n]),\
                                                           self.lastValue[n],\
                                                           self.params['raw_units'][n]))
                     sys.stdout.write('\n')
@@ -201,18 +207,18 @@ class device:
                             lv=self.lastValue[n]
                             lvs=self.lastScaled[n]
                             
-                        if ~show_scaled: print(lead+u'%i: %s = %s %s %s' % (n,self.config['channel_names'][n],\
+                        if ~show_scaled: print(lead+u'%i: %s = %s %s %s' % (n,self.truncateName(self.config['channel_names'][n]),\
                                                            lv,self.params['raw_units'][n],ismore))
-                        else: print(lead+u'%i: %s = %s%s %s \t %s %s %s' % (n,self.config['channel_names'][n],lv,\
+                        else: print(lead+u'%i: %s = %s%s %s \t %s %s %s' % (n,self.truncateName(self.config['channel_names'][n]),lv,\
                                                               self.params['raw_units'][n],ismore,\
                                                             lvs,self.config['eng_units'][n],ismore))
                     
                     # Don't show N-D arrays where N>1
                     else:
-                        if ~show_scaled: print(lead+u'%i: %s = <array of size %s> %s' % (n,self.config['channel_names'][n],\
+                        if ~show_scaled: print(lead+u'%i: %s = <array of size %s> %s' % (n,self.truncateName(self.config['channel_names'][n]),\
                                             self.lastValue[n].shape,self.params['raw_units'][n]))
                         else: print(lead+u'%i: %s = <array of size %s> %s \t <array of size %s> %s' % (n,\
-                                self.config['channel_names'][n],self.lastValue[n].shape,\
+                                self.truncateName(self.config['channel_names'][n]),self.lastValue[n].shape,\
                                 self.params['raw_units'][n],\
                                 self.lastScaled[n].shape,self.config['eng_units'][n]))
                     

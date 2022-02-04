@@ -7,7 +7,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.2
-    @date 19/01/2022
+    @date 04/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -37,7 +37,7 @@ from pyLabDataLogger.logger import globalFunctions
 import time
 from termcolor import cprint
 
-INTERVAL_SECONDS=60
+INTERVAL_SECONDS=1.0
 
 if __name__ == '__main__':
     globalFunctions.banner()
@@ -46,11 +46,11 @@ if __name__ == '__main__':
 
     # AUTO-LOAD ANY USB DEVICE
     usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=False)
-    special_args={} # default/init settings
+    special_args={'quiet':True} # default/init settings
     devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
     
     # HERE WE MANUALLY LOAD lmsensors DEVICE
-    devices.append(lmsensorsDevice.lmsensorsDevice())
+    devices.append(lmsensorsDevice.lmsensorsDevice(**special_args))
 
     if len(devices) == 0: exit()
    
@@ -64,6 +64,6 @@ if __name__ == '__main__':
             time.sleep(INTERVAL_SECONDS)
             print("")
     except KeyboardInterrupt:
-        cprint("\nStopped.",red,attrs=['bold'])
+        cprint("\nStopped.",'red',attrs=['bold'])
     except: # all other errors
         raise

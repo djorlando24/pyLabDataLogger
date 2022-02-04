@@ -7,7 +7,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.2
-    @date 19/01/2022
+    @date 04/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -29,6 +29,8 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    
+    Updated 04/02/22 with improved channel name and python3 string handling.
 """
 
 from .device import device
@@ -96,9 +98,10 @@ class lmsensorsDevice(device):
         self.config['eng_units']=[]
         self.config['scale']=[]
         self.config['offset']=[]
+        self.config['adapter']=[]
         
         try:
-            output = [ line for line in subprocess.check_output(['sensors']).split('\n') if line != '' ]
+            output = [ line for line in subprocess.check_output(['sensors']).split(b'\n') if line != '' ]
         except OSError:
             raise pyLabDataLoggerIOError("lm-sensors not available")
         
@@ -106,20 +109,26 @@ class lmsensorsDevice(device):
         
         # add temperatures
         for j in range(len(output)):
-            if 'Adapter:' in output[j]: adapter = ''.join(output[j].split(':')[1:])
-            if '°C' in output[j] and ':' in output[j]:
-                self.config['channel_names'].append(adapter + ' ' + output[j].split(':')[0] + ' temp')
+            if b'Adapter:' in output[j]: adapter = ''.join(output[j].decode('utf-8').split(':')[1:])
+            if '°C' in output[j].decode('utf-8') and b':' in output[j]:
+                #chname = adapter + ' ' + output[j].decode('utf-8').split(':')[0] + ' temp' # long name
+                chname = output[j].decode('utf-8').split(':')[0] # shorter name
+                self.config['channel_names'].append(self.make_unique_chname(chname))
                 self.params['raw_units'].append( '°C' )
                 self.config['eng_units'].append( '°C' )
+                self.config['adapter'].append(adapter)
                 if not self.quiet: print('\tDetected: %s' % self.config['channel_names'][-1])
-
+                
         # add fan RPMs
         for j in range(len(output)):
-            if 'Adapter:' in output[j]: adapter = ''.join(output[j].split(':')[1:])
-            if 'RPM' in output[j] and ':' in output[j]:
-                self.config['channel_names'].append(adapter + ' ' + output[j].split(':')[0]+ ' RPM')
+            if b'Adapter:' in output[j]: adapter = ''.join(output[j].decode('utf-8').split(':')[1:])
+            if b'RPM' in output[j] and b':' in output[j]:
+                #chname = adapter + ' ' + output[j].decode('utf-8').split(':')[0] + ' RPM' # long name
+                chname = output[j].decode('utf-8').split(':')[0] # shorter name
+                self.config['channel_names'].append(self.make_unique_chname(chname))
                 self.params['raw_units'].append( 'RPM' )
                 self.config['eng_units'].append( 'RPM' )
+                self.config['adapter'].append(adapter)
                 if not self.quiet: print('\tDetected: %s' % self.config['channel_names'][-1])
 
         # Set up device
@@ -182,11 +191,11 @@ class lmsensorsDevice(device):
         
         # Temperatures
         #temperatures = {match[0]: float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)°C", sensors, re.MULTILINE)}
-        temperatures = [float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)°C", sensors, re.MULTILINE)]
+        temperatures = [float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)°C", sensors.decode('utf-8'), re.MULTILINE)]
 
         # Fan speeds
         #rpms = {match[0]: float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)RPM", sensors, re.MULTILINE)}
-        rpms = [float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)RPM", sensors, re.MULTILINE)]
+        rpms = [float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)RPM", sensors.decode('utf-8'), re.MULTILINE)]
 
         # SMART hard disks?
         #for d in self.lm_sensors_chips:
@@ -219,5 +228,15 @@ class lmsensorsDevice(device):
         self.lastScaled = np.array(lastValueSanitized) * self.config['scale'] + self.config['offset']
         self.updateTimestamp()
         return self.lastValue
+
+    # Ensure channel name is unqiue, as lm-sensors can report many identical variable names.
+    def make_unique_chname(self,chname):
+        if chname in self.config['channel_names']:
+            i=1
+            while chname+' %i' % i in self.config['channel_names']: 
+                i+=1
+            return chname + ' %i' % i
+        return chname
+                        
 
 

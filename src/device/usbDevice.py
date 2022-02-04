@@ -105,22 +105,23 @@ usb_device_table = [
     {'vid':0x16c0, 'pid':0x0483, 'driver':'arduino', 'name':'Teensy uC'},
     {'vid':0x067b, 'pid':0x2303, 'driver':'arduino', 'name':'Arduino via PL2303'},
     
-    # Devices using generic Serial-to-USB adapters whose VID and PID are not correlated specifically to a piece of hardware
+    # Devices using generic Serial-to-USB adapters whose VID and PID are not correlated specifically to a piece of hardware.
+    # It's OK to change the VID and PID of these.
     {'vid':0x0557, 'pid':0x2008, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},
     {'vid':0x0408, 'pid':0x6051, 'driver':'arduino', 'name':'Arduino Pro via FTDI FT231X'},
     {'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/tds220gpib', 'name':'Tektronix TDS220 via usb-GPIB'},
     {'vid':0x0403, 'pid':0x6015, 'serial':0x3, 'driver':'serial/p6000a', 'name':'Newport P6000A Freq Counter'},
     {'vid':0x067b, 'pid':0x2303, 'driver':'serial/tc08rs232', 'name':'Picolog RS-232 TC-08 thermocouple datalogger'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/pt200m', 'name':'PT Ltd. PT200M Load Cell'},
-    {'vid':0x0403, 'pid':0x6015, 'driver':'serial/alicat', 'name':'Alicat Scientific M-series mass flow meter'},
-    #{'vid':0x1a86, 'pid':0x7523, 'driver':'serial/alicat', 'name':'Alicat Scientific M-series mass flow meter'},
+    {'vid':0x0403, 'pid':0x6001, 'driver':'serial/alicat', 'name':'Alicat Scientific M-series mass flow meter'},
+    {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/alicat', 'name':'Alicat Scientific M-series mass flow meter'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/wtb', 'name':'Radwag WTB series precision balance'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/esd508', 'name':'Leadshine ES-D508 easy servo driver'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/r5000', 'name':'Ranger 5000 Load Cell Amplifier'},
     {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/k3hb/vlc', 'name':'Omron K3HB-VLC Load Cell Amplifier'},
     {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/k3hb/x', 'name':'Omron K3HB-X Ammeter'},
-    #{'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-iseries/485', 'name':'Omega iSeries via RS-485'}, # needs work
-    #{'vid':0x1a86, 'pid':0x7523, 'driver':'serial/omega-iseries/232', 'name':'Omega iSeries via RS-232'}, # needs work
+    {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-iseries/485', 'name':'Omega iSeries via RS-485'},
+    {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/omega-iseries/232', 'name':'Omega iSeries via RS-232'},
     {'vid':0x067b, 'pid':0x2303, 'driver':'serial/andg', 'name':'AND GX-K and GF-K series balance'}
 
     # Known but unsupported or generic

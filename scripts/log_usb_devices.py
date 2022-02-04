@@ -6,8 +6,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.2
-    @date 19/01/2022
+    @version 1.2.1
+    @date 04/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -36,6 +36,8 @@ from pyLabDataLogger.logger import globalFunctions
 import datetime,time
 from termcolor import cprint
 
+MIN_DELAY_SEC = 0.5  # set to zero to go as fast as possible
+
 if __name__ == '__main__':
     
     globalFunctions.banner()
@@ -45,7 +47,7 @@ if __name__ == '__main__':
     usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=False)
     
     # kwargs to customise setup of devices
-    special_args={'live_preview':True, 'debugMode':False, 'quiet':False, 'revolutions':1.0,\
+    special_args={'live_preview':True, 'debugMode':False, 'quiet':True, 'revolutions':1.0,\
                   'init_tc08_config':['K','K','K','T','T','T','X','X'], \
                   'init_tc08_chnames':['Cold Junction','K1','K2','K3','T4','T5','T6','420mA_P1','420mA_P2']}
 
@@ -63,12 +65,13 @@ if __name__ == '__main__':
                 d.pprint()
                 d.log(logfilename)
             
-            #time.sleep(0.01) # optional slowdown
-            
             dt = time.time()-t0
             running_average = ((running_average*float(loop_counter)) + dt)/(float(loop_counter)+1)
             loop_counter += 1
-            cprint("Loop time = %0.3f sec" % dt, 'cyan')
+            
+            if ((dt<MIN_DELAY_SEC) and (loop_counter>0)): time.sleep(MIN_DELAY_SEC-dt)
+            
+            cprint("Polling time = %0.3f sec" % dt, 'cyan')
             
     except KeyboardInterrupt:
         cprint( "Stopped.", 'red', attrs=['bold'])
