@@ -46,24 +46,34 @@ if __name__ == '__main__':
 
     # AUTO-LOAD ANY USB DEVICE
     usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=False)
-    special_args={'quiet':True} # default/init settings
+    special_args={'live_preview':True, 'debugMode':False, 'quiet':True} # default/init settings
     devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
     
     # HERE WE MANUALLY LOAD lmsensors DEVICE
     devices.append(lmsensorsDevice.lmsensorsDevice(**special_args))
 
     if len(devices) == 0: exit()
-   
+    loop_counter = 0
+    running_average = 0.
     try:
         while True:
+            t0 = time.time()
             for d in devices:
-                cprint( d.name, 'magenta', attrs=['bold'])
+                cprint('\n'+d.name, 'magenta', attrs=['bold'])
                 d.query()
                 d.pprint()
                 d.log(logfilename)
-            time.sleep(INTERVAL_SECONDS)
-            print("")
+            
+            dt = time.time()-t0
+            running_average = ((running_average*float(loop_counter)) + dt)/(float(loop_counter)+1)
+            loop_counter += 1
+            
+            if ((dt<INTERVAL_SECONDS) and (loop_counter>0)): time.sleep(INTERVAL_SECONDS-dt)
+            cprint("Polling time = %0.3f sec" % dt, 'cyan')
+            
     except KeyboardInterrupt:
         cprint("\nStopped.",'red',attrs=['bold'])
     except: # all other errors
         raise
+        
+    cprint("Average loop time = %0.3f sec (%i loops)" % (running_average, loop_counter), 'cyan', attrs=['bold'])    

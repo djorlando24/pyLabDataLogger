@@ -234,7 +234,7 @@ class device:
 
     # log to HDF5 file
     # max_records specifies the largest size an array can get.
-    def log_hdf5(self, filename, max_records=100000):
+    def log_hdf5(self, filename, max_records=352800):
         try:
             assert(h5py)
         except AssertionError:

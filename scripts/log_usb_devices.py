@@ -36,7 +36,7 @@ from pyLabDataLogger.logger import globalFunctions
 import datetime,time
 from termcolor import cprint
 
-MIN_DELAY_SEC = 0.5  # set to zero to go as fast as possible
+INTERVAL_SECONDS = 0.5  # set to zero to go as fast as possible
 
 if __name__ == '__main__':
     
@@ -69,8 +69,7 @@ if __name__ == '__main__':
             running_average = ((running_average*float(loop_counter)) + dt)/(float(loop_counter)+1)
             loop_counter += 1
             
-            if ((dt<MIN_DELAY_SEC) and (loop_counter>0)): time.sleep(MIN_DELAY_SEC-dt)
-            
+            if ((dt<INTERVAL_SECONDS) and (loop_counter>0)): time.sleep(INTERVAL_SECONDS-dt)
             cprint("Polling time = %0.3f sec" % dt, 'cyan')
             
     except KeyboardInterrupt:
