@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.2
-    @date 19/01/2022
+    @version 1.2.1
+    @date 05/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -61,12 +61,30 @@ def scan_for_devices(bus=1):
     Supported devices:
         Adafruit ads1x15 ADCs
         Adafriut BMP085 and BMP150 pressure sensors
-    
+        MCP3424 18-Bit ADC-4 Channel with Programmable Gain Amplifier
+        DS3231 real-time clock
+        Gravity SEN0322 Oxygen sensor
+
+    Future support for:
+        CCS811 Air quality sensor
+
     """
 def load_i2c_devices(devices=None,bus=1,**kwargs):
     if devices is None: devices=scan_for_devices(bus)
     device_list=[]
     for address in devices:
+        if ((address=='0x5a') or (address=='0x5b')):
+           from pyLabDataLogger.device import ccs811Device
+           device_list.append(ccs811Device.ccs811Device(params={'address':address, 'bus':bus},**kwargs))
+        if address=='0x68':
+            from pyLabDataLogger.device import ds3231Device
+            device_list.append(ds3231.ds3231Device(params={'address':address, 'bus':bus},**kwargs))
+        if ((address=='0x6a') or (address=='0x6c') or (address=='0x6e')):
+            from pyLabDataLogger.device import mcp3424Device
+            device_list.append(mcp3424Device.mcp3424Device(params={'address':address, 'bus':bus},**kwargs))
+        if address=='0x73':
+            from pyLabDataLogger.device import i2cO2Device
+            device_list.append(i2cO2Device.i2cO2Device(params={'address':address, 'bus':bus},**kwargs))
         if address=='0x48' or address=='0x49':
             from pyLabDataLogger.device import ads1x15Device
             device_list.append(ads1x15Device.ads1x15Device(params={'address':address, 'bus':bus},**kwargs))
@@ -74,8 +92,7 @@ def load_i2c_devices(devices=None,bus=1,**kwargs):
             from pyLabDataLogger.device import bmpDevice
             device_list.append(bmpDevice.bmpDevice(params={'address':address, 'bus':bus},**kwargs))
         else:
-            cprint( "I don't know what to do with I2C device at address "+str(address), 'red', attrs=['bold'])
-            print(load_i2c_devices.__doc__)
+            cprint( "Ignoring unsupported I2C device at address "+str(address), 'yellow')
     return device_list
 
 
