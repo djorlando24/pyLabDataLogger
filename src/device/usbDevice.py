@@ -122,7 +122,9 @@ usb_device_table = [
     {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/k3hb/x', 'name':'Omron K3HB-X Ammeter'},
     {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-iseries/485', 'name':'Omega iSeries via RS-485'},
     {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/omega-iseries/232', 'name':'Omega iSeries via RS-232'},
-    {'vid':0x067b, 'pid':0x2303, 'driver':'serial/andg', 'name':'AND GX-K and GF-K series balance'}
+    {'vid':0x067b, 'pid':0x2303, 'driver':'serial/andg', 'name':'AND GX-K and GF-K series balance'},
+    {'vid':0x0403, 'pid':0x6015, 'driver':'serial/cozir', 'name':'COZIR CO2 monitor'},
+    {'vid':0xffff, 'pid':0xffff, 'driver':'serial/hpma', 'name':'Honeywell HPMA115S0 Air Quality sensor'}
 
     # Known but unsupported or generic
     #{'vid':0x1d6b, 'pid':0x0104, 'driver':'beaglebone', 'name':'Beaglebone Black'},

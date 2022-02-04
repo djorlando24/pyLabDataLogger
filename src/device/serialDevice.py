@@ -5,7 +5,7 @@
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
     @version 1.2.1
-    @date 04/02/2022
+    @date 05/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -48,6 +48,7 @@
         20/01/2022 - support for AND G[XF]-K series balances
         03/02/2022 - support for Radwag R series balances
         04/02/2022 - Alicat bug fixes
+        05/02/2022 - HPMA and COZIR support
 """
 
 from .device import device
@@ -76,8 +77,10 @@ class serialDevice(device):
             'serial/andg'              : AND GX-K and GF-K series precision balances
             'serial/bkp168'            : BK Precision 168xx series power supply
             'serial/center310'         : CENTER 310 Temperature and Humidity meter
+            'serial/cozir'             : COZIR CO2 sensor
             'serial/di148'             : DataQ DI-148 Analog-to-Digital Converter
             'serial/esd508'            : Leadshine ES-D508 Easy Servomotor Driver
+            'serial/hpma'              : Honeywell HPMA115S0 Air Quality sensor
             'serial/k3hb/vlc'          : Omron K3HB-VLC Load Cell Amplifier with FLK1B communications board
             'serial/k3hb/x'            : Omron K3HB-X Ammeter with FLK1B communications board
             'serial/mx5060'            : Metrix MX5060 Bench Multimeter 
@@ -317,7 +320,9 @@ class serialDevice(device):
             if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=False
             if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
             if not 'timeout' in self.params.keys(): self.params['timeout']=1. # sec for a single byte read/write
-        
+        elif (self.subdriver=='hpma') or (self.subdriver=='cozir'):
+            if not 'timeout' in self.params.keys(): self.params['timeout']=0.1
+
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
         if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.EIGHTBITS
@@ -402,6 +407,10 @@ class serialDevice(device):
                 # No settings can be modified at present.
                 # The comms is one-way, the device cannot be controlled remotely.
                 pass
+            elif subdriver=='cozir':
+                # No settings can be modified at present.
+            elif subdriver=='hpma':
+                # No settings can be modified at present.
             elif subdriver=='omega-iseries':
                 # No settings can be modified at present. In future we could allow changing of
                 # set points.
@@ -633,6 +642,39 @@ class serialDevice(device):
             self.responseTerminator='\r'
             self.maxlen=999999 # large chunks of data will come back!
             self.sleeptime=0.5
+
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='cozir': # Startup config for COZIR CO2 sensor
+            self.name = 'COZIR CO2 Sensor'
+            self.config['channel_names']=['humidity','temperature','z1','z2']
+            self.params['raw_units']=['%','degC','ppm','ppm']
+            self.config['eng_units']=['%','degC','ppm','ppm']
+            self.config['scale']=[1.,1.,1.,1.]
+            self.config['offset']=[0.,0.,0.,0.]
+            self.params['n_channels']=4
+            self.serialQuery=['Q']
+            self.queryTerminator='\r\n'
+            self.responseTerminator='\r'
+            self.sleeptime=0.001
+
+            raise RuntimeError("Get COZIR initial settings!")
+
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='hpma': # Startup config for Honeywell HPMA air quality sensor
+            self.name = 'Honeywell HPMA1150S Air Quality Sensor'
+            self.config['channel_names']=['pm2.5','pm10']
+            self.params['raw_units']=['ppm','ppm']
+            self.config['eng_units']=['ppm','ppm']
+            self.config['scale']=[1.,1.]
+            self.config['offset']=[0.,0.]
+            self.params['n_channels']=2
+            self.serialQuery=['\x68\x01\x04\x93']
+            self.queryTerminator=''
+            self.responseTerminator=''
+            self.sleeptime=0.001
+            self.serialCommsFunction=self.blockingRawSerialRequest
+
+            raise RuntimeError("Get HPMA initial settings!")
 
         # ----------------------------------------------------------------------------------------
         elif subdriver=='omega-ir-usb': # Statup config for IR-USB
@@ -1296,6 +1338,18 @@ class serialDevice(device):
                     temp[n] = fconversion(microvolts[n]/1000., Tref=cold_junction)
                 temp[-1] = cold_junction
                 return temp
+
+            # ----------------------------------------------------------------------------------------
+            elif subdriver=='hpma':
+                print(repr(rawData))
+                raise RuntimeError("HPMA support not yet ready")
+                return [None]*self.params['n_channels']
+
+            # ----------------------------------------------------------------------------------------
+            elif subdriver=='cozir':
+                print(repr(rawData))
+                raise RuntimeError("HPMA support not yet ready")
+                return [None]*self.params['n_channels']
 
             # ----------------------------------------------------------------------------------------
             elif subdriver=='omega-ir-usb':

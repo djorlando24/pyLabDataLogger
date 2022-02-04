@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.2
-    @date 19/01/2022
+    @version 1.2.1
+    @date 05/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -37,8 +37,8 @@ def banner():
                   '  @author Daniel Duke <daniel.duke@monash.edu>                                  ',\
                   '  @copyright (c) 2018-2021 LTRAC                                                ',\
                   '  @license GPL-3.0+                                                             ',\
-                  '  @version 1.1.3                                                                ',\
-                  '  @date 28/04/2021                                                              ',\
+                  '  @version 1.2.1                                                                ',\
+                  '  @date 05/02/2022                                                              ',\
                   '      __   ____________    ___    ______                                        ',\
                   '     / /  /_  ____ __  \  /   |  / ____/                                        ',\
                   '    / /    / /   / /_/ / / /| | / /                                             ',\
