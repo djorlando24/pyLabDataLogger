@@ -64,6 +64,7 @@ Follow the install directions (which requires manually copying the libraries, in
 The Rigol DS scopes are working over USB via the sigrok driver, which seems to handle the non standard SCPI frame fsormat that usbtmc can't.
 
 Rigol DS scopes also work via their ethernet connection using the pyvisa driver. Get the resource string by browsing to the device's IP address in a web browser.
+python3-pyvisa should be installed. Use 'python3 -m visa info' to check for visa support on your system.
 
 The scope needs to be set up and armed before the acquisition is started. Single shot mode may not work, I find best results arming it in Auto mode and letting sigrok acquire what's most recently on the screen. If things go wrong you can set 'debugMode':True in the kwargs to the device driver and see what is happening behind the scenes.
 
@@ -116,6 +117,9 @@ These devices have a custom VID and PID but are actually just FTDI FT232R serial
     udevadm control --reload-rules
 
 Then unplug and replug the device.
+
+# Center 310 Hygrometer
+*Center 310* hygrometer support via RS-232 is now built-in, there are some test utilities in thirdParty/C310 if you experience problems.
 
 # Can you add support for my device?
 I can't test and add support for hardware unless I actually have the equipment in my hands to test it, and the time to do so.

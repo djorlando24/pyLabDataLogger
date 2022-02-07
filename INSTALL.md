@@ -17,33 +17,37 @@ Most of the external libraries pyLabDataLogger needs to run specific devices do 
 ## Required Python modules
 
 pyLabDataLogger depends on the following modules. Those which require legacy versions or are hard to find have been stored in the thirdParty directory.
-Use pip, easy_install, apt, etc. to install these.
 
+Usually installed via OS package manager (apt/yum/brew):
 - numpy
-
 - matplotlib
+- h5py
+- pyusb
+- gi-cairo
+- smbus
+- pyvisa
+- pyvisa-py
 
+Usuall installed via PIP:
 - cython
-
 - natsort
-
 - tqdm
-
 - termcolor
+- console-menu
+- pylibftdi
+- thermocouples_reference
 
+The following are usually preinstalled in python 3:
 - re
-
+- glob
 - subprocess
 
-- glob
+For example, on Ubuntu, these commands will install typical requirements.
 
-- pyusb (for USB device support. Access via pip or pypi/easy_install)
-
-- pylibftdi
-
-- libscrc
-
-- gi-cairo
+```
+    sudo apt-get install python3-numpy python3-matplotlib python3-h5py python3-usb python3-gi-cairo python3-smbus python3-pyvisa python3-pyvisa-py
+    sudo pip3 install cython natsort tqdm termcolor re subprocess glob console-menu libscrc pylibftdi thermocouples_reference
+```
 
 ## building on Linux
 
@@ -53,11 +57,11 @@ See below sections as to what modules are needed for which drivers.
 
 To install without superuser privileges :
 
-	python setup.py install --user
+	`python setup.py install --user`
 
 To install as root, which you may need to do on raspberry Pis etc:
 
-	sudo python setup.py install
+	`sudo python setup.py install`
 
 You may need to copy some udev rules for certain USB devices - see Hardware.md for details.
 
@@ -67,7 +71,7 @@ To compile the mcclibusb drivers, you need libusb installed. On MacOS you can ge
 from Homebrew. Once you've done "brew install libusb" you may then need to tell python
 where the headers are. On my machine, I used:
 
-    CFLAGS="-I/usr/local/Cellar/libusb/1.0.22/include" python setup.py install --user
+    `CFLAGS="-I/usr/local/Cellar/libusb/1.0.22/include" python setup.py install --user`
 
 ## Optional Python modules
 
@@ -83,27 +87,15 @@ From here on, all these modules are optional. They only need to be installed for
 - For *Thorlabs translation stages*, pyAPT for Linux:
   Use the python2 modified version in thirdParty directory, or download from https://gitlab.com/weinshec/pyAPT.git
 
-### Optional Python modules you can obtain from a package manager
-
-- For I2C devices, you will need smbus module:
-  and driver specific modules i.e. Adafruit_ADS1x15
-
-- For VISA over TCP/IP for networked devices, pyvisa & pyvisa-py modules are required
-  Install by 'pip install pyvisa-py' and check installed options with
-  'python -m visa info'
-
-- For TC-08 RS-232 serial support, install the thermocouples_reference
-  module which provides conversion of thermocouple voltage to temperature.
-
-### Optional Python modules you will need to download and build manually
+### Optional Python modules you will need to install manually to support certain devices
 
 - for Picoscope devices, install pico-python
   https://github.com/colinoflynn/pico-python
 
-- For Agilent 33220A, thorlabs TSP01 and power meters, Rigol DG1000Z via usb, usbtmc driver is required.
+- For SCPI-over-USB devices such as the _Agilent 33220A_, _Thorlabs TSP01_ and power meters, _Rigol DG1000Z_ via usb, the `usbtmc` driver is required.
   See thirdParty/usbtmc or download yourself from https://github.com/python-ivi/python-usbtmc
 
-- For ALSA audio devices, pyalsaaudio
+- For ALSA audio devices, pyalsaaudio  [Linux only]
   https://github.com/larsimmisch/pyalsaaudio.git
 
 - For Video4Linux support, v4l2capture module.
@@ -117,7 +109,9 @@ From here on, all these modules are optional. They only need to be installed for
   https://github.com/colinoflynn/pico-python.git
 
 - For webcam support, OpenCV
-  (check your package manager such as apt/pip or use Homebrew on MacOS)
+
+  On Ubuntu; `sudo apt-get install python3-opencv`
+  The `cv2` module should be checked: `python3 -c 'import cv2'` should return no errors.
 
 - For CSI camera interface support, libcamera
   see http://libcamera.org/getting-started.html for more information
@@ -131,7 +125,7 @@ From here on, all these modules are optional. They only need to be installed for
   If you get an error about "No module named RPi" and you're not on a Rapsberry Pi device, edit
   omegasensor/smartsensor.py and comment out lines 6 and 7.
 
-## Optional non-Python dependencies
+## Optional non-Python dependencies to support certain devices
 
 - Any generic USB serial port drivers that your system does not have. By default Linux has most standard serial to USB device drivers in the kernel. MacOS and Windows may require FTDI, CP2102, etc. driver packages. These should come with the hardware and are also available online.
 
@@ -155,7 +149,7 @@ From here on, all these modules are optional. They only need to be installed for
   These are available from an apt repository for easy installation on Ubuntu.
   see https://www.picotech.com
 
-- For Measurement Computing devices, mcclibusb
+- For Measurement Computing devices, `mcclibusb`
   see https://github.com/chrismerck/mcc-libusb.git
 
 - For Video4Linux2 capture devices, you will need the v4l kernel drivers (usually installed by default on most Linux distros).
@@ -175,5 +169,3 @@ From here on, all these modules are optional. They only need to be installed for
   SUBSYSTEMS=="usb", ACTION=="add", ATTRS{idVendor}=="0957", ATTRS{idProduct}=="1755", GROUP="usbtmc", MODE="0660"
   Then save the file, and as root run: udevadm control --reload-rules && udevadm trigger
   You will also need to add yourself to the group usbtmc: sudo groupadd usbtmc && sudo usermod -a -G usbtmc userName
-
-- *Center 310* hygrometer support is built-in, there are some test utilities in thirdParty/C310

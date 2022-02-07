@@ -37,7 +37,7 @@ from pyLabDataLogger.logger import globalFunctions
 import time
 from termcolor import cprint
 
-INTERVAL_SECONDS=1.0
+INTERVAL_SECONDS=10.0
 
 if __name__ == '__main__':
     globalFunctions.banner()

@@ -10,7 +10,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.2
-    @date 19/01/2022
+    @date 07/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -19,11 +19,26 @@
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import sys, h5py, ast
 import numpy as np
-from termcolor import colored, cprint
+from termcolor import cprint
+
+modified_file=False
 
 try:
     from consolemenu import *
@@ -68,7 +83,7 @@ class deviceFinder:
 
 # Read attribute array from device and turn it into a real python list.
 def read_attr_array(b):
-    s = b.decode('utf-8').replace('array(','(').replace('nan','0')
+    s = b.replace('array(','(').replace('nan','0')
     try:
         return ast.literal_eval(s)
     except ValueError as e:
@@ -95,11 +110,11 @@ def change_param(filenames, dev_name, channel_idx):
         H0.close()
         
         
-        colored(dev_name+' / '+names[channel_idx], 'green', attrs=['bold'])
+        cprint(dev_name+' / '+names[channel_idx], 'green', attrs=['bold'])
         print('-'*80)
         print('')
-        colored("In %s" % filenames[0], 'cyan')
-        colored("\tCurrent setting: scaled values = %g [%s/%s] + %g [%s]"\
+        cprint("In %s" % filenames[0], 'cyan')
+        cprint("\tCurrent setting: scaled values = %g [%s/%s] + %g [%s]"\
                % (scales[channel_idx],units[channel_idx],raw_units[channel_idx],\
                   offsets[channel_idx],units[channel_idx]), 'cyan' )
         print("\tScaled min = %g [%s], mean = %g [%s], max = %g [%s]"\
@@ -126,9 +141,9 @@ def change_param(filenames, dev_name, channel_idx):
         except ValueError:
             new_offset = offsets[channel_idx]
         
-        colored("\nThe changes will be applied to all files:",'red',attrs=['bold'])
+        cprint("\nThe changes will be applied to all files:",'red',attrs=['bold'])
         for f in sys.argv[1:]:
-            colored('\t'+f,'red')
+            cprint('\t'+f,'red')
         
         confirm=getinput("Apply change? [y/N]: ").upper()
         
@@ -151,8 +166,9 @@ def change_param(filenames, dev_name, channel_idx):
                 h5py_scaled_dset[...] = h5py_raw_dset[...]*new_scale + new_offset
                 # Close file
                 H1.close()
+                modified_file=True
             except KeyError as e:
-                colored('In file %s:\n\t%s' % (f,e),'red')
+                cprint('In file %s:\n\t%s' % (f,e),'red')
                 confirm=getinput("Press ENTER to continue...")
                 
     except KeyboardInterrupt:
@@ -177,7 +193,7 @@ def main(filenames):
     .set_right_margin(4) \
     .show_header_bottom_border(True)
     
-    dev_menu = ConsoleMenu("Device selection","Reading < %s >" % filenames[0],\
+    dev_menu = ConsoleMenu("CHOOSE A DEVICE TO MODIFY","Reading < %s >" % filenames[0],\
                            formatter=menu_format)
     
     # List devices, with channels in each
@@ -193,7 +209,7 @@ def main(filenames):
                             scales[i], offsets[i]) for i in range(len(channels)) ]
         
         # Make submenu for selecting channel
-        channel_menu = ConsoleMenu("Select channel",k)
+        channel_menu = ConsoleMenu("SELECT A CHANNEL/VARIABLE TO MODIFY","Device = %s" % k)
         for i in range(len(channels)):
             # Don't show non-numeric channels
             if ('S' in dtypes[i]) or ('O' in dtypes[i]):
@@ -212,13 +228,14 @@ def main(filenames):
     dev_menu.start()
     dev_menu.join()
 
-    print("Committed changes to %i files." % (len(filenames)))
-
+    if modified_file: cprint("Committed changes to %i files." % (len(filenames)),'magenta',attrs=['bold'])
+    else: cprint("No changes were saved.", 'yellow',attrs=['bold'])
+    
     return
 ###############################################################################################
 
 
 if __name__ == '__main__':
-    
-    main(sys.argv[1:])
+    if len(sys.argv)<1: print("Specify HDF5 file")
+    else: main(sys.argv[1:])
 
