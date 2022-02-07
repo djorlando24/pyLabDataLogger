@@ -69,18 +69,59 @@ def scan_for_devices(bus=1):
         CCS811 Air quality sensor
 
     """
+    
+# Devices that can be logged.
+i2c_input_device_table = [
+
+    # Devices with fixed addresses
+    {'address':0x68, 'driver':'ds3231', 'name':'DS3231 Real-time Clock'},\
+    {'address':0x77, 'driver':'bmp', 'name':'BMP085/BMP180 barometric pressure sensor'},\
+    {'address':0x29, 'driver':'tsl2591', 'name':'TSL2591 light sensor'},\
+    {'address':0x33, 'driver':'mlx90640', 'name':'MLX90640 thermal camera'},\        
+    {'address':0x29, 'driver':'apds9960', 'name':'APDS9960 RGB gesture sensor'},\
+    {'address':0x29, 'driver':'vl6180x', 'name':'VL6180X time of flight sensor'},\
+    {'address':0x48, 'driver':'lm75a', 'name':'LM75A temperature sensor'}, \
+    {'address':0x00, 'driver':'lwlp5000', 'name':'LWLP5000 pressure sensor'}, \
+
+    # Devices that have multiple addresses
+    {'address':0x76, 'driver':'ms5611', 'name':'MS5611 barometric pressure sensor'}, #0x76-0x77 \ 
+    {'address':0x40, 'driver':'ina226', 'name':'INA226 current sensor'}, #0x40-4f \
+    {'address':0x40, 'driver':'ina219', 'name':'INA219 current sensor'}, #0x40,41,44,45 \
+    {'address':0x60, 'driver':'mcp9600', 'name':'MCP9600 thermocouple'}, #0x60-67 \
+    {'address':0x48, 'driver':'tmp117', 'name':'TMP117 temperature sensor'}, #0x48-49 \
+    {'address':0xff, 'driver':'mpx5700ap', 'name':'MPX5700 air pressure sensor'}, # 4 unknown addresses \
+
+    {'address':0x38, 'driver':'aht10', 'name':'AHT10 temperature and humidity sensor'}, #0x38-0x39 \    
+    {'address':0xae, 'driver':'max30105', 'name':'MAX30105 dust and particle sensor'}, #0xae-0xaf \
+    {'address':0x18, 'driver':'lis331', 'name':'H3LIS331DL accelerometer'}, #0x18-0x19 \
+    {'address':0x28, 'driver':'bno055', 'name';'BNO055 orientation sensor'}, #0x28-0x29 \
+    {'address':0x48, 'driver':'ads1x15', 'name':'ADS1x15 ADC'},   #0x48-0x49 \
+    {'address':0x5a, 'driver':'ccs811', 'name':'CCS811 Air quality sensor'}, #0x5a-0x5b \
+    {'address':0x73, 'driver':'ds3231', 'name':'DFRobot Oxygen Sensor'},    # 0x70-0x73 \
+    {'address':0x6a, 'driver':'mcp3424', 'name':'MCP3424 ADC'}, # 0x6a/c/e \
+    
+]
+
+
+# Devices we can print output to
+i2c_output_device_table = [
+
+    {'address':0x70, 'driver':'fourLetterPHAT'},\
+    {'address':0x70, 'driver':'HT16K33 alphanumeric display'},\
+    {'address':0xe0, 'driver':'8 digital 7 segment display'}, #0xe0,2,4,6\
+        
+]
+    
 def load_i2c_devices(devices=None,bus=1,**kwargs):
     if devices is None: devices=scan_for_devices(bus)
     device_list=[]
     for address in devices:
-        if address=='0x57':
-            cprint("IIC: Ignoring clock EEPROM at "+str(address), 'white')
         
-        elif ((address=='0x70') or (address=='0x71') or (address=='0x72') or (address=='0x73') 
-                or (address=='0xe0') or (address=='0xe2') or (address=='0xe4') or (address=='0xe6') ):
-            cprint("IIC: Acknowledged output device at address %s but won't add this as an input device" % str(address), 'white')
+        #elif ((address=='0x70') or (address=='0x71') or (address=='0x72') or (address=='0x73') 
+        #        or (address=='0xe0') or (address=='0xe2') or (address=='0xe4') or (address=='0xe6') ):
+        #    cprint("IIC: Acknowledged output device at address %s but won't add this as an input device" % str(address), 'white')
         
-        elif ((address=='0x5a') or (address=='0x5b')):
+        if ((address=='0x5a') or (address=='0x5b')):
            from pyLabDataLogger.device.i2c import ccs811Device
            device_list.append(ccs811Device.ccs811Device(params={'address':address, 'bus':bus},**kwargs))
          
