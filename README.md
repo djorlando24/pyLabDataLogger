@@ -5,7 +5,7 @@ Laboratory datalogging for USB and Serial devices
     @copyright (c) 2019-2021 LTRAC
     @license GPL-3.0+
     @version 1.2.1
-    @date 03/02/2022
+    @date 05/02/2022
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -31,7 +31,23 @@ Laboratory datalogging for USB and Serial devices
     This software searches for sensors and data acquisition devices
     over a range of communication protocols and logs them to a local file.
 
-## TLDR
+## Summary
+
+A lot of the measurement equipment used in scientific laboratories has the capability to connect to a PC. This is very handy when you want to keep track of hundreds of variables during an experiment - for example, temperatures, pressures, voltages, etc. However, many cheap devices have shockingly bad software. Often the software is Windows-only and unreliable. On the high end, expensive equipment with USB or Ethernet interfaces is very nice to use but can overwhelm inexperienced users. In some cases, the software is closed-source and this makes it very hard to get very different pieces of equipment (ie a $10 webcam, a $100 multimeter and a $1,000 digital pressure gauge) saving data into a single file at the same time. Other equipment uses RS-232 or RS-485 and demands that the user learn about baud rates, parity, and other things that they may not be familiar with.
+
+In most cases, scientists simply want to keep a log of the readings of many different pieces of equipment at the same time. One way to do this is to use a proprietary platform like NI LabView. This is a very expensive solution to a simple problem, where you have to pay for hundreds of advanced features you don't need. Another way is to use datalogging software like sigrok, but this doesn't support a lot of high-end (ie SCPI) lab equipment.
+
+This program provides the minimal set of Open Source tools required to record data from lab equipment:
+- Connect via USB, Serial port, Ethernet or I2C bus etc. to various devices - both expensive and cheap, professional and consumer-grade.
+- Attempt, where possible, to offer plug-and-play functionality for devices that are at their factory settings.
+- Record live process variables from various devices at a given point in time.
+- Save those data to a file or display them on screen.
+- Provide a simple Python scripting interface to allow end users to record data in the way they want (ie. automatically every N seconds, or when an action such as a GPIO/interrupt or keypress occurs).
+- Be lightweight enough to run on a Raspberry Pi or similar.
+
+It's not desgined to *control* devices remotely, or provide feedback for PID etc. It's also not designed to provide a pretty user interface. If you need that, you should use LabView. 
+
+## Changelog
 
 **Version 1.2**
 
