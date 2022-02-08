@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-# -*- coding: UTF-8 -*-
 """
-    Test device support.
+    Test I2C device via i2cmini adapter
     
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
@@ -31,34 +30,18 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-import time
+import sys
+import i2cdriver
 from termcolor import cprint
-from pyLabDataLogger.device.i2c import i2cDevice
-from pyLabDataLogger.logger import globalFunctions
 
-if __name__ == '__main__':
+if __name__=='__main__':
 
-    globalFunctions.banner()
+    if len(sys.argv)<2: ttys=["/dev/ttyUSB1"]
+    else: ttys=sys.argv[1:]
     
-    # I2C setup
-    found = i2cDevice.scan_for_devices(bus=1)
-    if len(found)==0: 
-        cprint( "No I2C devices found.", 'red',attrs=['bold'])
-        exit(1)	
-    else:
-        devices = i2cDevice.load_i2c_devices(found)
-       
-    try:
-        while True:
-            for d in devices:
-                cprint( d.name, 'magenta', attrs=['bold'] )
-                d.query()
-                d.pprint()
-            time.sleep(1)
-            print("")
-    except KeyboardInterrupt:
-        cprint( "Stopped.", 'red',attrs=['bold'])
-    except: # all other errors
-        raise
-     
-
+    for tty in ttys:
+        cprint("Connecting to i2cmini on %s" % tty, 'cyan')
+        i2c = i2cdriver.I2CDriver(tty)
+        cprint("Scanning for devices",'white')
+        i2c.scan()
+        

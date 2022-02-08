@@ -81,8 +81,10 @@ i2c_input_device_table = [
     {'address':0x29, 'driver':'apds9960', 'name':'APDS9960 RGB gesture sensor'},\
     {'address':0x29, 'driver':'vl6180x', 'name':'VL6180X time of flight sensor'},\
     {'address':0x48, 'driver':'lm75a', 'name':'LM75A temperature sensor'}, \
+    {'address':0x28, 'driver':'m32jm', 'name':'TE M32JM pressure transducer'},\
+    {'address':0x57, 'driver':'max30105', 'name':'MAX30105 dust and particle sensor'}, \
     {'address':0x00, 'driver':'lwlp5000', 'name':'LWLP5000 pressure sensor'}, \
-
+        
     # Devices that have multiple addresses
     {'address':0x76, 'driver':'ms5611', 'name':'MS5611 barometric pressure sensor'}, #0x76-0x77 \ 
     {'address':0x40, 'driver':'ina226', 'name':'INA226 current sensor'}, #0x40-4f \
@@ -92,7 +94,6 @@ i2c_input_device_table = [
     {'address':0xff, 'driver':'mpx5700ap', 'name':'MPX5700 air pressure sensor'}, # 4 unknown addresses \
 
     {'address':0x38, 'driver':'aht10', 'name':'AHT10 temperature and humidity sensor'}, #0x38-0x39 \    
-    {'address':0xae, 'driver':'max30105', 'name':'MAX30105 dust and particle sensor'}, #0xae-0xaf \
     {'address':0x18, 'driver':'lis331', 'name':'H3LIS331DL accelerometer'}, #0x18-0x19 \
     {'address':0x28, 'driver':'bno055', 'name';'BNO055 orientation sensor'}, #0x28-0x29 \
     {'address':0x48, 'driver':'ads1x15', 'name':'ADS1x15 ADC'},   #0x48-0x49 \
@@ -112,6 +113,9 @@ i2c_output_device_table = [
         
 ]
     
+# The default i2c bus is 1, which is the external bus on a Raspberry Pi.
+# On a desktop PC, this may not be correct - your motherboard may be using bus 1 for CPU temperatures and fan speeds, etc.
+# Use the `i2cdetect' tool in Linux to determine the correct bus number.
 def load_i2c_devices(devices=None,bus=1,**kwargs):
     if devices is None: devices=scan_for_devices(bus)
     device_list=[]
@@ -156,7 +160,7 @@ class i2cDevice(device):
     """ Class providing support for I2C devices. This class should not be used directly, it provides
         common functions for specific i2c devices. """
 
-    def __init__(self,params={},quiet=True,**kwargs):
+    def __init__(self,params={},bus=1,quiet=True,**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
@@ -164,8 +168,11 @@ class i2cDevice(device):
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
         
-        # Default I2C bus parameters
-        if not 'bus' in params.keys(): params['bus']=1
+        # Default I2C bus parameters.
+        # The default i2c bus is 1, which is the external bus on a Raspberry Pi.
+        # On a desktop PC, this may not be correct - your motherboard may be using bus 1 for CPU temperatures and fan speeds, etc.
+        # Use the `i2cdetect' tool in Linux to determine the correct bus number.
+        if not 'bus' in params.keys(): params['bus']=bus
         
         # apply kwargs to params
         for k in ['differential','gain']:
