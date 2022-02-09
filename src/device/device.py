@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.2
-    @date 04/02/2022
+    @version 1.2.2
+    @date 10/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -163,10 +163,12 @@ class device:
                     elif (n<self.params['n_channels']-1): sys.stdout.write(', ')
 
                 sys.stdout.write('\n')
+                if self.params['n_channels']==1: sys.stdout.write('\n')
                 
             else: # I have no idea what is in self.lastValue, print verbatim!
                 print(lead+'Raw values:',self.lastValue)
-            
+                sys.stdout.write('\n')
+
             # Only show the scaled units if they exist.
             if show_scaled:
                 sys.stdout.write(lead+'Scaled: ')
@@ -221,7 +223,7 @@ class device:
                                 self.truncateName(self.config['channel_names'][n]),self.lastValue[n].shape,\
                                 self.params['raw_units'][n],\
                                 self.lastScaled[n].shape,self.config['eng_units'][n]))
-                    
+    
         return
 
     ################################################################################################################################################################

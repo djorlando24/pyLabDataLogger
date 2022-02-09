@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.2
-    @date 19/01/2022
+    @version 1.2.2
+    @date 10/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -51,7 +51,8 @@ class ads1x15Device(i2cDevice):
     def activate(self):
         assert self.params['address']
         assert self.params['bus']
-        if not 'driver' in self.params.keys(): self.params['driver']='ADS1115'
+        if not 'driver' in self.params.keys(): self.params['driver']='ads1115'
+        if 'name' in self.params: self.name = self.params['name']+' %i:%s' % (self.params['bus'],hex(self.params['address']))
 
         if self.params['driver']=='ADS1115':
             self.ADC =  Adafruit_ADS1x15.ADS1115(address=int(self.params['address'],16), busnum=self.params['bus'])
@@ -89,9 +90,6 @@ class ads1x15Device(i2cDevice):
         elif self.diff: print("\tDifferential mode specified")
         else: print("\tSingle-ended mode")
         
-        if ('untitled' in self.name.lower()) or (self.name==''):
-            self.name = '%s I2C %i:%s' % (self.params['driver'],self.params['bus'],self.params['address'])
-
         self.apply_config()
         self.driverConnected=True
         

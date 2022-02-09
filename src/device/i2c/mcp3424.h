@@ -1,3 +1,34 @@
+/*
+    MCP3424 I2C Analog to Digital Converter
+    Software based on https://github.com/alxyng/mcp3424
+    
+    @author Daniel Duke <daniel.duke@monash.edu>
+    @copyright (c) 2018-2021 LTRAC
+    @license GPL-3.0+
+    @version 1.2.2
+    @date 10/02/2022
+        __   ____________    ___    ______
+       / /  /_  ____ __  \  /   |  / ____/
+      / /    / /   / /_/ / / /| | / /
+     / /___ / /   / _, _/ / ___ |/ /_________
+    /_____//_/   /_/ |__\/_/  |_|\__________/
+
+    Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
+    Monash University, Australia
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 #ifndef MCP3424_H_
 #define MCP3424_H_
 
@@ -42,8 +73,8 @@ typedef struct {
 	char errstr[MCP3424_ERR_LEN];
 } mcp3424;
 
-void mcp3424_init(mcp3424 *m, int fd, uint8_t addr, enum mcp3424_resolution res);
-
+void mcp3424_init(mcp3424 *m, char* dev, uint8_t addr, enum mcp3424_resolution res);
+void mcp3424_close(mcp3424 *m);
 void mcp3424_set_conversion_mode(mcp3424 *m, enum mcp3424_conversion_mode mode);
 void mcp3424_set_pga(mcp3424 *m, enum mcp3424_pga pga);
 void mcp3424_set_resolution(mcp3424 *m, enum mcp3424_resolution res);

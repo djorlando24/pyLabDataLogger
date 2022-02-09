@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.2.1
-    @date 05/02/2022
+    @version 1.2.2
+    @date 10/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -98,7 +98,7 @@ i2c_input_device_table = [
     {'address':(0x28,0x29), 'driver':'bno055', 'name':'BNO055 orientation sensor'}, #0x28-0x29 \
     {'address':(0x48,0x49), 'driver':'ads1x15', 'name':'ADS1x15 ADC'},   #0x48-0x49 \
     {'address':(0x5a,0x5b), 'driver':'ccs811', 'name':'CCS811 Air quality sensor'}, #0x5a-0x5b \
-    {'address':(0x71,0x72,0x73), 'driver':'ds3231', 'name':'DFRobot Oxygen Sensor'},    # 0x70-0x73 \
+    {'address':(0x71,0x72,0x73), 'driver':'dfoxy', 'name':'DFRobot Oxygen Sensor'},    # 0x70-0x73 \
     {'address':(0x6a,0x6c,0x6e), 'driver':'mcp3424', 'name':'MCP3424 18-bit ADC'}, # 0x6a/c/e \
     
 ]
@@ -160,30 +160,33 @@ def load_i2c_devices(addresses=None,bus=1,**kwargs):
 
         if matches[0]['driver']=='ccs811':
            from pyLabDataLogger.device.i2c import ccs811Device
-           device_list.append(ccs811Device.ccs811Device(params={'address':a, 'bus':bus},**kwargs))
+           device_list.append(ccs811Device.ccs811Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
 
-        elif matches[0]['driver']=='ds3231':
-            from pyLabDataLogger.device.i2c import ds3231Device
-            device_list.append(ds3231.ds3231Device(params={'address':a, 'bus':bus},**kwargs))
-        
         elif matches[0]['driver']=='mcp3424':
             from pyLabDataLogger.device.i2c import mcp3424Device
-            device_list.append(mcp3424Device.mcp3424Device(params={'address':a, 'bus':bus},**kwargs))
-        
-        elif matches[0]['driver']=='dfoxy':
-            from pyLabDataLogger.device.i2c import dfoxyDevice
-            device_list.append(dfoxyDevice.dfoxyDevice(params={'address':a, 'bus':bus},**kwargs))
-        
+            device_list.append(mcp3424Device.mcp3424Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+
         elif matches[0]['driver']=='ads1x15':
             from pyLabDataLogger.device.i2c import ads1x15Device
-            device_list.append(ads1x15Device.ads1x15Device(params={'address':a, 'bus':bus},**kwargs))
+            device_list.append(ads1x15Device.ads1x15Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
         
         elif matches[0]['driver']=='bmp':
             from pyLabDataLogger.device.i2c import bmpDevice
-            device_list.append(bmpDevice.bmpDevice(params={'address':a, 'bus':bus},**kwargs))
+            device_list.append(bmpDevice.bmpDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
         
+        elif matches[0]['driver']=='dfoxy':
+            from pyLabDataLogger.device.i2c import dfoxyDevice
+            device_list.append(dfoxyDevice.dfoxyDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+
         else:
             raise RuntimeError("Unknown device: %s" % str(matches[0]))
+
+        ''' 
+        elif matches[0]['driver']=='ds3231':
+            from pyLabDataLogger.device.i2c import ds3231Device
+            device_list.append(ds3231.ds3231Device(params={'address':a, 'bus':bus},**kwargs))
+        '''
+
 
     
     return device_list
