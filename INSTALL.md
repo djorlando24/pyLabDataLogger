@@ -46,7 +46,7 @@ For example, on Ubuntu, these commands will install typical requirements.
 
 ```
     sudo apt-get install python3-pip python3-numpy python3-matplotlib python3-h5py python3-usb python3-gi-cairo python3-smbus python3-pyvisa python3-pyvisa-py
-    sudo pip3 install cython natsort tqdm termcolor re subprocess glob console-menu libscrc pylibftdi thermocouples_reference
+    sudo pip3 install cython natsort tqdm termcolor console-menu libscrc pylibftdi thermocouples_reference
 ```
 
 ## building on Linux
