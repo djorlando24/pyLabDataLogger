@@ -77,7 +77,7 @@ i2c_input_device_table = [
     {'address':0x68, 'driver':'ds3231', 'name':'DS3231 Real-time Clock'},\
     {'address':0x77, 'driver':'bmp', 'name':'BMP085/BMP180 barometric pressure sensor'},\
     {'address':0x29, 'driver':'tsl2591', 'name':'TSL2591 light sensor'},\
-    {'address':0x33, 'driver':'mlx90640', 'name':'MLX90640 thermal camera'},\        
+    {'address':0x33, 'driver':'mlx90640', 'name':'MLX90640 thermal camera'},\
     {'address':0x29, 'driver':'apds9960', 'name':'APDS9960 RGB gesture sensor'},\
     {'address':0x29, 'driver':'vl6180x', 'name':'VL6180X time of flight sensor'},\
     {'address':0x48, 'driver':'lm75a', 'name':'LM75A temperature sensor'}, \
@@ -95,7 +95,7 @@ i2c_input_device_table = [
 
     {'address':0x38, 'driver':'aht10', 'name':'AHT10 temperature and humidity sensor'}, #0x38-0x39 \    
     {'address':0x18, 'driver':'lis331', 'name':'H3LIS331DL accelerometer'}, #0x18-0x19 \
-    {'address':0x28, 'driver':'bno055', 'name';'BNO055 orientation sensor'}, #0x28-0x29 \
+    {'address':0x28, 'driver':'bno055', 'name':'BNO055 orientation sensor'}, #0x28-0x29 \
     {'address':0x48, 'driver':'ads1x15', 'name':'ADS1x15 ADC'},   #0x48-0x49 \
     {'address':0x5a, 'driver':'ccs811', 'name':'CCS811 Air quality sensor'}, #0x5a-0x5b \
     {'address':0x73, 'driver':'ds3231', 'name':'DFRobot Oxygen Sensor'},    # 0x70-0x73 \
