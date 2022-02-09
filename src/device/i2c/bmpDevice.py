@@ -31,7 +31,7 @@
 """
 
 from .i2cDevice import *
-from .device import pyLabDataLoggerIOError
+from ..device import pyLabDataLoggerIOError
 import datetime, time
 import numpy as np
 from termcolor import cprint
@@ -64,7 +64,7 @@ class bmpDevice(i2cDevice):
         self.config['scale']=np.ones(self.params['n_channels'],)
         self.config['offset']=np.zeros(self.params['n_channels'],)
         if 'gain' in self.params: self.config['gain']=self.params['gain']
-        cprint( "Activating %s on i2c bus at %i:%s with %i channels" % (self.params['driver'],self.params['bus'],self.params['address'],self.params['n_channels']), 'green')
+        cprint( "Activating %s on i2c bus at %i:%s with %i channels" % (self.params['driver'],self.params['bus'],hex(self.params['address']),self.params['n_channels']), 'green')
         if ('untitled' in self.name.lower()) or (self.name==''):
             self.name = '%s I2C %i:%s' % (self.params['driver'],self.params['bus'],self.params['address'])
 

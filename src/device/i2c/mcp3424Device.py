@@ -1,11 +1,11 @@
 """
-    Adafruit ADS1x15 Analog to Digital Converter Class
+    MCP3424 I2C Analog to Digital Converter Class
     
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.2
-    @date 19/01/2022
+    @date 09/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -35,15 +35,10 @@ import datetime, time
 import numpy as np
 from termcolor import cprint
 
-try:
-    import Adafruit_ADS1x15
-except ImportError:
-    cprint( "Error, could not load Adafruit_ADS1x15 library", 'red', attrs=['bold'])
 
 ########################################################################################################################
-class ads1x15Device(i2cDevice):
-    """ Class providing support for Adafruit's ADS1x15 breakout boards (ADS1015, ADS1115).
-        Specify I2C bus, address and driver (ADS1015/ADS1115) on initialisation.
+class mcp3424Device(i2cDevice):
+    """ Class providing support for MCP3424 analog to digital converter.
         Channel gains can be specified with the gain config parameter (a list).
         Setting 'differential' parameter True gives 2 outputs instead of 4. """
 
@@ -51,19 +46,11 @@ class ads1x15Device(i2cDevice):
     def activate(self):
         assert self.params['address']
         assert self.params['bus']
-        if not 'driver' in self.params.keys(): self.params['driver']='ADS1115'
-
-        if self.params['driver']=='ADS1115':
-            self.ADC =  Adafruit_ADS1x15.ADS1115(address=int(self.params['address'],16), busnum=self.params['bus'])
-        elif self.params['driver']=='ADS1015':
-            self.ADC =  Adafruit_ADS1x15.ADS1015(address=int(self.params['address'],16), busnum=self.params['bus'])
-        else:
-            cprint( "Error: unknown driver. Choices are ADS1015 or ADS1115" ,'red',attrs=['bold'] )
-            return
+        if not 'driver' in self.params.keys(): self.params['driver']='mcp3424'
 
         if not 'differential' in self.params.keys(): 
-            self.diffDefault=True
-            self.diff=True
+            self.diffDefault=False
+            self.diff=False
         else: 
             self.diffDefault=False
             self.diff=self.params['differential']
@@ -71,7 +58,7 @@ class ads1x15Device(i2cDevice):
         if self.diff:
             self.params['n_channels']=2
             if not 'channel_names' in self.config:
-                self.config['channel_names']=['ChA','ChB']
+                self.config['channel_names']=['Ch1-2','Ch3-4']
         else:
             self.params['n_channels']=4
             if not 'channel_names' in self.config:
@@ -82,9 +69,32 @@ class ads1x15Device(i2cDevice):
         self.config['eng_units']=['V']*self.params['n_channels']
         self.config['scale']=np.ones(self.params['n_channels'],)
         self.config['offset']=np.zeros(self.params['n_channels'],)
-        if 'gain' in self.params: self.config['gain']=self.params['gain']
+        
+        if not 'pga' in self.params: self.params['pga']=1
+        if 'bits' in self.params: self.config['bits']=self.params['bits']
+        else: self.config['bits']=18
 
         cprint( "Activating %s on i2c bus at %i:%s with %i channels" % (self.params['driver'],self.params['bus'],hex(self.params['address']),self.params['n_channels']) , 'green' )
+        
+        self.ADC = _mcp3424();
+        self.config['RAW_MIN']=0
+        self.config['V_MIN']=0
+        self.fd='/dev/i2c-%i' % self.params['bus']
+        if self.config['bits']==12:
+            _mcp3424_init(self.ADC, self.fd, int(self.params['address'],16), MCP3424_RESOLUTION_12);
+            self.config['RAW_MAX']=2048
+        elif self.config['bits']==14:
+            _mcp3424_init(self.ADC, self.fd, int(self.params['address'],16), MCP3424_RESOLUTION_14);
+            self.config['RAW_MAX']=8192
+        elif self.config['bits']==16:
+            _mcp3424_init(self.ADC, self.fd, int(self.params['address'],16), MCP3424_RESOLUTION_16);
+            self.config['RAW_MAX']=32768
+        elif self.config['bits']==18:
+            _mcp3424_init(self.ADC, self.fd, int(self.params['address'],16), MCP3424_RESOLUTION_18);
+            self.config['RAW_MAX']=131072
+        else:
+            raise ValueError("Unknown MCP3424 bit depth (must be 12/14/16/18)")
+
         if self.diffDefault: print("\tDifferential mode (default)")
         elif self.diff: print("\tDifferential mode specified")
         else: print("\tSingle-ended mode")
@@ -97,27 +107,33 @@ class ads1x15Device(i2cDevice):
         
         return
 
-    # Apply configuration (i.e. gain parameter)
-    def apply_config(self,default_gain=2/3):
-        valid_gain_values=[2/3, 1,2,4,8,16]
-        if not 'gain' in self.config.keys(): self.config['gain']=[default_gain]*self.params['n_channels']
-        for chg in self.config['gain']:
-            if not chg in valid_gain_values:
-                cprint( "Error, gain values are invalid. Resetting", 'yellow' )
-                self.config['gain']=[default_gain]*self.params['n_channels']
+    # Apply configuration
+    def apply_config(self):
+        if self.params['pga']==1:
+            _mcp3424_set_pga(self.ADC, MCP3424_PGA_1X);
+            self.config['V_MAX']=5.06
+        elif self.params['pga']==2:
+            _mcp3424_set_pga(self.ADC, MCP3424_PGA_2X);
+            self.config['V_MAX']=5.06/2.
+        elif self.params['pga']==4:
+            _mcp3424_set_pga(self.ADC, MCP3424_PGA_4X);
+            self.config['V_MAX']=5.06/4.
+        elif self.params['pga']==8:
+            _mcp3424_set_pga(self.ADC, MCP3424_PGA_8X);
+            self.config['V_MAX']=5.06/8.
+        else:
+            raise ValueError("Invalid MCP3424 PGA gain (must be 1/2/4/8)")
         return
 
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self):
-        assert self.ADC
         # Read all the ADC channel values in a list.
         values = [0]*4
+        res = [0]*4
+        c = [MCP3424_CHANNEL_1, MCP3424_CHANNEL_2, MCP3424_CHANNEL_3, MCP3424_CHANNEL_4]
         for i in range(4):
-            if self.diff: j=i/2
-            else: j=i
-            values[i] = self.ADC.read_adc(i, gain=self.config['gain'][j])*4.096/32768.
-            if self.config['gain'][j]==0: values[i] /= 2/3.
-            else: values[i] /= self.config['gain'][j]
+            res[i] = _mcp3424_get_raw(self.ADC, c[i]);
+            values[i] = _MAP(res[i], self.config['RAW_MIN'], self.config['RAW_MAX'], self.config['V_MIN'], self.config['V_MAX']); 
         self.updateTimestamp()
         
         if self.diff:

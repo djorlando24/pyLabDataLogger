@@ -35,7 +35,7 @@ import datetime, time
 import numpy as np
 from termcolor import cprint
 
-""" Scan for available and unused i2c bus addresses that may contain
+""" Scan for available i2c addresses that may contain
     devices we can talk to. """
 def scan_for_devices(bus=1):
     try:
@@ -48,10 +48,10 @@ def scan_for_devices(bus=1):
     devices=[]
     for device in range(128):
        try:
-          bus.read_byte(device)
-          devices.append(hex(device))
-       except:
-          continue
+           bus.read_byte(device)
+           devices.append(device)
+       except OSError:
+           continue
     return devices
 
 """ Load devices based on a-priori knowledge of what addresses on the bus
@@ -82,24 +82,24 @@ i2c_input_device_table = [
     {'address':0x29, 'driver':'vl6180x', 'name':'VL6180X time of flight sensor'},\
     {'address':0x48, 'driver':'lm75a', 'name':'LM75A temperature sensor'}, \
     {'address':0x28, 'driver':'m32jm', 'name':'TE M32JM pressure transducer'},\
-    {'address':0x57, 'driver':'max30105', 'name':'MAX30105 dust and particle sensor'}, \
+    {'address':0xff, 'driver':'max30105', 'name':'MAX30105 dust and particle sensor'}, #0x57 \
     {'address':0x00, 'driver':'lwlp5000', 'name':'LWLP5000 pressure sensor'}, \
         
     # Devices that have multiple addresses
-    {'address':0x76, 'driver':'ms5611', 'name':'MS5611 barometric pressure sensor'}, #0x76-0x77 \ 
+    {'address':[0x76,0x77], 'driver':'ms5611', 'name':'MS5611 barometric pressure sensor'}, #0x76-0x77 \ 
     {'address':0x40, 'driver':'ina226', 'name':'INA226 current sensor'}, #0x40-4f \
     {'address':0x40, 'driver':'ina219', 'name':'INA219 current sensor'}, #0x40,41,44,45 \
     {'address':0x60, 'driver':'mcp9600', 'name':'MCP9600 thermocouple'}, #0x60-67 \
-    {'address':0x48, 'driver':'tmp117', 'name':'TMP117 temperature sensor'}, #0x48-49 \
+    {'address':(0x48,0x49), 'driver':'tmp117', 'name':'TMP117 temperature sensor'}, #0x48-49 \
     {'address':0xff, 'driver':'mpx5700ap', 'name':'MPX5700 air pressure sensor'}, # 4 unknown addresses \
 
-    {'address':0x38, 'driver':'aht10', 'name':'AHT10 temperature and humidity sensor'}, #0x38-0x39 \    
-    {'address':0x18, 'driver':'lis331', 'name':'H3LIS331DL accelerometer'}, #0x18-0x19 \
-    {'address':0x28, 'driver':'bno055', 'name':'BNO055 orientation sensor'}, #0x28-0x29 \
-    {'address':0x48, 'driver':'ads1x15', 'name':'ADS1x15 ADC'},   #0x48-0x49 \
-    {'address':0x5a, 'driver':'ccs811', 'name':'CCS811 Air quality sensor'}, #0x5a-0x5b \
-    {'address':0x73, 'driver':'ds3231', 'name':'DFRobot Oxygen Sensor'},    # 0x70-0x73 \
-    {'address':0x6a, 'driver':'mcp3424', 'name':'MCP3424 ADC'}, # 0x6a/c/e \
+    {'address':(0x38,0x39), 'driver':'aht10', 'name':'AHT10 temperature and humidity sensor'}, #0x38-0x39 \    
+    {'address':(0x18,0x19), 'driver':'lis331', 'name':'H3LIS331DL accelerometer'}, #0x18-0x19 \
+    {'address':(0x28,0x29), 'driver':'bno055', 'name':'BNO055 orientation sensor'}, #0x28-0x29 \
+    {'address':(0x48,0x49), 'driver':'ads1x15', 'name':'ADS1x15 ADC'},   #0x48-0x49 \
+    {'address':(0x5a,0x5b), 'driver':'ccs811', 'name':'CCS811 Air quality sensor'}, #0x5a-0x5b \
+    {'address':(0x71,0x72,0x73), 'driver':'ds3231', 'name':'DFRobot Oxygen Sensor'},    # 0x70-0x73 \
+    {'address':(0x6a,0x6c,0x6e), 'driver':'mcp3424', 'name':'MCP3424 18-bit ADC'}, # 0x6a/c/e \
     
 ]
 
@@ -116,41 +116,76 @@ i2c_output_device_table = [
 # The default i2c bus is 1, which is the external bus on a Raspberry Pi.
 # On a desktop PC, this may not be correct - your motherboard may be using bus 1 for CPU temperatures and fan speeds, etc.
 # Use the `i2cdetect' tool in Linux to determine the correct bus number.
-def load_i2c_devices(devices=None,bus=1,**kwargs):
-    if devices is None: devices=scan_for_devices(bus)
+#
+# You can use the addresses keyword to specify an i2c address to force-load
+def load_i2c_devices(addresses=None,bus=1,**kwargs):
+    if 'quiet' in kwargs: quiet=kwargs['quiet']
+    else: quiet=False
+
+    if addresses is None: addresses=scan_for_devices(bus)
     device_list=[]
-    for address in devices:
+    
+    for a in addresses:
+        # Find matches for input devices.
+        matches = []
+        for d in i2c_input_device_table:
+            if isinstance(d['address'],tuple):
+                for dd in d['address']:
+                    if dd==a: matches.append(d)
+            else:
+                if d['address']==a: matches.append(d)
         
-        #elif ((address=='0x70') or (address=='0x71') or (address=='0x72') or (address=='0x73') 
-        #        or (address=='0xe0') or (address=='0xe2') or (address=='0xe4') or (address=='0xe6') ):
-        #    cprint("IIC: Acknowledged output device at address %s but won't add this as an input device" % str(address), 'white')
-        
-        if ((address=='0x5a') or (address=='0x5b')):
+        if len(matches)>1:
+            # Handle multiple matches (addresses are often overlappng between devices)
+            print( "\nMultiple IIC devices share the address %s. Please select which driver to use on bus %i:" % (hex(a),bus))
+            print( "0) None (don't use this device)")
+            n=1; choose_n=-1
+            for d in found_devices:
+                print( '%i) %s (%s)' % (n,d['name'],d['driver']))
+                n+=1
+            while (choose_n<0) | (choose_n>len(matches)):
+                try:
+                    choose_n = int(input('> '))
+                except ValueError:
+                    choose_n = -1
+                if choose_n == 0: continue
+                elif choose_n <= len(matches): matches=[matches[choose_n-1]]
+
+        if len(matches)==0:
+            continue
+
+        if not quiet:
+            if len(device_list)==0: cprint("IIC: Found input devices:",'cyan')
+            print('\t',hex(a),matches)
+
+        if matches[0]['driver']=='ccs811':
            from pyLabDataLogger.device.i2c import ccs811Device
-           device_list.append(ccs811Device.ccs811Device(params={'address':address, 'bus':bus},**kwargs))
-         
-        elif address=='0x68':
+           device_list.append(ccs811Device.ccs811Device(params={'address':a, 'bus':bus},**kwargs))
+
+        elif matches[0]['driver']=='ds3231':
             from pyLabDataLogger.device.i2c import ds3231Device
-            device_list.append(ds3231.ds3231Device(params={'address':address, 'bus':bus},**kwargs))
+            device_list.append(ds3231.ds3231Device(params={'address':a, 'bus':bus},**kwargs))
         
-        elif ((address=='0x6a') or (address=='0x6c') or (address=='0x6e')):
+        elif matches[0]['driver']=='mcp3424':
             from pyLabDataLogger.device.i2c import mcp3424Device
-            device_list.append(mcp3424Device.mcp3424Device(params={'address':address, 'bus':bus},**kwargs))
+            device_list.append(mcp3424Device.mcp3424Device(params={'address':a, 'bus':bus},**kwargs))
         
-        elif address=='0x73':
-            from pyLabDataLogger.device.i2c import i2cO2Device
-            device_list.append(i2cO2Device.i2cO2Device(params={'address':address, 'bus':bus},**kwargs))
+        elif matches[0]['driver']=='dfoxy':
+            from pyLabDataLogger.device.i2c import dfoxyDevice
+            device_list.append(dfoxyDevice.dfoxyDevice(params={'address':a, 'bus':bus},**kwargs))
         
-        elif address=='0x48' or address=='0x49':
+        elif matches[0]['driver']=='ads1x15':
             from pyLabDataLogger.device.i2c import ads1x15Device
-            device_list.append(ads1x15Device.ads1x15Device(params={'address':address, 'bus':bus},**kwargs))
+            device_list.append(ads1x15Device.ads1x15Device(params={'address':a, 'bus':bus},**kwargs))
         
-        elif address=='0x77':
+        elif matches[0]['driver']=='bmp':
             from pyLabDataLogger.device.i2c import bmpDevice
-            device_list.append(bmpDevice.bmpDevice(params={'address':address, 'bus':bus},**kwargs))
+            device_list.append(bmpDevice.bmpDevice(params={'address':a, 'bus':bus},**kwargs))
         
         else:
-            cprint( "IIC: Ignoring unsupported device at address "+str(address), 'yellow')
+            raise RuntimeError("Unknown device: %s" % str(matches[0]))
+
+    
     return device_list
 
 
@@ -199,7 +234,8 @@ class i2cDevice(device):
             import smbus
             bus = smbus.SMBus(self.params['bus'])
             try:
-                bus.read_byte(int(self.params['address'],16))
+                #bus.read_byte(int(self.params['address'],16))
+                bus.read_byte(self.params['address'])
             except:
                 cprint( "Error, no I2C devices found on bus %i address %s" % (self.params['bus'],self.params['address']), 'red', attrs=['bold'])
                 raise

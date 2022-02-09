@@ -42,11 +42,10 @@ if __name__ == '__main__':
     
     # I2C setup
     found = i2cDevice.scan_for_devices(bus=1)
-    if len(found)==0: 
+    devices = i2cDevice.load_i2c_devices(found) 
+    if len(devices)==0: 
         cprint( "No I2C devices found.", 'red',attrs=['bold'])
         exit(1)	
-    else:
-        devices = i2cDevice.load_i2c_devices(found)
        
     try:
         while True:
