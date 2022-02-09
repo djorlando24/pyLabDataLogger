@@ -102,7 +102,7 @@ class mcclibusbDevice(device):
         sites = site.getsitepackages(); sites.append(site.USER_SITE)
         libname = self.subdriver[:]
         for libext in ['so','dylib','dll','a']:
-            path_to_lib = list(itertools.chain.from_iterable([ glob.glob(p+'/lib'+libname+'.'+libext)\
+            path_to_lib = list(itertools.chain.from_iterable([ glob.glob(p+'/lib'+libname+'*.'+libext)\
                                         for p in sites ]))
             if len(path_to_lib)>0: break
         if len(path_to_lib)==0: cprint("\tWarning - can't find lib%s" % libname,'yellow')

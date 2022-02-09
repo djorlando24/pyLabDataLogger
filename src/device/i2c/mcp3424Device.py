@@ -31,10 +31,30 @@
 
 from .i2cDevice import *
 from ..device import pyLabDataLoggerIOError
-import datetime, time
+import site, itertools, glob, datetime, os, time
 import numpy as np
 from termcolor import cprint
 
+# Ctypes required
+import ctypes, ctypes.util, struct
+from ctypes import py_object, c_int, c_char, c_uint, c_uint8, cast, addressof
+
+# set up enums and structs
+(MCP3424_CHANNEL_1,MCP3424_CHANNEL_2,MCP3424_CHANNEL_3,MCP3424_CHANNEL_4)=range(4)
+(MCP3424_CONVERSION_MODE_ONE_SHOT,MCP3424_CONVERSION_MODE_CONTINUOUS)=range(2)
+(MCP3424_PGA_1X,MCP3424_PGA_2X,MCP3424_PGA_4X,MCP3424_PGA_8X)=range(4)
+(MCP3424_RESOLUTION_12,MCP3424_RESOLUTION_14,MCP3424_RESOLUTION_16,MCP3424_RESOLUTION_18)=range(4)
+mcp3424_resolution_t=c_uint
+mcp3424_pga_t=c_uint
+mcp3424_channel_t=c_uint
+
+class mcp3424_t(ctypes.Structure):
+     _fields_ = [("df", c_int),
+                 ("addr", c_uint8),
+                 ("config", c_uint8),
+                 ("err", c_int),
+                 ("errstr", c_char*256),
+                 ]
 
 ########################################################################################################################
 class mcp3424Device(i2cDevice):
@@ -44,6 +64,32 @@ class mcp3424Device(i2cDevice):
 
     # Establish connection to device
     def activate(self):
+        # Load dynamic library
+        
+        # Find DLLs for specific devices generated at build time
+        sites = site.getsitepackages(); sites.append(site.USER_SITE)
+        libname = 'mcp3424'
+        for libext in ['so','dylib','dll','a']:
+            path_to_lib = list(itertools.chain.from_iterable([ glob.glob(p+'/lib'+libname+'*.'+libext)\
+                                        for p in sites ]))
+            if len(path_to_lib)>0: break
+        if len(path_to_lib)==0: cprint("\tWarning - can't find lib%s" % libname,'yellow')
+        else: self.libpath = path_to_lib[0]
+        self.L = ctypes.cdll.LoadLibrary(self.libpath)
+        
+        # Set up the functions we'll call later
+        self.L.mcp3424_init.argtypes=[mcp3424_t, c_int, c_uint8, mcp3424_resolution_t]
+        self.L.mcp3424_init.restype=None
+        self.L.mcp3424_set_pga.argtypes=[mcp3424_t, mcp3424_pga_t]
+        self.L.mcp3424_set_pga.restype=None
+        self.L.mcp3424_get_raw.argtypes=[mcp3424_t, mcp3424_channel_t]
+        self.L.mcp3424_get_raw.restype=c_uint
+        #self.L.mcp3424_set_conversion_mode.argtypes=[mcp3424_t, mcp3424_conversion_mode_t]
+        #self.L.mcp3424_set_conversion_mode.restype=None
+        #self.L.mcp3424_set_resolution.argtypes=[mcp3424_t, mcp3424_resolution_t]
+        #self.L.mcp3424_set_resolution.restype=None
+
+        # Set up device
         assert self.params['address']
         assert self.params['bus']
         if not 'driver' in self.params.keys(): self.params['driver']='mcp3424'
@@ -74,23 +120,33 @@ class mcp3424Device(i2cDevice):
         if 'bits' in self.params: self.config['bits']=self.params['bits']
         else: self.config['bits']=18
 
-        cprint( "Activating %s on i2c bus at %i:%s with %i channels" % (self.params['driver'],self.params['bus'],hex(self.params['address']),self.params['n_channels']) , 'green' )
+        cprint( "Activating %s on i2c bus at %i:%s with %i channels" % (self.params['driver'],\
+                self.params['bus'],hex(self.params['address']),self.params['n_channels']) , 'green' )
         
-        self.ADC = _mcp3424();
+        self.ADC = mcp3424_t()
         self.config['RAW_MIN']=0
         self.config['V_MIN']=0
-        self.fd='/dev/i2c-%i' % self.params['bus']
+        self.i2c_dev='/dev/i2c-%i' % self.params['bus']
+        self.fd = os.open(self.i2c_dev, os.O_RDWR)
+        '''
+        self.L.mcp3424_init.argtypes=[mcp3424_t, c_int, c_uint8, mcp3424_resolution_t]
+        self.L.mcp3424_init.restype=None
+        self.L.mcp3424_set_pga.argtypes=[mcp3424_t, mcp3424_pga_t]
+        self.L.mcp3424_set_pga.restype=None
+        self.L.mcp3424_get_raw.argtypes=[mcp3424_t, mcp3424_channel_t]
+        self.L.mcp3424_get_raw.restype=c_uint
+        '''
         if self.config['bits']==12:
-            _mcp3424_init(self.ADC, self.fd, int(self.params['address'],16), MCP3424_RESOLUTION_12);
+            self.L.mcp3424_init(self.ADC, c_int(self.fd), c_uint8(self.params['address']), MCP3424_RESOLUTION_12);
             self.config['RAW_MAX']=2048
         elif self.config['bits']==14:
-            _mcp3424_init(self.ADC, self.fd, int(self.params['address'],16), MCP3424_RESOLUTION_14);
+            self.L.mcp3424_init(self.ADC, c_int(self.fd), c_uint8(self.params['address']), MCP3424_RESOLUTION_14);
             self.config['RAW_MAX']=8192
         elif self.config['bits']==16:
-            _mcp3424_init(self.ADC, self.fd, int(self.params['address'],16), MCP3424_RESOLUTION_16);
+            self.L.mcp3424_init(self.ADC, c_int(self.fd), c_uint8(self.params['address']), MCP3424_RESOLUTION_16);
             self.config['RAW_MAX']=32768
         elif self.config['bits']==18:
-            _mcp3424_init(self.ADC, self.fd, int(self.params['address'],16), MCP3424_RESOLUTION_18);
+            self.L.mcp3424_init(self.ADC, c_int(self.fd), c_uint8(self.params['address']), MCP3424_RESOLUTION_18);
             self.config['RAW_MAX']=131072
         else:
             raise ValueError("Unknown MCP3424 bit depth (must be 12/14/16/18)")
@@ -110,16 +166,16 @@ class mcp3424Device(i2cDevice):
     # Apply configuration
     def apply_config(self):
         if self.params['pga']==1:
-            _mcp3424_set_pga(self.ADC, MCP3424_PGA_1X);
+            self.L.mcp3424_set_pga(self.ADC, MCP3424_PGA_1X);
             self.config['V_MAX']=5.06
         elif self.params['pga']==2:
-            _mcp3424_set_pga(self.ADC, MCP3424_PGA_2X);
+            self.L.mcp3424_set_pga(self.ADC, MCP3424_PGA_2X);
             self.config['V_MAX']=5.06/2.
         elif self.params['pga']==4:
-            _mcp3424_set_pga(self.ADC, MCP3424_PGA_4X);
+            self.L.mcp3424_set_pga(self.ADC, MCP3424_PGA_4X);
             self.config['V_MAX']=5.06/4.
         elif self.params['pga']==8:
-            _mcp3424_set_pga(self.ADC, MCP3424_PGA_8X);
+            self.L.mcp3424_set_pga(self.ADC, MCP3424_PGA_8X);
             self.config['V_MAX']=5.06/8.
         else:
             raise ValueError("Invalid MCP3424 PGA gain (must be 1/2/4/8)")
@@ -132,8 +188,10 @@ class mcp3424Device(i2cDevice):
         res = [0]*4
         c = [MCP3424_CHANNEL_1, MCP3424_CHANNEL_2, MCP3424_CHANNEL_3, MCP3424_CHANNEL_4]
         for i in range(4):
-            res[i] = _mcp3424_get_raw(self.ADC, c[i]);
-            values[i] = _MAP(res[i], self.config['RAW_MIN'], self.config['RAW_MAX'], self.config['V_MIN'], self.config['V_MAX']); 
+            res[i] = self.L.mcp3424_get_raw(self.ADC, c[i]);
+            values[i] = ((res[i] - self.config['RAW_MIN']) * \
+                    ((self.config['V_MAX'] - self.config['V_MIN']) / (self.config['RAW_MAX'] - self.config['RAW_MIN']))) \
+                    + self.config['V_MIN'] 
         self.updateTimestamp()
         
         if self.diff:

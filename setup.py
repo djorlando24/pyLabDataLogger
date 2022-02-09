@@ -47,15 +47,12 @@ long_description = """Easy data logging from USB, Serial and Network devices"""
 
 # Build cython modules
 cython_modules = [
-#    Extension(
-#        "pySciCam.chronos14_raw",
-#        ["src/pySciCam/chronos14_raw.pyx"],
-#    )
 ]
 
 # Build C libraries that interface to hardware
 c_libraries = [
-    Extension("libmccusb1608G", sources = ["src/mcclibusb/usb-1608G.c"])
+    Extension("libmccusb1608G", sources = ["src/mcclibusb/usb-1608G.c"]),
+    Extension("libmcp3424", sources = ["src/device/i2c/mcp3424.c"])
 ]
 
 
