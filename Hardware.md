@@ -10,6 +10,8 @@ Some devices also require manual configuration in the runtime script because the
 
 Those special configurations are explained below.
 
+# USB Devices
+
 ## LHT00SU1 logic analyser
 
 - This unit works via sigrok and must be flashed with fx2lafw firmware to work.
@@ -90,10 +92,6 @@ Assumes the default device address of 01 (factory setting).
 Assumes the serial comms are at 9600 baud 8N1. The factory default comms mode is 9600 7O2 and this needs to be fixed in the device's menus.
 The device doesn't indicate its units of measurement; the scale and offset must be set by the user on the device.
 
-## I2C Devices
-I2C devices that use Adafruit libraries rely on deprecated python libraries which have been copied into thirdParty in case
-the old repositories on Github go away. These devices have been tested on Raspberry pi, but should work on Beaglebones as well.
-
 ## Webcams
 Webcame frame capture requires the OpenCV library. If your webcam is not detected you may need to add its VID and PID to the device table in src/device/usbDevice.py, and specify the 'opencv' driver. Then merge your changes so I can expand the supported deice list!
 
@@ -118,8 +116,16 @@ These devices have a custom VID and PID but are actually just FTDI FT232R serial
 
 Then unplug and replug the device.
 
-# Center 310 Hygrometer
+## Center 310 Hygrometer
 *Center 310* hygrometer support via RS-232 is now built-in, there are some test utilities in thirdParty/C310 if you experience problems.
+
+# I2C / IIC devices
+
+Adafruit devices use libraries from Adafruit which can be obtained via github.
+Some of them are no longer on the web; they are available in ThirdParty directory.
+
+MCP3424 is based on alxyng's userspace driver at https://github.com/alxyng/mcp3424
+
 
 # Can you add support for my device?
 I can't test and add support for hardware unless I actually have the equipment in my hands to test it, and the time to do so.

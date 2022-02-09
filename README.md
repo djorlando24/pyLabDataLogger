@@ -140,6 +140,8 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
       (must set mode switch on dongle to '2')
     - Alicat Scientific M-series mass flow meters via RS232-to-USB dongle
       (default baud rate 19200, default unit ID 'A')
+    - Honeywell HPMA115S0 PM2.5/PM10 air quality monitor
+    - COZIR carbon dioxide monitor
     - Leadshine ES-D508 servomotor controller
     - Metrix MX5060 Bench multimeter (contains an internal generic CP210x Serial-to-USB bridge)
     - Radwag WTB series digital lab balance/scale via RS232-to-USB UART adapter **
@@ -156,6 +158,8 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
 - Single board computer (Raspberry Pi, Beaglebone) I2C, SPI & GPIO
     - Adafruit ADS1x15 12-bit ADCs via I2C
     - Adafruit BMP085/BMP150 barometer/altimeter via I2C
+    - MCP3424 18-bit ADC via I2C
+    - DFRobot Oxygen Sensor via I2C
     - Raspberry Pi low speed GPIO
 
 ## Future supported hardware

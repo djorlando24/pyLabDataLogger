@@ -48,7 +48,7 @@ if __name__ == '__main__':
     # I2C setup    
     found = i2cDevice.scan_for_devices()
     if len(found)==0: 
-        print "No I2C devices found."
+        print("No I2C devices found.")
     else:
         devices.extend(i2cDevice.load_i2c_devices(found, **special_args)) 
     
@@ -62,12 +62,12 @@ if __name__ == '__main__':
     try:
         while True:
             for d in devices:
-                print d.name
+                print(d.name)
                 d.query()
                 d.pprint()
             time.sleep(1)
     except KeyboardInterrupt:
-        print "Stopped."
+        print("Stopped.")
     except:
         raise
      
