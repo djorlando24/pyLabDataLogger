@@ -485,6 +485,13 @@ class serialDevice(device):
         else: cprint( "Error resetting %s: device is not detected" % self.name, 'red', attrs=['bold'])
 
     ########################################################################################################################
+    # Blocking call to send raw bytes on the serial port.
+    def simpleSerialRequest(self,request,terminationChar=None,maxlen=None,min_response_length=0,sleeptime=0):
+         self.Serial.write(request)
+         if sleeptime>0: time.sleep(sleeptime)
+         return self.Serial.read(min_response_length)
+
+    ########################################################################################################################
     # Blocking call to send a request and get a string back.
     # This method block is for devices that use a standard
     # method; call<CR/LF> -short delay- response<CR/LF>.
@@ -659,25 +666,45 @@ class serialDevice(device):
             self.responseTerminator='\r'
             self.sleeptime=0.001
 
-            raise RuntimeError("Get COZIR initial settings!")
+            # Set polling mode
+            self.Serial.write('K 2\r\n'.encode())
+            self.config['Polling Mode']=self.Serial.read(64)
+            if not b'K 00002' in self.config['Polling Mode']:
+                raise PyLabDataLoggerIOError("Couldn't set COZIR polling mode - check serial port")
+
+            # Get device info
+            self.Serial.write('Y\r\n'.encode())
+            self.config['Device Info String']=self.Serial.read(64)
+            if not self.quiet: cprint("\tCOZIR Device Info: %s" % self.config['Device Info String'],'white')
+
+            # Get scaling constant
+            self.Serial.write('.\r\n'.encode())
+            ret = self.Serial.read(16)
+            self.config['zconst'] = float(ret[3:8])
 
         # ----------------------------------------------------------------------------------------
         elif subdriver=='hpma': # Startup config for Honeywell HPMA air quality sensor
             self.name = 'Honeywell HPMA1150S Air Quality Sensor'
-            self.config['channel_names']=['pm2.5','pm10']
-            self.params['raw_units']=['ppm','ppm']
-            self.config['eng_units']=['ppm','ppm']
-            self.config['scale']=[1.,1.]
-            self.config['offset']=[0.,0.]
-            self.params['n_channels']=2
-            self.serialQuery=['\x68\x01\x04\x93']
-            self.queryTerminator=''
-            self.responseTerminator=''
+            self.config['channel_names']=['pm2.5','pm10','checksum']
+            self.params['raw_units']=['ug/m3','ug/m3','']
+            self.config['eng_units']=['ug/m3','ug/m3','']
+            self.config['scale']=[1.,1.,1.]
+            self.config['offset']=[0.,0.,0.]
+            self.params['n_channels']=3
+            self.serialQuery=[[0x68,0x01,0x04,0x93]]
+            self.queryTerminator=[]
+            self.responseTerminator=[]
             self.sleeptime=0.001
-            self.serialCommsFunction=self.blockingRawSerialRequest
+            self.serialCommsFunction=self.simpleSerialRequest
+            self.params['min_response_length']=38 # bytes
 
-            raise RuntimeError("Get HPMA initial settings!")
-
+            #Stop Auto Send, in  case it is enabled.
+            self.Serial.write([0x68,0x01,0x20,0x77])
+            if b'\xa5\xa5' in self.Serial.read(5):  # 0xA5A5 = success
+                if not self.quiet: cprint("\tHPMA Auto-send off",'white')
+            else:
+                raise pyLabDataLoggerIOError("HPMA communication error")
+            
         # ----------------------------------------------------------------------------------------
         elif subdriver=='omega-ir-usb': # Statup config for IR-USB
             self.name = "Omega IR-USB"
@@ -1343,15 +1370,41 @@ class serialDevice(device):
 
             # ----------------------------------------------------------------------------------------
             elif subdriver=='hpma':
-                print(repr(rawData))
-                raise RuntimeError("HPMA support not yet ready")
-                return [None]*self.params['n_channels']
+                
+                header=rawData[0][:2]
+                data=rawData[0][2:]
+
+                if header==b'\x96\x96':
+                    if not self.quiet: cprint("\tHPMA: Negative ACK",'red')
+                    return [None]*self.params['n_channels']
+
+                elif header==b'\x40\x05':
+                        #print("Positive ACK")
+                        #print("\tData: (received %i bytes)" % len(data))
+                        pm25 = struct.unpack('>h',data[1:3])[0]
+                        pm10 = struct.unpack('>h',data[3:5])[0]
+                        cs1 = data[5]
+                        cs2 = (65536-(int(header[0])+int(header[1])+int(data[0])+sum([int(v) for v in data[1:5]])))%256
+                        #print("\tPM2.5 = %s\n\tPM10 = %s\n\tChecksum match=%s\n" % (pm25,pm10,cs1==cs2))
+                        return [pm25, pm10, cs1-cs2]
+                else:
+                        if not self.quiet: cprint("\tHMPA: Comm Error. Got %s" % repr(rawData[0]),'red')
+                        return [None]*self.params['n_channels']
 
             # ----------------------------------------------------------------------------------------
             elif subdriver=='cozir':
-                print(repr(rawData))
-                raise RuntimeError("HPMA support not yet ready")
-                return [None]*self.params['n_channels']
+                #Typical response looks like: Q\r\n'    b'H 00510 T 01244 Z 00698 z 00737
+                try:
+                    zconst=self.config['zconst']
+                    l=rawData[0].decode('ascii').strip().replace("\\r\\n","").strip('\'').split(' ')
+                    h=float(l[1]) * 0.1
+                    t=float(l[3][2:]) * 0.1
+                    z1=float(l[5][2:])  * zconst
+                    z2=float(l[7][2:])  * zconst
+                    return [h,t,z1,z2]
+                except:
+                    raise
+                    return [None]*self.params['n_channels']
 
             # ----------------------------------------------------------------------------------------
             elif subdriver=='omega-ir-usb':

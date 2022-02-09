@@ -41,13 +41,13 @@ if __name__ == '__main__':
 
     globalFunctions.banner()
     devices=[]
-    '''
+    
     # I2C setup
     found = i2cDevice.scan_for_devices(bus=1)
     devices = i2cDevice.load_i2c_devices(found) 
     if len(devices)==0: 
         cprint( "No I2C devices found.", 'red',attrs=['bold'])
-    '''
+    
 
     # USB setup
     usbDevicesFound = usbDevice.search_for_usb_devices(debugMode=True)
@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
     # Serial device on the Pi's UART
     from pyLabDataLogger.device import serialDevice
-    devices.extend( serialDevice.serialDevice(driver='serial/hpma', port='/dev/ttyAMA0') )
+    devices.append( serialDevice.serialDevice({'driver':'serial/hpma', 'port':'/dev/serial0'}) )
 
     try:
         while True:
