@@ -1,11 +1,11 @@
 """
-    MAX30105 optical sensor
+    AHT10/AHT20 temperature and humidity sensor support
 
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.2.2
-    @date 10/02/2022
+    @date 11/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -36,14 +36,15 @@ import numpy as np
 from termcolor import cprint
 
 try:
-    from max30105 import MAX30105, HeartRate
+    import board, busio
+    import adafruit_ahtx0
 except ImportError:
-    cprint("Please install max30105 library using pip")
+    cprint("Please install adafruit-circuitpython-ahtx0 via pip",'red')
 
 ########################################################################################################################
-class max30105Device(i2cDevice):
+class ahtx0Device(i2cDevice):
 
-    """ Class providing support for __
+    """ Class providing support for AHT20 Temp & Humidity sensor via I2C
         Specify I2C bus and address on initialisation.
     """
 
@@ -54,30 +55,19 @@ class max30105Device(i2cDevice):
         if 'name' in self.params: self.name = self.params['name']+' %i:%s' % (self.params['bus'],hex(self.params['address']))
         if not 'driver' in self.params.keys(): self.params['driver']=None
 
-        self.params['n_channels']=4
+        self.params['n_channels']=2
         if not 'channel_names' in self.config:
-            self.config['channel_names']=['Temperature','Instantaneous reading','Running mean','Delta']
+            self.config['channel_names']=['Temperature','Humidity']
 
-        self.params['raw_units']=['degC','','','']
-        self.config['eng_units']=['degC','','','']
+        self.params['raw_units']=['degC','%']
+        self.config['eng_units']=['degC','%']
         self.config['scale']=np.ones(self.params['n_channels'],)
         self.config['offset']=np.zeros(self.params['n_channels'],)
         if ('untitled' in self.name.lower()) or (self.name==''):
-            self.name = 'MAX30105 optical sensor I2C %i:%s' % (self.params['bus'],self.params['address'])
+            self.name = '%s temperature sensor I2C %i:%s' % (self.params['driver'],self.params['bus'],self.params['address'])
 
-        self.max30105 = MAX30105()
-        self.max30105.setup(leds_enable=3)
-
-        self.max30105.set_led_pulse_amplitude(1, 0.0)
-        self.max30105.set_led_pulse_amplitude(2, 0.0)
-        self.max30105.set_led_pulse_amplitude(3, 12.5)
-
-        self.max30105.set_slot_mode(1, 'red')
-        self.max30105.set_slot_mode(2, 'ir')
-        self.max30105.set_slot_mode(3, 'green')
-        self.max30105.set_slot_mode(4, 'off')
-
-        self.hr = HeartRate(self.max30105)
+        self.i2c = busio.I2C(board.SCL, board.SDA)
+        self.dev = adafruit_ahtx0.AHTx0(self.i2c)
 
         return
 
@@ -89,30 +79,8 @@ class max30105Device(i2cDevice):
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self):
 
-        data=[]
-        means=[]
-        mean_size=20; delta_size=10
-        delta=0; deltas=[]
-        while len(means)<mean_size+1:
-            samples = self.max30105.get_samples()
-            if samples is not None:
-                r = samples[2] & 0xff
-                d = self.hr.low_pass_fir(r)
-                data.append(d)
-                if len(data) > mean_size:
-                    data.pop(0)
-                mean = sum(data) / float(len(data))
-                means.append(mean)
-                if len(means) > delta_size:
-                    delta = means[-1] - means[-delta_size]
-                else:
-                    delta = 0
-                deltas.append(delta)
-                time.sleep(0.01)
-
-
-        self.lastValue = [self.max30105.get_temperature(),d,mean,np.mean(deltas)]
-
+        self.lastValue = [ self.dev.temperature, self.dev.relative_humidity ]
+        
         self.updateTimestamp()
 
         self.lastScaled = np.array(self.lastValue) * self.config['scale'] + self.config['offset']
@@ -121,5 +89,5 @@ class max30105Device(i2cDevice):
 
     # End connection to device.
     def deactivate(self):
-        del self.max30105
-        del self.hr
+        del self.dev
+        del self.i2c

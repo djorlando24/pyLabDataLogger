@@ -88,7 +88,7 @@ i2c_input_device_table = [
     {'address':0x00, 'driver':'lwlp5000', 'name':'LWLP5000 pressure sensor'}, \
     {'address':0x28, 'driver':'tfmini-lidar', 'name':'TFMini I2C LiDAR ToF Laser Range Sensor'},\
     {'address':0x48, 'driver':'pcf8591', 'name':'PCF8591 8-bit ADC'},\
-    {'address':0x38, 'driver':'aht20', 'name':'AHT20 temperature and humidity sensor'},\
+    {'address':(0x38,0x39), 'driver':'ahtx0', 'name':'AHTx0 temperature and humidity sensor'},\
       
     # Devices that have multiple addresses
     {'address':[0x76,0x77], 'driver':'ms5611', 'name':'MS5611 barometric pressure sensor'}, #0x76-0x77 \ 
@@ -98,7 +98,6 @@ i2c_input_device_table = [
     {'address':(0x48,0x49), 'driver':'tmp117', 'name':'TMP117 temperature sensor'}, #0x48-49 \
     {'address':0xff, 'driver':'mpx5700ap', 'name':'MPX5700 air pressure sensor'}, # 4 unknown addresses \
 
-    {'address':(0x38,0x39), 'driver':'aht10', 'name':'AHT10 temperature and humidity sensor'}, #0x38-0x39 \    
     {'address':(0x18,0x19), 'driver':'lis331', 'name':'H3LIS331DL accelerometer'}, #0x18-0x19 \
     {'address':(0x28,0x29), 'driver':'bno055', 'name':'BNO055 orientation sensor'}, #0x28-0x29 \
     {'address':(0x48,0x49), 'driver':'ads1x15', 'name':'ADS1x15 ADC'},   #0x48-0x49 \
@@ -200,6 +199,10 @@ def load_i2c_devices(addresses=None,bus=1,**kwargs):
         elif matches[0]['driver']=='dfoxy':
             from pyLabDataLogger.device.i2c import dfoxyDevice
             device_list.append(dfoxyDevice.dfoxyDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+
+        elif matches[0]['driver']=='ahtx0':
+            from pyLabDataLogger.device.i2c import ahtx0Device
+            device_list.append(ahtx0Device.ahtx0Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
 
         else:
             raise RuntimeError("Unknown device: %s" % str(matches[0]))

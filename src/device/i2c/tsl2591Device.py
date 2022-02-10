@@ -90,4 +90,5 @@ class tsl2591Device(i2cDevice):
 
     # End connection to device.
     def deactivate(self):
-        pass
+        del self.dev
+        del self.i2c
