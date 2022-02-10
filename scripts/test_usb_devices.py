@@ -60,6 +60,8 @@ if __name__ == '__main__':
                 d.pprint()
             time.sleep(.01)
     except KeyboardInterrupt:
-        print("Stopped.")
+        cprint("Stopped.",'red',attrs=['bold'])
+        for d in devices: d.deactivate()
+
     except: # all other errors
         raise

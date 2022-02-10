@@ -137,6 +137,7 @@ if __name__ == '__main__':
             
     except KeyboardInterrupt:
         cprint( "Stopped.", 'red', attrs=['bold'])
+        for d in devices: d.deactivate()
         
     except: # all other errors
         raise

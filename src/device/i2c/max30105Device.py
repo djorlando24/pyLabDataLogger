@@ -96,19 +96,20 @@ class max30105Device(i2cDevice):
         while len(means)<mean_size+1:
             samples = self.max30105.get_samples()
             if samples is not None:
-                r = samples[2] & 0xff
-                d = self.hr.low_pass_fir(r)
-                data.append(d)
-                if len(data) > mean_size:
-                    data.pop(0)
-                mean = sum(data) / float(len(data))
-                means.append(mean)
-                if len(means) > delta_size:
-                    delta = means[-1] - means[-delta_size]
-                else:
-                    delta = 0
-                deltas.append(delta)
-                time.sleep(0.01)
+                if len(samples)>2:
+                    r = samples[2] & 0xff
+                    d = self.hr.low_pass_fir(r)
+                    data.append(d)
+                    if len(data) > mean_size:
+                        data.pop(0)
+                    mean = sum(data) / float(len(data))
+                    means.append(mean)
+                    if len(means) > delta_size:
+                        delta = means[-1] - means[-delta_size]
+                    else:
+                        delta = 0
+                    deltas.append(delta)
+            time.sleep(0.01)
 
 
         self.lastValue = [self.max30105.get_temperature(),d,mean,np.mean(deltas)]
@@ -121,5 +122,6 @@ class max30105Device(i2cDevice):
 
     # End connection to device.
     def deactivate(self):
+        self.max30105.soft_reset()
         del self.max30105
         del self.hr

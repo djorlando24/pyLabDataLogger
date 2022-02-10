@@ -54,5 +54,7 @@ if __name__ == '__main__':
             print("")
     except KeyboardInterrupt:
         print "Stopped."
+        for d in devices: d.deactivate()
+
     except: # all other errors
         raise
