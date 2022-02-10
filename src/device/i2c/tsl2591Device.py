@@ -59,9 +59,10 @@ class tsl2591Device(i2cDevice):
         if not 'channel_names' in self.config:
             self.config['channel_names']=['Lux','IR','Visible','Full Spectrum']
 
-
-        self.params['raw_units']=['']*4
-        self.config['eng_units']=['']*4
+        self.params['VIS_RANGE']=float(2**32)
+        self.params['IR_RANGE'] =float(2**16)
+        self.params['raw_units']=['lux','','','']
+        self.config['eng_units']=['lux','','','']
         self.config['scale']=np.ones(self.params['n_channels'],)
         self.config['offset']=np.zeros(self.params['n_channels'],)
         if ('untitled' in self.name.lower()) or (self.name==''):
@@ -80,7 +81,7 @@ class tsl2591Device(i2cDevice):
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self):
 
-        self.lastValue = [ self.dev.lux, self.dev.infrared, self.dev.visible, self.dev.full_spectrum ]
+        self.lastValue = [ self.dev.lux, self.dev.infrared/self.params['IR_RANGE'], self.dev.visible/self.params['VIS_RANGE'], self.dev.full_spectrum/self.params['VIS_RANGE'] ]
         
         self.updateTimestamp()
 

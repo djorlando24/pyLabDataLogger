@@ -134,7 +134,7 @@ class device:
         show_scaled = ('eng_units' in self.config) and ('scale' in self.config) and\
                       ('offset' in self.config) and ('eng_units' in self.config) and\
                       not (np.all(np.array(self.config['scale'])==1.) and  np.all(np.array(self.config['offset'])==0.))
-                                            
+        
         # Print scalar variables with units where present. ################################################
         if (not isinstance( self.lastValue[0], list)) and (not isinstance(self.lastValue[0], np.ndarray)):
             if 'raw_units' in self.params:
@@ -159,11 +159,10 @@ class device:
 
                     # Spacing between variables.
                     # New line every 4 vars, commas between them 
-                    if (((n%4)==3) & (n>0)): sys.stdout.write('\n'+lead)                      
+                    if (((n%4)==3) & (n>0)): sys.stdout.write('\n'+lead) 
                     elif (n<self.params['n_channels']-1): sys.stdout.write(', ')
 
-                sys.stdout.write('\n')
-                if self.params['n_channels']==1: sys.stdout.write('\n')
+                if self.params['n_channels']<=2: sys.stdout.write('\n')
                 
             else: # I have no idea what is in self.lastValue, print verbatim!
                 print(lead+'Raw values:',self.lastValue)
@@ -171,11 +170,10 @@ class device:
 
             # Only show the scaled units if they exist.
             if show_scaled:
-                sys.stdout.write(lead+'Scaled: ')
+                sys.stdout.write('\n'+lead+'Scaled: ')
                 for n in range(self.params['n_channels']):
                     sys.stdout.write(u'%s = %f %s' % (self.truncateName(self.config['channel_names'][n]), self.lastScaled[n],self.config['eng_units'][n]))
                     if (n<self.params['n_channels']-1): sys.stdout.write(', ')
-                sys.stdout.write('\n')
     
         # Vectors (i.e. timeseries data) with units added to the end where present. ####################################
         else:
@@ -187,7 +185,6 @@ class device:
                         sys.stdout.write(u'%s = %s %s' % (self.truncateName(self.config['channel_names'][n]),\
                                                           self.lastValue[n],\
                                                           self.params['raw_units'][n]))
-                    sys.stdout.write('\n')
                 else: 
                     # show some values of 1-D lists and arrays
                     if (len(self.lastValue[n].shape) <= 1):
@@ -224,6 +221,7 @@ class device:
                                 self.params['raw_units'][n],\
                                 self.lastScaled[n].shape,self.config['eng_units'][n]))
     
+        sys.stdout.write('\n')
         return
 
     ################################################################################################################################################################
