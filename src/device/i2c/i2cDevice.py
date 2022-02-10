@@ -84,7 +84,9 @@ i2c_input_device_table = [
     {'address':0x28, 'driver':'m32jm', 'name':'TE M32JM pressure transducer'},\
     {'address':0xff, 'driver':'max30105', 'name':'MAX30105 dust and particle sensor'}, #0x57 \
     {'address':0x00, 'driver':'lwlp5000', 'name':'LWLP5000 pressure sensor'}, \
-        
+    {'address':0x28, 'driver':'tfmini-lidar', 'name':'TFMini I2C LiDAR ToF Laser Range Sensor'},\
+    {'address':0x48, 'driver':'pcf8591', 'name':'PCF8591 8-bit ADC'},\
+    
     # Devices that have multiple addresses
     {'address':[0x76,0x77], 'driver':'ms5611', 'name':'MS5611 barometric pressure sensor'}, #0x76-0x77 \ 
     {'address':0x40, 'driver':'ina226', 'name':'INA226 current sensor'}, #0x40-4f \
@@ -140,7 +142,7 @@ def load_i2c_devices(addresses=None,bus=1,**kwargs):
             print( "\nMultiple IIC devices share the address %s. Please select which driver to use on bus %i:" % (hex(a),bus))
             print( "0) None (don't use this device)")
             n=1; choose_n=-1
-            for d in found_devices:
+            for d in matches:
                 print( '%i) %s (%s)' % (n,d['name'],d['driver']))
                 n+=1
             while (choose_n<0) | (choose_n>len(matches)):
@@ -149,7 +151,9 @@ def load_i2c_devices(addresses=None,bus=1,**kwargs):
                 except ValueError:
                     choose_n = -1
                 if choose_n == 0: continue
-                elif choose_n <= len(matches): matches=[matches[choose_n-1]]
+        
+            if choose_n>0: matches=[matches[choose_n-1]]
+            else: matches=[]
 
         if len(matches)==0:
             continue
@@ -158,7 +162,15 @@ def load_i2c_devices(addresses=None,bus=1,**kwargs):
             if len(device_list)==0: cprint("IIC: Found input devices:",'cyan')
             print('\t',hex(a),matches)
 
-        if matches[0]['driver']=='ccs811':
+        if matches[0]['driver']=='pcf8591':
+           from pyLabDataLogger.device.i2c import pcf8591Device
+           device_list.append(pcf8591Device.pcf8591Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+
+        elif matches[0]['driver']=='m32jm':
+            from pyLabDataLogger.device.i2c import m32jmDevice
+            device_list.append(m32jmDevice.m32jmDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+
+        elif matches[0]['driver']=='ccs811':
            from pyLabDataLogger.device.i2c import ccs811Device
            device_list.append(ccs811Device.ccs811Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
 

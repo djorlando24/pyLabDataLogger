@@ -159,7 +159,9 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Adafruit ADS1x15 12-bit ADCs via I2C
     - Adafruit BMP085/BMP150 barometer/altimeter via I2C
     - MCP3424 18-bit ADC via I2C
+    - PCF8591 8-bit ADC via I2C
     - DFRobot Oxygen Sensor via I2C
+    - TE M5300 (M53JM) series Pressure Transducer via I2C      
     - Raspberry Pi low speed GPIO
 
 ## Future supported hardware
