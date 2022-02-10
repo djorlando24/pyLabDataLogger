@@ -48,7 +48,9 @@ def scan_for_devices(bus=1):
     devices=[]
     for device in range(128):
        try:
-           bus.read_byte(device)
+           bus.write_byte(device,device)
+           get_ack=bus.read_byte(device)
+           #print(hex(device),hex(get_ack))
            devices.append(device)
        except OSError:
            continue
@@ -82,11 +84,12 @@ i2c_input_device_table = [
     {'address':0x29, 'driver':'vl6180x', 'name':'VL6180X time of flight sensor'},\
     {'address':0x48, 'driver':'lm75a', 'name':'LM75A temperature sensor'}, \
     {'address':0x28, 'driver':'m32jm', 'name':'TE M32JM pressure transducer'},\
-    {'address':0xff, 'driver':'max30105', 'name':'MAX30105 dust and particle sensor'}, #0x57 \
+    {'address':0x57, 'driver':'max30105', 'name':'MAX30105 dust and particle sensor'},\
     {'address':0x00, 'driver':'lwlp5000', 'name':'LWLP5000 pressure sensor'}, \
     {'address':0x28, 'driver':'tfmini-lidar', 'name':'TFMini I2C LiDAR ToF Laser Range Sensor'},\
     {'address':0x48, 'driver':'pcf8591', 'name':'PCF8591 8-bit ADC'},\
-    
+    {'address':0x38, 'driver':'aht20', 'name':'AHT20 temperature and humidity sensor'},\
+      
     # Devices that have multiple addresses
     {'address':[0x76,0x77], 'driver':'ms5611', 'name':'MS5611 barometric pressure sensor'}, #0x76-0x77 \ 
     {'address':0x40, 'driver':'ina226', 'name':'INA226 current sensor'}, #0x40-4f \
@@ -165,6 +168,14 @@ def load_i2c_devices(addresses=None,bus=1,**kwargs):
         if matches[0]['driver']=='pcf8591':
            from pyLabDataLogger.device.i2c import pcf8591Device
            device_list.append(pcf8591Device.pcf8591Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+       
+        elif matches[0]['driver']=='max30105':
+           from pyLabDataLogger.device.i2c import max30105Device
+           device_list.append(max30105Device.max30105Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+
+        elif matches[0]['driver']=='tsl2591':
+           from pyLabDataLogger.device.i2c import tsl2591Device
+           device_list.append(tsl2591Device.tsl2591Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
 
         elif matches[0]['driver']=='m32jm':
             from pyLabDataLogger.device.i2c import m32jmDevice
