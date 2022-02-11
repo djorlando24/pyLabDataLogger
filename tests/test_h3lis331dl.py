@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
+'''
+This script was modified to run on python3.
+The original code is reused from ControlEverything under these terms:
 
-# Distributed with a free-will license.
-# Use it any way you want, profit or free, provided it fits in the licenses of its associated works.
-# H3LIS331DL
-# This code is designed to work with the H3LIS331DL_I2CS I2C Mini Module available from ControlEverything.com.
-# https://www.controleverything.com/content/Accelorometer?sku=H3LIS331DL_I2CS#tabs-0-product_tabset-2
+    # Distributed with a free-will license.
+    # Use it any way you want, profit or free, provided it fits in the licenses of its associated works.
+
+    # H3LIS331DL
+    # This code is designed to work with the H3LIS331DL_I2CS I2C Mini Module available from ControlEverything.com.
+    # https://www.controleverything.com/content/Accelorometer?sku=H3LIS331DL_I2CS#tabs-0-product_tabset-2
+
+It's found at https://github.com/ControlEverythingCommunity/H3LIS331DL
+'''
 
 import smbus
 import time

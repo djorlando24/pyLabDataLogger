@@ -104,7 +104,7 @@ i2c_input_device_table = [
     {'address':(0x6a,0x6c,0x6e), 'driver':'mcp3424', 'name':'MCP3424 18-bit ADC'}, # 0x6a/c/e \
    
     # Not supported well on the Rasberry Pi - requires clock stretching
-    #{'address':(0x28,0x29), 'driver':'bno055', 'name':'BNO055 orientation sensor'},\
+    {'address':(0x28,0x29), 'driver':'bno055', 'name':'BNO055 orientation sensor'},\
     #{'address':0x28, 'driver':'tfmini-lidar', 'name':'TFMini I2C LiDAR ToF Laser Range Sensor'},\
 ]
 
@@ -208,6 +208,9 @@ def load_i2c_devices(addresses=None,bus=1,**kwargs):
         elif matches[0]['driver']=='h3lis331dl':
             from pyLabDataLogger.device.i2c import h3lis331dlDevice
             device_list.append(h3lis331dlDevice.h3lis331dlDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+
+        elif matches[0]['driver']=='bno055':
+            cprint("IIC: BNO055 not currently supported as it requires clock-stretching",'yellow')
 
         else:
             raise RuntimeError("Unknown device: %s" % str(matches[0]))

@@ -121,11 +121,22 @@ Then unplug and replug the device.
 
 # I2C / IIC devices
 
+Please note that hardware I2C support has only been tested on **Rasberry Pi** so far. I cannot guarantee proper smbus support on other systems.
+
 Adafruit devices use libraries from Adafruit which can be obtained via github.
 Some of them are no longer on the web; they are available in ThirdParty directory.
 
-MCP3424 is based on alxyng's userspace driver at https://github.com/alxyng/mcp3424
+Notes:
+- MCP3424 is based on alxyng's userspace driver at https://github.com/alxyng/mcp3424
+- H3LIS331DL driver is based on ControlEverything's script from https://github.com/ControlEverythingCommunity/H3LIS331DL
 
+## Devices that won't work on Raspberry Pi
+
+Devices that use clock stretching usually don't work on the Pi unless you bit-bang the I2C which is not very efficient, and it messes with anything else on the bus. Given this, I have not tried to implement drivers for those devices on purpose. Affected devices I've found so far that we can't support are:
+- BNO055 9-axis orientation sensor
+- TFMini Lidar Module [ it has a UART interface that could work though! ]
+
+To use the above devices I suggest you connect them to an Arduino (or similar microcontroller with usb) and use the arduinoDevice interface to pull down the data. Then you can use the off-the-shelf Arduino libraries with very little effort. Same applies to any I2C or SPI device that doesn't have a Rasberry Pi smbus driver.
 
 # Can you add support for my device?
 I can't test and add support for hardware unless I actually have the equipment in my hands to test it, and the time to do so.

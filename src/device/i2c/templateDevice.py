@@ -35,8 +35,13 @@ import datetime, time
 import numpy as np
 from termcolor import cprint
 
+try:
+    import Lib
+except ImportError:
+    cprint("Please install Lib.",'red')
+    
 ########################################################################################################################
-class dfoxyDevice(i2cDevice):
+class _Device(i2cDevice):
 
     """ Class providing support for __
         Specify I2C bus and address on initialisation.
@@ -49,16 +54,19 @@ class dfoxyDevice(i2cDevice):
         if 'name' in self.params: self.name = self.params['name']+' %i:%s' % (self.params['bus'],hex(self.params['address']))
         if not 'driver' in self.params.keys(): self.params['driver']=None
 
-        self.params['n_channels']=1
         if not 'channel_names' in self.config:
-            self.config['channel_names']=['O2_Vol']
+            self.config['channel_names']=['?']
+        self.params['n_channels']=len(self.config['channel_names'])
 
+        self.params['HW_CONST']=
         self.params['raw_units']=['']
         self.config['eng_units']=['']
         self.config['scale']=np.ones(self.params['n_channels'],)
         self.config['offset']=np.zeros(self.params['n_channels'],)
         if ('untitled' in self.name.lower()) or (self.name==''):
-            self.name = '%s I2C %i:%s' % (self.params['driver'],self.params['bus'],self.params['address'])
+            self.name = '? I2C %i:%s' % (self.params['bus'],self.params['address'])
+
+        self.dev=
 
         return
 
@@ -70,9 +78,8 @@ class dfoxyDevice(i2cDevice):
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self):
 
-        self.lastValue = [self.BMP.read_temperature(),\
-                          self.BMP.read_pressure() ]
-        
+        self.lastValue = 
+
         self.updateTimestamp()
 
         self.lastScaled = np.array(self.lastValue) * self.config['scale'] + self.config['offset']
@@ -81,4 +88,5 @@ class dfoxyDevice(i2cDevice):
 
     # End connection to device.
     def deactivate(self):
+        del self.dev
         pass

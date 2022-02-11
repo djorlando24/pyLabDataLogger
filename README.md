@@ -155,24 +155,28 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
            Testing with generic RS-232 to USB adapters indicated that when the PC attempts to take control of the flow control
            lines upon initialising the adapter, the device will cease transmitting and it cannot be restarted without disconnecting the serial cable. The simple solution is to wire up a TTL-to-UART adapter cable to an RS232 adapter, connecting only the RX, TX, VCC and GND lines (leaving the CTS/RTS/DTR lines disconnected).
 
-- Single board computer (Raspberry Pi, Beaglebone) I2C, SPI & GPIO
+- Single board computer (Raspberry Pi, Beaglebone)
     - Adafruit ADS1x15 12-bit ADCs via I2C
+    - AHT10/AHT20 temperature + humidity sensors
     - Adafruit BMP085/BMP150 barometer/altimeter via I2C
+    - H3LIS331DL accelerometer
+    - MAX30105 light, particle and heartbeat sensor
     - MCP3424 18-bit ADC via I2C
     - PCF8591 8-bit ADC via I2C
     - DFRobot Oxygen Sensor via I2C
-    - TE M5300 (M53JM) series Pressure Transducer via I2C      
+    - TE M5300 (M53JM) series Pressure Transducer via I2C
+    - TSL2591 lux sensor
+- and some GPIO support using special scripts in raspberryPi directory:
     - Raspberry Pi low speed GPIO
 
 ## Future supported hardware
 
-- more I2C bus devices on the Raspberry Pi
+- more I2C+SPI bus devices on the Raspberry Pi
 
 - PicoScope headless oscilloscopes
 
 - NI-VISA devices, such as
-    - NI USB DAQ boards ie 6212-series
-    - NI PCI card DAQs
+    - NI USB DAQ boards
     
 - Firewire machine vision cameras (libdc1394)
   [https://damien.douxchamps.net/ieee1394/cameras/]
