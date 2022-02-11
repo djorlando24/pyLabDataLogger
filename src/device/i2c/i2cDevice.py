@@ -86,25 +86,26 @@ i2c_input_device_table = [
     {'address':0x28, 'driver':'m32jm', 'name':'TE M32JM pressure transducer'},\
     {'address':0x57, 'driver':'max30105', 'name':'MAX30105 dust and particle sensor'},\
     {'address':0x00, 'driver':'lwlp5000', 'name':'LWLP5000 pressure sensor'}, \
-    {'address':0x28, 'driver':'tfmini-lidar', 'name':'TFMini I2C LiDAR ToF Laser Range Sensor'},\
     {'address':0x48, 'driver':'pcf8591', 'name':'PCF8591 8-bit ADC'},\
     {'address':(0x38,0x39), 'driver':'ahtx0', 'name':'AHTx0 temperature and humidity sensor'},\
-      
+    {'address':0x5a, 'driver':'mpr121', 'name':'MPR121 capacitative touch sensor'},\
+
     # Devices that have multiple addresses
-    {'address':[0x76,0x77], 'driver':'ms5611', 'name':'MS5611 barometric pressure sensor'}, #0x76-0x77 \ 
+    {'address':(0x18,0x19), 'driver':'h3lis331dl', 'name':'H3LIS331DL accelerometer'},\
+    {'address':(0x76,0x77), 'driver':'ms5611', 'name':'MS5611 barometric pressure sensor'}, #0x76-0x77 \ 
     {'address':0x40, 'driver':'ina226', 'name':'INA226 current sensor'}, #0x40-4f \
     {'address':0x40, 'driver':'ina219', 'name':'INA219 current sensor'}, #0x40,41,44,45 \
     {'address':0x60, 'driver':'mcp9600', 'name':'MCP9600 thermocouple'}, #0x60-67 \
     {'address':(0x48,0x49), 'driver':'tmp117', 'name':'TMP117 temperature sensor'}, #0x48-49 \
     {'address':0xff, 'driver':'mpx5700ap', 'name':'MPX5700 air pressure sensor'}, # 4 unknown addresses \
-
-    {'address':(0x18,0x19), 'driver':'lis331', 'name':'H3LIS331DL accelerometer'}, #0x18-0x19 \
-    {'address':(0x28,0x29), 'driver':'bno055', 'name':'BNO055 orientation sensor'}, #0x28-0x29 \
     {'address':(0x48,0x49), 'driver':'ads1x15', 'name':'ADS1x15 ADC'},   #0x48-0x49 \
     {'address':(0x5a,0x5b), 'driver':'ccs811', 'name':'CCS811 Air quality sensor'}, #0x5a-0x5b \
     {'address':(0x71,0x72,0x73), 'driver':'dfoxy', 'name':'DFRobot Oxygen Sensor'},    # 0x70-0x73 \
     {'address':(0x6a,0x6c,0x6e), 'driver':'mcp3424', 'name':'MCP3424 18-bit ADC'}, # 0x6a/c/e \
-    
+   
+    # Not supported well on the Rasberry Pi - requires clock stretching
+    #{'address':(0x28,0x29), 'driver':'bno055', 'name':'BNO055 orientation sensor'},\
+    #{'address':0x28, 'driver':'tfmini-lidar', 'name':'TFMini I2C LiDAR ToF Laser Range Sensor'},\
 ]
 
 
@@ -203,6 +204,10 @@ def load_i2c_devices(addresses=None,bus=1,**kwargs):
         elif matches[0]['driver']=='ahtx0':
             from pyLabDataLogger.device.i2c import ahtx0Device
             device_list.append(ahtx0Device.ahtx0Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+
+        elif matches[0]['driver']=='h3lis331dl':
+            from pyLabDataLogger.device.i2c import h3lis331dlDevice
+            device_list.append(h3lis331dlDevice.h3lis331dlDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
 
         else:
             raise RuntimeError("Unknown device: %s" % str(matches[0]))
