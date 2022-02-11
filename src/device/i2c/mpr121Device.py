@@ -1,11 +1,11 @@
 """
-    PCF8591 ADC support
+    MPR121 capacitative touch sensor
 
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.2.3
-    @date 10/02/2022
+    @date 12/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -36,15 +36,15 @@ import numpy as np
 from termcolor import cprint
 
 try:
-    import smbus
+    import board, busio
+    import adafruit_mpr121
 except ImportError:
-    cprint("Please install smbus module.",'red')
-
-
+    cprint("Please install adafruit_mpr121 from https://github.com/adafruit/Adafruit_CircuitPython_MPR121",'red')
+    
 ########################################################################################################################
-class pcf8591Device(i2cDevice):
+class mpr121Device(i2cDevice):
 
-    """ Class providing support for PCF8591 8Bit ADC
+    """ Class providing support for MPR121 touch sensor
         Specify I2C bus and address on initialisation.
     """
 
@@ -55,19 +55,19 @@ class pcf8591Device(i2cDevice):
         if 'name' in self.params: self.name = self.params['name']+' %i:%s' % (self.params['bus'],hex(self.params['address']))
         if not 'driver' in self.params.keys(): self.params['driver']=None
 
-        self.params['n_channels']=4
         if not 'channel_names' in self.config:
-            self.config['channel_names']=['A0','A1','A2','A3']
+            self.config['channel_names']=['Ch%i' % i for i in range(12)]
+        self.params['n_channels']=len(self.config['channel_names'])
 
-        if not 'VMIN' in self.params: self.params['VMIN']=0.
-        if not 'VMAX' in self.params: self.params['VMAX']=3.3*0.9
-
-        self.params['raw_units']=['V']*4
-        self.config['eng_units']=['V']*4
+        self.params['raw_units']=['']*self.params['n_channels']
+        self.config['eng_units']=['']*self.params['n_channels']
         self.config['scale']=np.ones(self.params['n_channels'],)
         self.config['offset']=np.zeros(self.params['n_channels'],)
         if ('untitled' in self.name.lower()) or (self.name==''):
-            self.name = 'PCF8591 ADC I2C %i:%s' % (self.params['bus'],self.params['address'])
+            self.name = 'MPR121 capacitative touch sensor I2C %i:%s' % (self.params['bus'],self.params['address'])
+
+        self.i2c = busio.I2C(board.SCL, board.SDA)
+        self.dev=adafruit_mpr121.MPR121(self.i2c)
 
         return
 
@@ -79,13 +79,7 @@ class pcf8591Device(i2cDevice):
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self):
 
-        self.lastValue = []
-        bus=smbus.SMBus(self.params['bus'])
-        for offset in [0x05,0x06,0x03,0x04]:
-            bus.write_byte(self.params['address'],offset)
-            data = bus.read_byte(self.params['address'])
-            self.lastValue.append(data/255.*(self.params['VMAX']-self.params['VMIN']) + self.params['VMIN'])
-            #print(hex(offset),data)
+        self.lastValue = [ self.dev[i].value for i in range(self.params['n_channels']) ]
 
         self.updateTimestamp()
 
@@ -95,4 +89,6 @@ class pcf8591Device(i2cDevice):
 
     # End connection to device.
     def deactivate(self):
+        del self.dev
+        del self.i2c
         pass

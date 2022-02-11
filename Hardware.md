@@ -123,8 +123,10 @@ Then unplug and replug the device.
 
 Please note that hardware I2C support has only been tested on **Rasberry Pi** so far. I cannot guarantee proper smbus support on other systems.
 
-Adafruit devices use libraries from Adafruit which can be obtained via github.
-Some of them are no longer on the web; they are available in ThirdParty directory.
+Adafruit devices use libraries from Adafruit which can be obtained mostly via pip (ie `sudo pip3 install adafruit_foo`). For those that can't use pip you can get a working module via github:
+- MPR121 - https://github.com/adafruit/Adafruit_CircuitPython_MPR121
+
+Any libraries that are no longer available or require older versions are available in ThirdParty directory for convenience.
 
 Notes:
 - MCP3424 is based on alxyng's userspace driver at https://github.com/alxyng/mcp3424

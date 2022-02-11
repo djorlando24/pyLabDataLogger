@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.2.2
-    @date 10/02/2022
+    @version 1.2.3
+    @date 12/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -42,6 +42,7 @@ except ImportError:
     
 ########################################################################################################################
 class _Device(i2cDevice):
+    raise RuntimeError("Note to developers: Please change class name from _Device and update documentation!")
 
     """ Class providing support for __
         Specify I2C bus and address on initialisation.
@@ -58,7 +59,7 @@ class _Device(i2cDevice):
             self.config['channel_names']=['?']
         self.params['n_channels']=len(self.config['channel_names'])
 
-        self.params['HW_CONST']=
+        self.params['HW_CONST']=None
         self.params['raw_units']=['']
         self.config['eng_units']=['']
         self.config['scale']=np.ones(self.params['n_channels'],)
@@ -66,7 +67,7 @@ class _Device(i2cDevice):
         if ('untitled' in self.name.lower()) or (self.name==''):
             self.name = '? I2C %i:%s' % (self.params['bus'],self.params['address'])
 
-        self.dev=
+        self.dev=None
 
         return
 
@@ -78,7 +79,7 @@ class _Device(i2cDevice):
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self):
 
-        self.lastValue = 
+        self.lastValue = None
 
         self.updateTimestamp()
 

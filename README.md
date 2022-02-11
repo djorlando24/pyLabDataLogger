@@ -4,8 +4,8 @@ Laboratory datalogging for USB and Serial devices
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2019-2021 LTRAC
     @license GPL-3.0+
-    @version 1.2.2
-    @date 10/02/2022
+    @version 1.2.3
+    @date 12/02/2022
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -162,6 +162,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - H3LIS331DL accelerometer
     - MAX30105 light, particle and heartbeat sensor
     - MCP3424 18-bit ADC via I2C
+    - MPR121 capacitative touch sensor
     - PCF8591 8-bit ADC via I2C
     - DFRobot Oxygen Sensor via I2C
     - TE M5300 (M53JM) series Pressure Transducer via I2C

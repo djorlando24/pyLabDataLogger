@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.2.2
-    @date 10/02/2022
+    @version 1.2.3
+    @date 12/02/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -105,7 +105,7 @@ i2c_input_device_table = [
    
     # Not supported well on the Rasberry Pi - requires clock stretching
     {'address':(0x28,0x29), 'driver':'bno055', 'name':'BNO055 orientation sensor'},\
-    #{'address':0x28, 'driver':'tfmini-lidar', 'name':'TFMini I2C LiDAR ToF Laser Range Sensor'},\
+    #{'address':0x28, 'driver':'tfmini-lidar', 'name':'TFMini I2C LiDAR ToF Laser Range Sensor'}, # Not required since >1 other device on 0x28 \
 ]
 
 
@@ -209,7 +209,11 @@ def load_i2c_devices(addresses=None,bus=1,**kwargs):
             from pyLabDataLogger.device.i2c import h3lis331dlDevice
             device_list.append(h3lis331dlDevice.h3lis331dlDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
 
-        elif matches[0]['driver']=='bno055':
+        elif matches[0]['driver']=='mpr121':
+            from pyLabDataLogger.device.i2c import mpr121Device
+            device_list.append(mpr121Device.mpr121Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+
+        elif matches[0]['driver']=='bno055': # The purpose of having this here is to ensure that a BNO055 isn't detected as something else by mistake.
             cprint("IIC: BNO055 not currently supported as it requires clock-stretching",'yellow')
 
         else:
