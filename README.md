@@ -150,6 +150,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Omega iSeries temperature process controllers, via generic RS-485 or RS-232 adapter **
     - Omron K3HB-VLC load cell process controller with FLK1B RS-232/485 comms option board
     - Omron K3HB-X ammeter with FLK1B RS-232/485 comms option board
+    - Bosch BNO055 9-DoF position sensor (gyro/magnetometer/accelerometer) via UART (no I2C support) **
 
         ** Double asterisk denotes the need for a TTL-UART type adapter without flow control lines.
            Testing with generic RS-232 to USB adapters indicated that when the PC attempts to take control of the flow control

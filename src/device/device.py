@@ -141,7 +141,8 @@ class device:
                 sys.stdout.write(lead+'Raw values: ')
                 for n in range(self.params['n_channels']):
 
-                    if isinstance(self.lastValue[n],str):
+                    if (isinstance(self.lastValue[n],str) or isinstance(self.lastValue[n],tuple) or \
+                            isinstance(self.lastValue[n],list) or  isinstance(self.lastValue[n],np.ndarray) ):
                         if self.params['raw_units'][n] == '':
                             sys.stdout.write(u'%s = %s' % (self.truncateName(self.config['channel_names'][n]),self.lastValue[n]))
                         else:
@@ -180,9 +181,10 @@ class device:
             for n in range(self.params['n_channels']):
                 if not isinstance(self.lastValue[n], np.ndarray):
                     if self.params['raw_units'][n] == '':
-                        sys.stdout.write(u'%s = %s' % (self.truncateName(self.config['channel_names'][n]),self.lastValue[n]))
+                        sys.stdout.write(lead+u'%i: %s = %s' % (n,self.truncateName(self.config['channel_names'][n]),\
+                                                                self.lastValue[n]))
                     else:
-                        sys.stdout.write(u'%s = %s %s' % (self.truncateName(self.config['channel_names'][n]),\
+                        sys.stdout.write(lead+u'%i: %s = %s %s' % (n,self.truncateName(self.config['channel_names'][n]),\
                                                           self.lastValue[n],\
                                                           self.params['raw_units'][n]))
                 else: 

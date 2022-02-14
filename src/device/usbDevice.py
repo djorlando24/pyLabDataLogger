@@ -82,7 +82,7 @@ usb_device_table = [
     {'vid':0x1a86, 'pid':0xe008, 'driver':'uni-t/ut32x', 'name':'UT32x or 72-771x Thermocouple Reader'},
     {'vid':0x10c4, 'pid':0xea80, 'driver':'multicomp/mp730679', 'name':'Multicomp Pro MP730679 Multimeter'},
     {'vid':0x0483, 'pid':0xa0f7, 'driver':'serial/radwag-r', 'name':'Radwag R series balance'},
-
+    
     # Multiple devices with same VID and PID are seperated by the serial number as a unique descriptor.
     {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'name':'Thorlabs APT motor driver (generic)'},
     {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'serial_number':'27501777', 'name':'Thorlabs APT motor driver (X)'},
@@ -124,7 +124,8 @@ usb_device_table = [
     {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/omega-iseries/232', 'name':'Omega iSeries via RS-232'},
     {'vid':0x067b, 'pid':0x2303, 'driver':'serial/andg', 'name':'AND GX-K and GF-K series balance'},
     {'vid':0x0403, 'pid':0x6015, 'driver':'serial/cozir', 'name':'COZIR CO2 monitor'},
-    {'vid':0xffff, 'pid':0xffff, 'driver':'serial/hpma', 'name':'Honeywell HPMA115S0 Air Quality sensor'}
+    {'vid':0xffff, 'pid':0xffff, 'driver':'serial/hpma', 'name':'Honeywell HPMA115S0 Air Quality sensor'},
+    {'vid':0x0403, 'pid':0x6015, 'driver':'bno055', 'name':'BNO055 9-axis sensor'},
 
     # Known but unsupported or generic
     #{'vid':0x1d6b, 'pid':0x0104, 'driver':'beaglebone', 'name':'Beaglebone Black'},
@@ -310,7 +311,9 @@ def load_usb_devices(devs=None,**kwargs):
         elif driverClass == 'uni-t':
             from pyLabDataLogger.device import uniTDevice
             device_list.append(uniTDevice.uniTDevice(params=d,**kwargs))
-            
+        elif driverClass == 'bno055':
+            from pyLabDataLogger.device import bno055Device
+            device_list.append(bno055Device.bno055Device(params=d,**kwargs))
         else:
             cprint( "\tI don't know what to do with this device" ,'red', attrs=['bold'])
 

@@ -80,6 +80,14 @@ class genericDevice(device):
     # Establish connection to device (ie open serial port)
     def activate(self,quiet=False):
         
+        self.name = "Untitled Device"
+        self.config['channel_names']=['']
+        self.params['raw_units']=['']
+        self.config['eng_units']=['']
+        self.config['scale']=[1.]*len(self.config['channel_names'])
+        self.config['offset']=[0.]*len(self.config['channel_names'])
+        self.params['n_channels']=len(self.config['channel_names'])
+
         # ...
         
         self.driverConnected=True

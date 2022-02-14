@@ -126,6 +126,8 @@ Please note that hardware I2C support has only been tested on **Rasberry Pi** so
 Adafruit devices use libraries from Adafruit which can be obtained mostly via pip (ie `sudo pip3 install adafruit_foo`). For those that can't use pip you can get a working module via github:
 - MPR121 - https://github.com/adafruit/Adafruit_CircuitPython_MPR121
 
+Devices that use 'clock stretching' aren't supported due to RPi <= 4's lack of support for this. However, the Bosch BNO055 has a UART mode (tie pin PS1 to 3.3v; SCA and SCL become a UART). The UART interface works fine with a USB-FTDI chip, the 'bno055' drivers supports this UART communications. To use the BNO055 you'll need the Adafruit module 'adafruit-circuitpython-bno055'. See https://github.com/adafruit/Adafruit_CircuitPython_BNO055 
+
 Any libraries that are no longer available or require older versions are available in ThirdParty directory for convenience.
 
 Notes:
