@@ -135,6 +135,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Tenma 72-2710 USB programmable bench power supply
     - BK Precision 168xx series programmable bench power supply
     - Pico RS-232 TC-08 thermocouple logger via generic RS-232 adpater
+    - USB Current Clamp (marked as "AVIOSYS USB e-Meter 8870")
     - CENTER 310 humidity meter via model-specific serial to USB dongle
     - OHAUS digital lab scales via generic RS-232 adapter
     - Extech SD700 Barometric pressure/humidity/temperature datalogger via model-specific serial to USB dongle

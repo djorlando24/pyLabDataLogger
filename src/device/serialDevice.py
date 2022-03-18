@@ -49,7 +49,7 @@
         03/02/2022 - support for Radwag R series balances
         04/02/2022 - Alicat bug fixes
         05/02/2022 - HPMA and COZIR support
-        18/03/2022 - Omega Platinum support
+        18/03/2022 - Omega Platinum meter & CC8870 current clamp support
 """
 
 from .device import device
@@ -77,6 +77,7 @@ class serialDevice(device):
             'serial/alicat'            : Alicat Scientific M-series mass flow meter
             'serial/andg'              : AND GX-K and GF-K series precision balances
             'serial/bkp168'            : BK Precision 168xx series power supply
+            'serial/cc8870'            : USB Current Clamp (E-Meter 8870 marking)
             'serial/center310'         : CENTER 310 Temperature and Humidity meter
             'serial/cozir'             : COZIR CO2 sensor
             'serial/di148'             : DataQ DI-148 Analog-to-Digital Converter
@@ -299,6 +300,9 @@ class serialDevice(device):
         elif self.subdriver=='omega-pt':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=300
             if not 'timeout' in self.params.keys(): self.params['timeout']=1.0
+        elif self.subdriver=='cc8870':
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=19200
+            if not 'timeout' in self.params.keys(): self.params['timeout']=1.0
         elif self.subdriver=='p6000a':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600 # or 1200 depending on config bits
             if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.SEVENBITS
@@ -463,6 +467,9 @@ class serialDevice(device):
                 # No settings can be modified at present.
                 pass
             elif subdriver=='omega-pt':
+                # No settings can be modified at present.
+                pass
+            elif subdriver=='cc8870':
                 # No settings can be modified at present.
                 pass
             else:
@@ -1325,10 +1332,33 @@ class serialDevice(device):
             self.queryTerminator='\r'
             self.responseTerminator='\r'
             self.params['min_response_length']=1
-            #self.serialCommsFunction=self.blockingRawSerialRequest
             self.sleeptime=0.01
             
             self.serialQuery=['GETD','','GETS','']
+
+        # ----------------------------------------------------------------------------------------
+        # Startup config for CC 8870 current clamp
+        elif subdriver=='cc8870': 
+            self.name = "USB Current Clamp 8870"
+            self.config['channel_names']=['current']
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.params['raw_units']=['A']
+            self.config['eng_units']=self.params['raw_units']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.queryTerminator=''
+            self.responseTerminator='\n'
+            self.params['min_response_length']=4
+            self.sleeptime=0.05
+            self.serialQuery=['~']
+            
+            # turn off auto reporting
+            self.serialCommsFunction('auto off\n',min_response_length=12)
+            s=self.serialCommsFunction('ver\n',min_response_length=8).decode('ascii').strip()
+            if 'ver:' in s:
+                self.config['version']=s[s.index('ver:'):]
+            
+            print(self.serialCommsFunction('~',min_response_length=1).decode('ascii').strip())
 
         # ----------------------------------------------------------------------------------------
         # Startup config for AND G[XF]-K balance
@@ -1833,6 +1863,13 @@ class serialDevice(device):
                 
                 return vals
             
+            # ----------------------------------------------------------------------------------------
+            if subdriver=='cc8870':
+                s=rawData[0].strip()
+                if b'z>\x00' in s: s=s[s.index(b'z>\x00')+3:]
+                if b'A' in s: s=s.strip(b'A') # remove unit of amp, it never changes anyway 
+                return [float(s.decode('ascii'))]
+
 
             # ----------------------------------------------------------------------------------------
             if subdriver=='andg':
