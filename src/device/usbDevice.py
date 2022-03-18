@@ -9,8 +9,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
-    @version 1.2.3
-    @date 12/02/2022
+    @version 1.2.4
+    @date 18/03/2022
         __   ____________    ___    ______	
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -98,6 +98,7 @@ usb_device_table = [
     {'vid':0x10c4, 'pid':0xea60, 'driver':'serial/bkp168', 'name':'BK Precision 168xx Power Supply'},
     {'vid':0x0683, 'pid':0x1480, 'driver':'serial/di148', 'name':'DataQ DI-148 ADC'},
     {'vid':0x0403, 'pid':0xbab1, 'driver':'status/sem1600b', 'name':'STATUS SEM1600/B Load Cell Amplifier'},
+    {'vid':0x2a72, 'pid':0x0400, 'driver':'serial/omega-pt', 'name':'Omega Platinum Process Meter'},
     
     # Microcontrollers using serial-over-USB
     {'vid':0x2341, 'pid':0x8036, 'driver':'arduino', 'name':'uDuino (Leonardo)'},

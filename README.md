@@ -4,8 +4,8 @@ Laboratory datalogging for USB and Serial devices
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2019-2021 LTRAC
     @license GPL-3.0+
-    @version 1.2.3
-    @date 12/02/2022
+    @version 1.2.4
+    @date 18/03/2022
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -107,6 +107,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Picolog USB-TC-08 thermocouple logger
     - Omega IR-USB thermometer
     - Omega USB-H 'high speed' pressure transducers 
+    - Omega Platinum Series Process Controllers via the micro-USB or RS-232/485 over USB
     - Fluke 568 IR thermometer
     - STATUS SEM1600/B Load cell amplifier
     - Omega Layer N Smart Probes via Omega IF-001 Modbus USB-Serial adapter

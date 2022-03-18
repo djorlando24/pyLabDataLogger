@@ -4,8 +4,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-20 LTRAC
     @license GPL-3.0+
-    @version 1.2.3
-    @date 12/02/2022
+    @version 1.2.4
+    @date 18/03/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -49,6 +49,7 @@
         03/02/2022 - support for Radwag R series balances
         04/02/2022 - Alicat bug fixes
         05/02/2022 - HPMA and COZIR support
+        18/03/2022 - Omega Platinum support
 """
 
 from .device import device
@@ -88,6 +89,7 @@ class serialDevice(device):
             'serial/omega-iseries/232' : Omega iSeries Process Controller via RS232 transciever
             'serial/omega-iseries/485' : Omega iSeries Process Controller via RS485 transciever
             'serial/omega-usbh         : Omega USB-H 'high speed' pressure transducers with built in USB to Serial converter
+            'serial/omega-pt           : Omega Platinum series process meter / controller via USB interface w/Omega protocol
             'serial/ohaus7k'           : OHAUS 7000 series scientific scales via RS232
             'serial/r5000'             : Ranger 5000 series load cell amplifier via RS232
             'serial/radwag-r'          : RADWAG R-series balance
@@ -294,6 +296,9 @@ class serialDevice(device):
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=4800
         elif self.subdriver=='pt200m':
             if not 'timeout' in self.params.keys(): self.params['timeout']=0.1
+        elif self.subdriver=='omega-pt':
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=300
+            if not 'timeout' in self.params.keys(): self.params['timeout']=1.0
         elif self.subdriver=='p6000a':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600 # or 1200 depending on config bits
             if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.SEVENBITS
@@ -455,6 +460,9 @@ class serialDevice(device):
                 # No settings can be modified at present. 
                 pass
             elif subdriver=='andg':
+                # No settings can be modified at present.
+                pass
+            elif subdriver=='omega-pt':
                 # No settings can be modified at present.
                 pass
             else:
@@ -719,6 +727,105 @@ class serialDevice(device):
             self.responseTerminator='\r'
             self.config['set_emissivity']=None
 
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='omega-pt': # Statup config for Omega Platinum via USB with Omega protocol
+            # See https://bl831.als.lbl.gov/~gmeigs/PDF/CN8_serial_comm.pdf for decoding the strings
+            
+            self.name = "Omega Platinum Meter"
+            self.config['channel_names']=['value','peak','valley','SP1','SP2']
+            self.params['n_channels']=5
+            self.params['raw_units']=['']*self.params['n_channels']
+            self.config['eng_units']=['']*self.params['n_channels']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.serialQuery=['*G110','*G111','*G112','*R400','*R410']
+            self.queryTerminator='\r'
+            self.responseTerminator='\r'
+
+            # Set the communications mode for Omega protocol, command mode, no LF, Echo on, <CR> between records.
+            # This way we don't need any logic to decode the responses later.  
+            self.config['commMode']=self.blockingSerialRequest('*W320 00011\r','\r').decode('ascii')
+            if not 'W320' in self.config['commMode']: 
+                raise pyLabDataLoggerIOError("Could not set communication mode.")
+            
+            # Find out what kind of input device is chosen
+            self.OMEGAPT_INPUT_TYPES=['Thermocouple','RTD','Process','Thermistor','Remote']
+            self.OMEGAPT_SI1=[['J','K','T','E','N','?','R','S','B','C','?','?'],\
+                              ['2wire','3wire','4wire'],\
+                              ['4-20mA','0-24mA','?','?','?','+-10VDC','+-1VDC','+-0.1VDC'],\
+                              ['2.25K','5K','10K']]
+            self.OMEGAPT_UNIT=['deg','deg',['mA','mA','','','','V','V','V'],'deg','']
+            
+            inpt=self.blockingSerialRequest('*R100\r','\r').decode('ascii')
+            if len(inpt)>1:
+                self.config['InputType']=self.OMEGAPT_INPUT_TYPES[int(inpt[4])]
+                self.config['InputConfig']=self.OMEGAPT_SI1[int(inpt[4])][int(inpt[5])]
+            
+            
+                # Determine units
+                if self.config['InputType']==2: 
+                    unit=self.OMEGAPT_UNIT[int(inpt[4])][int(inpt[5])]
+                else:
+                    unit=self.OMEGAPT_UNIT[int(inpt[4])]
+            
+                if unit == 'deg': 
+                    cf = int(self.blockingSerialRequest('*R200\r','\r').decode('ascii')[5])
+                    if cf==0: unit=''
+                    elif cf==1: unit+='C'
+                    elif cf==2: unit+='F'
+                    else: raise pyLabDataLoggerIOError("Could not set temperature unit.")
+            
+                cprint("\tProcess meter mode: %s - %s (%s)" % (self.config['InputType'],self.config['InputConfig'],unit),'white')
+            
+            else:
+                raise pyLabDataLoggerIOError("Could not determine input mode.")
+            
+            self.params['raw_units']=[unit]*self.params['n_channels']
+            self.config['eng_units']=[unit]*self.params['n_channels']
+            
+            # Get other settings
+            self.config['filterConst']=self.blockingSerialRequest('*R101\r','\r').decode('ascii')
+            self.config['thermocoupleCalibrationMode']=self.blockingSerialRequest('*R120\r','\r').decode('ascii')
+            self.config['thermocoupleCalibrationPoint']=self.blockingSerialRequest('*R121\r','\r').decode('ascii')+' '+\
+                                                        self.blockingSerialRequest('*R122\r','\r').decode('ascii')+' '+\
+                                                        self.blockingSerialRequest('*R123\r','\r').decode('ascii')
+            self.OMEGAPT_EXC=['0V','5V','10V','12V','24V']                                            
+            self.config['excitationVoltage']=self.OMEGAPT_EXC[int(self.blockingSerialRequest('*R210\r','\r').decode('ascii')[-1])]
+            
+            remSetPt=self.blockingSerialRequest('*R401\r','\r').decode('ascii')
+            self.OMEGAPT_OPR=['4-20V','0-24V','0-10V','0-1V']
+            if remSetPt[0]=='1': 
+                self.config['remoteSetpoint']=self.OMEGAPT_OPR[int(remSetPt[1])]
+            else:
+                self.config['remoteSetpoint']='Disabled'
+            
+            self.config['PID']=' '.join([self.blockingSerialRequest('*R%3i\r' % n,'\r').decode('ascii') for n in range(500,506)])
+            self.OMEGAPT_OPMODE=['Off','PID','On-Off','ScaledPV','Alarm1','Alarm2','Ramp&Soak RE.ON','Ramp&Soak SE.ON']
+            self.config['outputMode']=self.OMEGAPT_OPMODE[int(self.blockingSerialRequest('*R600\r','\r').decode('ascii')[-1])]
+            self.OMEGAPT_OPTYP=['None avail','Single poll relay','SSR','Double poll relay','DC pulse','Analog','Isolated Analog']
+            self.config['outputSelect']=self.OMEGAPT_OPTYP[int(self.blockingSerialRequest('*G601\r','\r').decode('ascii')[-1])]
+            self.config['outputOnOff']=self.blockingSerialRequest('*R610\r','\r').decode('ascii')[4:]
+            self.config['alarmConfig']=self.blockingSerialRequest('*R620\r','\r').decode('ascii')[4:]
+            self.config['alarmSettings']=' '.join([self.blockingSerialRequest('*R%3i\r' % n,'\r').decode('ascii')[4:]\
+                                                 for n in range(621,626)])
+            self.OMEGAPT_OPR=['0-10V','0-5V','0-20V','4-20V','0-24V']
+            self.config['outputRange']=self.OMEGAPT_OPR[int(self.blockingSerialRequest('*R660\r','\r').decode('ascii')[-1])]
+            
+            # Make name unique with the firmware version?
+            self.config['firmwareVersion']=self.blockingSerialRequest('*GF20\r','\r').decode('ascii')[4:].strip()
+            self.config['bootloaderVersion']=self.blockingSerialRequest('*GF22\r','\r').decode('ascii')[4:].strip()
+            self.config['devAddress']=self.blockingSerialRequest('*R300\r','\r').decode('ascii')[4:].strip()
+            
+            # Add the device address to the name of the device
+            if len(self.config['devAddress'])>0:
+                self.name+=' '+self.config['devAddress']
+            
+            # Force the controller to RUN mode
+            cprint("\tSetting RUN mode",'white')
+            self.config['runMode']=self.blockingSerialRequest('*WF23 6\r','\r').decode('ascii')
+            if not 'F23' in self.config['runMode']: 
+                raise pyLabDataLoggerIOError("Could not set RUN mode.")
+            
         # ----------------------------------------------------------------------------------------
         elif subdriver=='omega-usbh':
             self.name = "Omega USB High-Speed Pressure Transducer"
@@ -1414,6 +1521,16 @@ class serialDevice(device):
                 else: vals.extend([float(v) for v in rawData[2].split('=')[1].split(',')])
                 if len(rawData)<4: vals.append(np.nan)
                 else: vals.append(float(rawData[3].split('=')[1]))
+                return vals
+                
+            # ----------------------------------------------------------------------------------------
+            elif subdriver=='omega-pt':
+                vals = []
+                for d in rawData:
+                    try:
+                        vals.append(float(d.strip()[4:]))
+                    except ValueError:
+                        vals.append(None)
                 return vals
 
             # ----------------------------------------------------------------------------------------
