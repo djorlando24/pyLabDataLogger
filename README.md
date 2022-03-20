@@ -5,7 +5,7 @@ Laboratory datalogging for USB and Serial devices
     @copyright (c) 2019-2021 LTRAC
     @license GPL-3.0+
     @version 1.2.4
-    @date 18/03/2022
+    @date 20/03/2022
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -158,7 +158,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
            Testing with generic RS-232 to USB adapters indicated that when the PC attempts to take control of the flow control
            lines upon initialising the adapter, the device will cease transmitting and it cannot be restarted without disconnecting the serial cable. The simple solution is to wire up a TTL-to-UART adapter cable to an RS232 adapter, connecting only the RX, TX, VCC and GND lines (leaving the CTS/RTS/DTR lines disconnected).
 
-- Single board computer (Raspberry Pi, Beaglebone)
+- Single board computer (Raspberry Pi, Beaglebone) I2C bus hardware
     - Adafruit ADS1x15 12-bit ADCs via I2C
     - AHT10/AHT20 temperature + humidity sensors
     - Adafruit BMP085/BMP150 barometer/altimeter via I2C
@@ -172,6 +172,9 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - TSL2591 lux sensor
 - and some GPIO support using special scripts in raspberryPi directory:
     - Raspberry Pi low speed GPIO
+
+- Web API (IoT) devices
+    - Kaiterra Laser Egg CO2/Air Quality Monitor
 
 ## Future supported hardware
 
