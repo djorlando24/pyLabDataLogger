@@ -88,7 +88,6 @@ class webAPIDevice(device):
         
         return
 
-    # Detect if URL is valid
     def scan(self,override_params=None,quiet=False):
         if override_params is not None: self.params = override_params
         self.activate(quiet=quiet)
@@ -162,6 +161,7 @@ class webAPIDevice(device):
 
         if 'kaiterra' in self.url.lower():
             # KAITERRA device
+            print(data)
             self.config['id'] = data['id']
             d=data['data']
             for v in d: print(v)
