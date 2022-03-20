@@ -7,6 +7,8 @@
     device itself. There's usually a secret key in the URL.
     
     Put a list of URLs in the file webAPIkeys.txt .   
+        This file can have comments starting with '#'.
+        Each line can be a URL or `URL<tab>Name` or `URL<tab>Name<tab>Format`.
  
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2021 LTRAC
@@ -61,12 +63,20 @@ if __name__ == '__main__':
     
     devices=[]
     with open("webAPIkeys.txt",'r') as F:
-        for url in F.readlines():
-            if len(url)>0:
-                if url[0] != '#':
+        for l in F.readlines():
+            if len(l)>0:
+                if l[0] != '#':
                     try:
-                        cprint(url,'cyan',attrs=['bold'])
-                        devices.append(webAPIDevice.webAPIDevice(url=url.strip()))
+                        apilist = l.strip().split()
+                        url=apilist[0]
+                        name=None; fmt='json'
+                        if len(apilist)>1: 
+                           name=apilist[1]
+                           cprint('%s - %s' % (name,url),'cyan',attrs=['bold'])
+                           if len(apilist)>2: fmt=apilist[2] 
+                        else:
+                           cprint(url, 'cyan', attrs=['bold'])
+                        devices.append(webAPIDevice.webAPIDevice(url=url,name=name,format=fmt))
                     except pyLabDataLoggerIOError:
                         pass
     
@@ -89,15 +99,8 @@ if __name__ == '__main__':
                 
             except KeyboardInterrupt:
                 print("Stopped.")
-                break
+                for d in devices: d.deactivate()
+                exit(0) 
                 
             except: # all other errors
                 raise
-
-            
-    
-
-    for d in devices:
-        d.deactivate()
-        
-    exit()

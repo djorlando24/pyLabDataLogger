@@ -242,6 +242,12 @@ class device:
         except AssertionError:
             cprint( "Install h5py library to enable HDF5 logging support.", 'red', attrs=['bold'])
         
+        # Check that no channel has a reserved name 'timestamp'.
+        # Substitute a different name if it does.
+        chn = self.config['channel_names'][:]
+        if 'timestamp' in chn:
+            chn[chn.index('timestamp')]='time_stamp'
+
         # Open file
         with h5py.File(filename, 'a') as fh:
 
@@ -272,9 +278,12 @@ class device:
             for i in range(self.params['n_channels']):
 
                 # Make/open group for channel
-                if self.config['channel_names'][i] in dg: cg = dg[self.config['channel_names'][i]]
-                else: cg = dg.create_group(self.config['channel_names'][i])
-
+                if chn[i] in dg: 
+                    cg = dg[chn[i]]
+                else: 
+                    cg = dg.create_group(chn[i])
+                    if self.config['channel_names'][i] == 'timestamp': cprint("Warning: changed `timestamp' to `time_stamp' to avoid confict",'yellow',attrs=['bold'])
+                
                 # Loop over raw values and scaled values
                 for data, desc, units in [(self.lastValue, "Raw values", self.params['raw_units'][i]),\
                                           (self.lastScaled, "Scaled values", self.config['eng_units'][i])]:

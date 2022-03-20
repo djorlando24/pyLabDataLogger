@@ -45,16 +45,20 @@ except ImportError:
 class webAPIDevice(device):
     """ Class providing support for HTTPS Web API Devices.
 	
-	Initialisation requires a URL parameter passed via the constructor or in the params dictionary.
+	Initialisation requires the following parameters passed via the constructor or in the params dictionary.
+        
+                url (string)    : specify API URL including any API key required
+                format (string) : 'json' [default] or 'xml'
+                name (string)   : name of device - default will use data from the server to guess
+
         The 'format' parameter is 'json' by default. In future 'xml' could be supported as well.    
 
     """
 
-    def __init__(self,params={},url=None,format='json',quiet=True,**kwargs):
+    def __init__(self,params={},url=None,format='json',name=None,quiet=True,**kwargs):
         self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
         self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
         self.driverConnected = False # Goes to True when scan method succeeds
-        self.name = "uninitialized web API Device"
         self.lastValue = None # Last known value (for logging)
         self.lastValueTimestamp = None # Time when last value was obtained
         
@@ -71,6 +75,11 @@ class webAPIDevice(device):
             self.fmt=params['format']
         else:
             self.fmt=format
+
+        if 'name' in params:
+            self.name=params['name']
+        else:
+            self.name=name
 
         self.url=None
         if url is None:
@@ -147,11 +156,16 @@ class webAPIDevice(device):
         self.convert_data(data,reset)
  
         # Generate scaled values. Convert non-numerics to NaN
+        # Generate scaled values. Convert non-numerics to NaN
         lastValueSanitized = []
-        for v in self.lastValue: 
+        for v in self.lastValue:
             if v is None: lastValueSanitized.append(np.nan)
-            else: lastValueSanitized.append(v)
+            #elif isinstance(v, basestring): lastValueSanitized.append(np.nan)  # python2
+            elif isinstance(v, str): lastValueSanitized.append(np.nan)  # python3
+            elif isinstance(v, bytes): lastValueSanitized.append(np.nan)  # python3
+            else:    lastValueSanitized.append(v)
         self.lastScaled = np.array(lastValueSanitized) * self.config['scale'] + self.config['offset']
+        
         self.updateTimestamp()
         return self.lastValue
 
@@ -161,10 +175,26 @@ class webAPIDevice(device):
 
         if 'kaiterra' in self.url.lower():
             # KAITERRA device
-            print(data)
             self.config['id'] = data['id']
             d=data['data']
-            for v in d: print(v)
+
+            if reset:
+                if self.name is None: self.name = 'Kaiterra Device %s' % self.config['id']
+                self.params['n_channels']=len(d)+1
+                self.config['channel_names']=[v['param'] for v in d]
+                self.config['scale']=[1.]*self.params['n_channels']
+                self.config['offset']=[0.]*self.params['n_channels']
+                self.params['raw_units']=[v['units'] for v in d]
+                self.config['eng_units']=[v['units'] for v in d]
+                self.config['span']=','.join(str([v['span'] for v in d]))
+            
+                self.config['channel_names'].append('timestamp') # RFC339 time stamp
+                self.params['raw_units'].append('')
+                self.config['eng_units'].append('')
+
+            self.lastValue = [float(v['points'][0]['value']) for v in d]
+            self.lastValue.append(d[0]['points'][0]['ts']) # use first var's timestamp
+                 
         else:
             raise pyLabDataLoggerIOError("Sorry, I can't understand data from that device - please edit webAPIDevice.py")
         

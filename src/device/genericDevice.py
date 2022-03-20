@@ -162,11 +162,16 @@ class genericDevice(device):
         self.get_values()
 
         # Generate scaled values. Convert non-numerics to NaN
+        # Generate scaled values. Convert non-numerics to NaN
         lastValueSanitized = []
-        for v in self.lastValue: 
+        for v in self.lastValue:
             if v is None: lastValueSanitized.append(np.nan)
-            else: lastValueSanitized.append(v)
+            #elif isinstance(v, basestring): lastValueSanitized.append(np.nan)  # python2
+            elif isinstance(v, str): lastValueSanitized.append(np.nan)  # python3
+            elif isinstance(v, bytes): lastValueSanitized.append(np.nan)  # python3
+            else:    lastValueSanitized.append(v)
         self.lastScaled = np.array(lastValueSanitized) * self.config['scale'] + self.config['offset']
+ 
         self.updateTimestamp()
         return self.lastValue
 
