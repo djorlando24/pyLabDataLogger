@@ -7,7 +7,7 @@
     @copyright (c) 2018-2021 LTRAC
     @license GPL-3.0+
     @version 1.2.4
-    @date 18/03/2022
+    @date 20/03/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -40,7 +40,7 @@ __copyright__="Copyright (c) 2018-2022 LTRAC"
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Build import cythonize
-import numpy
+import numpy, sys
 
 long_description = """Easy data logging from USB, Serial and Network devices"""
 
@@ -52,9 +52,16 @@ cython_modules = [
 # Build C libraries that interface to hardware
 c_libraries = [
     Extension("libmccusb1608G", sources = ["src/mcclibusb/usb-1608G.c"]),
-    Extension("libmcp3424", sources = ["src/device/i2c/mcp3424.c"])
 ]
 
+# Add platform-dependent C libraries
+if 'linux' in sys.platform:
+    c_libraries.append(Extension("libmcp3424", sources = ["src/device/i2c/mcp3424.c"]))
+
+# Add platform-dependent include directories (ie Homebrew on MacOS)
+include_dirs=[numpy.get_include()]
+if 'darwin' in sys.platform:
+    include_dirs.append('/usr/local/include')
 
 setup(name="pyLabDataLogger",
       version="1.2",
@@ -67,5 +74,5 @@ setup(name="pyLabDataLogger",
       package_dir={'pyLabDataLogger': 'src'},
       url='daniel-duke.net',
       ext_modules=cythonize(cython_modules) + c_libraries,
-      include_dirs=[numpy.get_include()]
+      include_dirs=include_dirs
 )
