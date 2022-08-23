@@ -292,7 +292,7 @@ class serialDevice(device):
         elif self.subdriver=='mx5060':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=4800
         elif self.subdriver=='r5000':
-            if not 'timeout' in self.params.keys(): self.params['timeout']=5
+            if not 'timeout' in self.params.keys(): self.params['timeout']=0.5
         elif self.subdriver=='radwag-r':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=4800
         elif self.subdriver=='pt200m':

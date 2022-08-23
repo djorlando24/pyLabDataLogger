@@ -4,7 +4,7 @@
     @copyright (c) 2019-2021 LTRAC
     @license GPL-3.0+
     @version 1.2
-    @date 19/01/2022
+    @date 23/08/2022
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -70,7 +70,7 @@ Just follow these commands as required for any Linux:
 	```
 	
 - Run `sudo apt install hwdata linux-tools-generic `
-- find the linux-tools directory: `ls -d /usr/lib/linux-tools/*` (the asterisk is `uname -r`)
+- find the linux-tools directory: `ls -d '/usr/lib/linux-tools/'$(uname -r)`
 - Copy this directory and add it to the secure_path using `sudo visudo`
 	`Defaults        secure_path="/usr/lib/linux-tools/5.4.0-91-generic:/usr/local/sbin:/`...
 - In Powershell, run `wsl --update`

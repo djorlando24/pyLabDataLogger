@@ -84,6 +84,7 @@ You can modify these in the software if you wish.
 The RJ-12 to RS-232 adapter supplied for tuning the ES-D508 servomotor controller can be used to move the motor and poll the encoder to get the current position. The tuning constants may need adjustment depending on choice of motor, which can be determined using the tuning software supplied by the manufacturer.
 
 ## Ranger 5000 Load Cell Amplifier
+Connect via Serial2. Set communications mode to Net.A (Rinstrum)
 Assumes default settings - RS232 communications at 9600 baud 8n1, device address 31, 0x02 start byte and 0x03 end byte for messages.
 Flow control lines on serial port must be disonnected (only RX, TX & GND wires).
 
