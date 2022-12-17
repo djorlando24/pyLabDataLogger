@@ -36,19 +36,19 @@ Usuall installed via PIP:
 - console-menu
 - pylibftdi
 - thermocouples_reference
-- json
 - requests
 
 The following are usually preinstalled in python 3:
 - re
 - glob
 - subprocess
+- json
 
 For example, on Ubuntu, these commands will install typical requirements.
 
 ```
     sudo apt-get install python3-pip python3-numpy python3-matplotlib python3-h5py python3-usb python3-gi-cairo python3-smbus python3-pyvisa python3-pyvisa-py python3-hid python3-hidapi libhidapi-dev libusb-1* 
-    sudo pip3 install json requests cython natsort tqdm termcolor console-menu libscrc pylibftdi thermocouples_reference pyserial
+    sudo pip3 install requests cython natsort tqdm termcolor console-menu libscrc pylibftdi thermocouples_reference pyserial
 ```
 
 ## building on Linux
