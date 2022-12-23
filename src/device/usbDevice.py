@@ -7,10 +7,10 @@
     - Handle VID/PID conflicts for devices that use generic serial ports i.e. FTDI chips.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2021 LTRAC
+    @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
-    @version 1.2.4
-    @date 18/03/2022
+    @version 1.3.0
+    @date 23/12/2022
         __   ____________    ___    ______	
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -107,27 +107,32 @@ usb_device_table = [
     {'vid':0x16c0, 'pid':0x0483, 'driver':'arduino', 'name':'Teensy uC'},
     {'vid':0x067b, 'pid':0x2303, 'driver':'arduino', 'name':'Arduino via PL2303'},
     
-    # Devices using generic Serial-to-USB adapters whose VID and PID are not correlated specifically to a piece of hardware.
-    # It's OK to change the VID and PID of these.
-    {'vid':0x0557, 'pid':0x2008, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},
-    {'vid':0x0408, 'pid':0x6051, 'driver':'arduino', 'name':'Arduino Pro via FTDI FT231X'},
+    # Devices using generic Serial-to-USB adapters that could be used on any hardware, but have a unique key
+    # such as a serial number that makes them uniquely identifiable.
     {'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/tds220gpib', 'name':'Tektronix TDS220 via usb-GPIB'},
     {'vid':0x0403, 'pid':0x6015, 'serial':0x3, 'driver':'serial/p6000a', 'name':'Newport P6000A Freq Counter'},
-    {'vid':0x067b, 'pid':0x2303, 'driver':'serial/tc08rs232', 'name':'Picolog RS-232 TC-08 thermocouple datalogger'},
-    {'vid':0x0403, 'pid':0x6001, 'driver':'serial/pt200m', 'name':'PT Ltd. PT200M Load Cell'},
-    {'vid':0x0403, 'pid':0x6001, 'driver':'serial/alicat', 'name':'Alicat Scientific M-series mass flow meter'},
-    {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/alicat', 'name':'Alicat Scientific M-series mass flow meter'},
-    {'vid':0x0403, 'pid':0x6001, 'driver':'serial/wtb', 'name':'Radwag WTB series precision balance'},
-    {'vid':0x0403, 'pid':0x6001, 'driver':'serial/esd508', 'name':'Leadshine ES-D508 easy servo driver'},
-    {'vid':0x0403, 'pid':0x6001, 'driver':'serial/r5000', 'name':'Ranger 5000 Load Cell Amplifier'},
-    {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/k3hb/vlc', 'name':'Omron K3HB-VLC Load Cell Amplifier'},
-    {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/k3hb/x', 'name':'Omron K3HB-X Ammeter'},
-    {'vid':0x0403, 'pid':0x6001, 'driver':'serial/omega-iseries/485', 'name':'Omega iSeries via RS-485'},
-    {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/omega-iseries/232', 'name':'Omega iSeries via RS-232'},
-    {'vid':0x067b, 'pid':0x2303, 'driver':'serial/andg', 'name':'AND GX-K and GF-K series balance'},
-    {'vid':0x0403, 'pid':0x6015, 'driver':'serial/cozir', 'name':'COZIR CO2 monitor'},
-    {'vid':0xffff, 'pid':0xffff, 'driver':'serial/hpma', 'name':'Honeywell HPMA115S0 Air Quality sensor'},
-    {'vid':0x0403, 'pid':0x6015, 'driver':'bno055', 'name':'BNO055 9-axis sensor'},
+    
+    # Devices using generic Serial-to-USB adapters whose VID and PID are not correlated specifically to a piece of hardware.
+    # The VID and PID below are the defaults only and can be edited by the end user. If a unique adapter is set on a particular
+    # machine then the user-interactive device selection stage can be skipped when starting the data logging.
+    # Otherwise, a generic adapter in the list below will prompt the user to pick any of the devices below.
+    # Changing the default PID/VID will require reinstallation of the module.
+    {'vid':0x0557, 'pid':0x2008, 'genericAdapter':1, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},
+    {'vid':0x0408, 'pid':0x6051, 'genericAdapter':1, 'driver':'arduino', 'name':'Arduino Pro via FTDI FT231X'},
+    {'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'serial/tc08rs232', 'name':'Picolog RS-232 TC-08 thermocouple datalogger'},
+    {'vid':0x0403, 'pid':0x6001, 'genericAdapter':1, 'driver':'serial/pt200m', 'name':'PT Ltd. PT200M Load Cell'},
+    {'vid':0x1a86, 'pid':0x7523, 'genericAdapter':1, 'driver':'serial/alicat', 'name':'Alicat Scientific M-series mass flow meter'},
+    {'vid':0x0403, 'pid':0x6001, 'genericAdapter':1, 'driver':'serial/wtb', 'name':'Radwag WTB series precision balance'},
+    {'vid':0x0403, 'pid':0x6001, 'genericAdapter':1, 'driver':'serial/esd508', 'name':'Leadshine ES-D508 easy servo driver'},
+    {'vid':0x0403, 'pid':0x6001, 'genericAdapter':1, 'driver':'serial/r5000', 'name':'Ranger 5000 Load Cell Amplifier'},
+    {'vid':0x0403, 'pid':0x6001, 'genericAdapter':1, 'driver':'serial/k3hb/vlc', 'name':'Omron K3HB-VLC Load Cell Amplifier'},
+    {'vid':0x0403, 'pid':0x6001, 'genericAdapter':1, 'driver':'serial/k3hb/x', 'name':'Omron K3HB-X Ammeter'},
+    {'vid':0x0403, 'pid':0x6001, 'genericAdapter':1, 'driver':'serial/omega-iseries/485', 'name':'Omega iSeries via RS-485'},
+    {'vid':0x1a86, 'pid':0x7523, 'genericAdapter':1, 'driver':'serial/omega-iseries/232', 'name':'Omega iSeries via RS-232'},
+    {'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'serial/andg', 'name':'AND GX-K and GF-K series balance'},
+    {'vid':0x0403, 'pid':0x6015, 'genericAdapter':1, 'driver':'serial/cozir', 'name':'COZIR CO2 monitor'},
+    {'vid':0x0403, 'pid':0x6015, 'genericAdapter':1, 'driver':'bno055', 'name':'BNO055 9-axis sensor'},
+    {'vid':0xffff, 'pid':0xffff, 'genericAdapter':1, 'driver':'serial/hpma', 'name':'Honeywell HPMA115S0 Air Quality sensor'},
 
     # Known but unsupported or generic
     #{'vid':0x1d6b, 'pid':0x0104, 'driver':'beaglebone', 'name':'Beaglebone Black'},
@@ -208,14 +213,26 @@ def search_for_usb_devices(debugMode=False):
 
         if len(found_devices) == 0: table_entry = None                  # Found nothing
         elif len(found_devices) == 1: table_entry = found_devices[0]    # Found one device
-        elif (len(found_devices) == 2) & ('v4l2' in [d['driver'] for d in found_devices]): table_entry = found_devices # Video and audio capture type device with two drivers
+        elif (len(found_devices) == 2) & ('v4l2' in [d['driver'] for d in found_devices]):
+            table_entry = found_devices # Video and audio capture type device with two drivers
         else:
             # Handle multiple possible matches (generic/common USB adapter)
             print( '\nGeneric USB adapter found at %i.%i. Please choose which hardware you have on this adapter:' % (dev.bus, dev.address) )
-            print( "0) None (don't use this device)")
+            cprint( "0) None (don't use this device)",'red')
+            
+            # Add found_devices to include all generic adapters, not just matching VID and PID.
+            for table_entry in usb_device_table:
+                if 'genericAdapter' in table_entry.keys():
+                    if not table_entry in found_devices: found_devices.append(table_entry)
+            
+            # Loop through found_devices to show options available.
+            # Green means it is a fixed-VID/PID device that matches.
+            # Yellow means it is a generic device that might match.
             n=1; choose_n=-1
             for d in found_devices: 
-                print( '%i) %s (%s)' % (n,d['name'],d['driver']))
+                if 'genericAdapter' in d: c='yellow'
+                else: c='green'
+                cprint( '%i) %04x:%04x\t%s (%s)' % (n,d['vid'],d['pid'],d['name'],d['driver']),c)
                 n+=1
             while (choose_n<0) | (choose_n>len(found_devices)):
                 try:
@@ -223,7 +240,12 @@ def search_for_usb_devices(debugMode=False):
                 except ValueError:
                     choose_n = -1
                 if choose_n == 0: table_entry = None
-                elif choose_n <= len(found_devices): table_entry = found_devices[choose_n-1]
+                elif choose_n <= len(found_devices): 
+                    table_entry = found_devices[choose_n-1]    
+                    # Over-ride the VID and PID on the found entry, removing the default and replacing with the actual
+                    table_entry['vid'] = dev.idVendor
+                    table_entry['pid'] = dev.idProduct
+            # End generic device selection code block
             
         # If matching device(s) found, add to found_entries list
 

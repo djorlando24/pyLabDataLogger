@@ -4,10 +4,10 @@
     Laboratory datalogging for USB and Serial devices
 
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2021 LTRAC
+    @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
-    @version 1.2.4
-    @date 20/03/2022
+    @version 1.3.0
+    @date 23/12/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -32,13 +32,15 @@
 """
 
 __author__="Daniel Duke <daniel.duke@monash.edu>"
-__version__="1.2.4"
+__version__="1.3.0"
 __license__="GPL-3.0+"
-__copyright__="Copyright (c) 2018-2022 LTRAC"
+__copyright__="Copyright (c) 2018-2023 LTRAC"
 
 
-from distutils.core import setup
-from distutils.extension import Extension
+#from distutils.core import setup
+#from distutils.extension import Extension
+from setuptools import setup, Extension
+
 from Cython.Build import cythonize
 import numpy, sys
 
@@ -64,7 +66,7 @@ if 'darwin' in sys.platform:
     include_dirs.append('/usr/local/include')
 
 setup(name="pyLabDataLogger",
-      version="1.2",
+      version="1.3",
       description="Laboratory datalogging for USB and Serial devices.",
       author="Daniel Duke",
       author_email="daniel.duke@monash.edu",

@@ -29,8 +29,8 @@
 #define HS_DELAY 1000
 
 // Globals
-Thermocouple_Data ThermocoupleData[8];
-double TypeKReverseExtra[3];
+//Thermocouple_Data ThermocoupleData[8];
+//double TypeKReverseExtra[3];
 static int expansion_board = 0;
 
 /* for USB-2416 Only.  Later modes store these values in memory */

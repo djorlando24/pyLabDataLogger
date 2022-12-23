@@ -3,10 +3,10 @@
     Test I2C device via i2cmini adapter
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2021 LTRAC
+    @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
-    @version 1.2.1
-    @date 05/02/2022
+    @version 1.3.0
+    @date 23/12/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /

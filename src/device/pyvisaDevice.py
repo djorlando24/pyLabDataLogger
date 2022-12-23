@@ -4,10 +4,10 @@
     pyVISA-py device class
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2021 LTRAC
+    @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
-    @version 1.2
-    @date 19/01/2022
+    @version 1.3.0
+    @date 23/12/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -38,9 +38,9 @@ import datetime, time, sys, struct
 from termcolor import cprint
 
 try:
-    import visa
+    import pyvisa as visa
 except ImportError:
-    cprint( "Please install pyvisa-py", 'red', attrs=['bold'])
+    cprint( "Please install pyvisa", 'red', attrs=['bold'])
     raise
 
 ########################################################################################################################

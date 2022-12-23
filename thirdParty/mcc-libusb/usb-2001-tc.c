@@ -34,8 +34,8 @@ static int wMaxPacketSize;  // will be the same for all devices of this type so
                             // no need to be reentrant. 
 
 // Globals
-Thermocouple_Data ThermocoupleData[8];
-double TypeKReverseExtra[3];
+//Thermocouple_Data ThermocoupleData[8];
+//double TypeKReverseExtra[3];
 
 
 void usbBuildGainTable_USB2001TC(libusb_device_handle *udev, float table[NGAINS_USB2001_TC][2])

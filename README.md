@@ -2,10 +2,10 @@
 Laboratory datalogging for USB and Serial devices
 
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2019-2021 LTRAC
+    @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
-    @version 1.2.4
-    @date 20/03/2022
+    @version 1.3.0
+    @date 23/12/2022
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -48,6 +48,10 @@ This program provides the minimal set of Open Source tools required to record da
 It's not desgined to *control* devices remotely, or provide feedback for PID etc. It's also not designed to provide a pretty user interface. If you need that, you should use LabView. 
 
 ## Changelog
+
+**Version 1.3**
+- Removed distutils and replace with setuptools to support Python 3.12.
+- Updated USB searching algorithm.
 
 **Version 1.2**
 

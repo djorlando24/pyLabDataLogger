@@ -2,10 +2,10 @@
     Device class for web-based API calls via HTTPS (IoT devices)   
  
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2021 LTRAC
+    @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
-    @version 1.2.4
-    @date 20/03/2022
+    @version 1.3.0
+    @date 23/12/2022
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /

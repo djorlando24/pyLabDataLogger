@@ -37,6 +37,7 @@ Usuall installed via PIP:
 - pylibftdi
 - thermocouples_reference
 - requests
+- zeroconf
 
 The following are usually preinstalled in python 3:
 - re
@@ -85,6 +86,7 @@ From here on, all these modules are optional. They only need to be installed for
 
 - *Measurement Computing* devices require libmccusb, see thirdParty/mcc-libusb
   (you will need to run "make libmccusb.so" in there to build the shared library)
+  If it does not build with your C++ compiler, try https://github.com/coanda/libmcc
 
 - For *Thorlabs translation stages*, pyAPT for Linux:
   Use the python2 modified version in thirdParty directory, or download from https://gitlab.com/weinshec/pyAPT.git
