@@ -46,7 +46,7 @@ usb_device_table = [
     # USBTMC/SCPI devices with fixed VID and PID
     #{'vid':0x1ab1, 'pid':0x04ce, 'driver':'usbtmc/rigol-ds', 'name':'Rigol DS Oscilloscope'}, # not reliable
     {'vid':0x0957, 'pid':0x0407, 'driver':'usbtmc/33220a', 'name':'Agilent 33220A Waveform Generator'},
-    {'vid':0x1313, 'pid':0x80f8, 'driver':'usbtmc/thorlabs-tsp01', 'name':'Thorlabs TSP01 Thermometer/Barometer'},
+    {'vid':0x1313, 'pid':0x80f8, 'driver':'usbtmc/thorlabs-tsp01', 'name':'Thorlabs TSP01 Temperature and Humidity Data Logger'},
     {'vid':0x1313, 'pid':0x807b, 'driver':'usbtmc/thorlabs-pm', 'name':'Thorlabs PM16 USB power meter'},
     {'vid':0x1ab1, 'pid':0x0642, 'driver':'usbtmc/dg1000z', 'name':'Rigol DG1000Z programmable delay/function generator'},
 

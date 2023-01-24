@@ -10,6 +10,10 @@ SUBSYSTEMS=="usb", ACTION=="add", ATTRS{idVendor}=="1ab1", ATTRS{idProduct}=="06
 # Agilent 33220A (0957:0407)
 SUBSYSTEMS=="usb", ACTION=="add", ATTRS{idVendor}=="0957", ATTRS{idProduct}=="0407", GROUP="usbtmc", MODE="0660"
 
+# Thorlabs TSP01 (rev A, and B)
+SUBSYSTEMS=="usb", ACTION=="add", ATTRS{idVendor}=="1313", ATTRS{idProduct}=="80f8", GROUP="usbtmc", MODE="0660"
+SUBSYSTEMS=="usb", ACTION=="add", ATTRS{idVendor}=="1313", ATTRS{idProduct}=="80fa", GROUP="usbtmc", MODE="0660"
+
 # Devices
 KERNEL=="usbtmc/*",       MODE="0660", GROUP="usbtmc"
 KERNEL=="usbtmc[0-9]*",   MODE="0660", GROUP="usbtmc"
