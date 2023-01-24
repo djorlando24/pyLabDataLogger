@@ -160,7 +160,7 @@ class usbtmcDevice(device):
             if self.subdriver=='rigol-ds':
                 # Currently this is a read-only device. In future we could set the sample rates etc.
                 pass
-            if subdriver=='thorlabs-tsp01':
+            if self.subdriver=='thorlabs-tsp01':
                 # Read only device
                 pass
             if self.subdriver=='dg1000z':
