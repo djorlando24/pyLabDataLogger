@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 """
     Video 4 Linux capture device support (v4l2)
     

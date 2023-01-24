@@ -1,4 +1,4 @@
-#/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
     Test Center 310 PTH meter experimental driver.

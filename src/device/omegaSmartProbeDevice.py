@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 """
     Omega Smart Probe Layer N Modbus Compatible Devices
     - currently supports USB access via TTY

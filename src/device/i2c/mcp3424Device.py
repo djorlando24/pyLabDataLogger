@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 """
     MCP3424 I2C Analog to Digital Converter Class
     

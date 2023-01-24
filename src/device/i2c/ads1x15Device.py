@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 """
     Adafruit ADS1x15 Analog to Digital Converter Class
     

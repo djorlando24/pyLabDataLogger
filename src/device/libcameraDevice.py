@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 """
     libcamera device class
     Currently just uses the picamera library for Rasberry Pi.

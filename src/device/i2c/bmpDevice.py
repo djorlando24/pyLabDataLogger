@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 """
     Adafruit BMP Barometric Pressure Sensor device class
     Compatible with BMP085 and BMP150 

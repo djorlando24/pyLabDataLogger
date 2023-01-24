@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
+
 import serial,sys
 import time
 import adafruit_bno055

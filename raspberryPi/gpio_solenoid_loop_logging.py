@@ -1,4 +1,4 @@
-#/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
     Raspberry Pi simple GPIO loop with HDF5 data logging of connected USB and I2C devices.

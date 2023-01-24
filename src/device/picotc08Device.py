@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
     Picolog USB TC-08 device using Pico's usbtc08 driver.

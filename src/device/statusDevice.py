@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 """
     STATUS Instruments DIN rail USB signal amplifier support
     

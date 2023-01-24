@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 """
     Device class for web-based API calls via HTTPS (IoT devices)   
  

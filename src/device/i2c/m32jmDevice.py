@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 """
     TE Connectivity M32JM I2C Pressure Transducer
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 """
     Serial device class - arduino like devices that talk over a USB to serial TTY
     

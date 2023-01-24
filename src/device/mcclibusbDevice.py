@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 """
     Measurement Computing USB device class
     based on the mcc-libusb driver by Warren J. Jasper

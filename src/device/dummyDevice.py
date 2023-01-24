@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 """
     Dummy device for testing code on a computer without any relevant hardware.
     

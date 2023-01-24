@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 """
     AHT10/AHT20 temperature and humidity sensor support
 
