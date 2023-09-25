@@ -9,8 +9,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
-    @version 1.3.0
-    @date 23/12/2022
+    @version 1.3.1
+    @date 25/09/2023
         __   ____________    ___    ______	
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -100,7 +100,8 @@ usb_device_table = [
     {'vid':0x0403, 'pid':0xbab1, 'driver':'status/sem1600b', 'name':'STATUS SEM1600/B Load Cell Amplifier'},
     {'vid':0x2a72, 'pid':0x0400, 'driver':'serial/omega-pt', 'name':'Omega Platinum Process Meter'},
     {'vid':0x04d8, 'pid':0x8870, 'driver':'serial/cc8870', 'name':'USB Current Clamp 8870'},
-    
+    {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/fy3200s', 'name':'FeelTech FY3200S Dual Channel Function Generator'},
+	
     # Microcontrollers using serial-over-USB
     {'vid':0x2341, 'pid':0x8036, 'driver':'arduino', 'name':'uDuino (Leonardo)'},
     {'vid':0x2341, 'pid':0x0043, 'driver':'arduino', 'name':'Arduino Uno'},
@@ -133,7 +134,7 @@ usb_device_table = [
     {'vid':0x0403, 'pid':0x6015, 'genericAdapter':1, 'driver':'serial/cozir', 'name':'COZIR CO2 monitor'},
     {'vid':0x0403, 'pid':0x6015, 'genericAdapter':1, 'driver':'bno055', 'name':'BNO055 9-axis sensor'},
     {'vid':0xffff, 'pid':0xffff, 'genericAdapter':1, 'driver':'serial/hpma', 'name':'Honeywell HPMA115S0 Air Quality sensor'},
-
+	
     # Known but unsupported or generic
     #{'vid':0x1d6b, 'pid':0x0104, 'driver':'beaglebone', 'name':'Beaglebone Black'},
     #{'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/gpib', 'name':'GPIB-USB adapter'},

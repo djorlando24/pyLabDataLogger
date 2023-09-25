@@ -6,8 +6,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
-    @version 1.3.0
-    @date 23/12/2022
+    @version 1.3.1
+    @date 25/09/2023
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -52,6 +52,8 @@
         04/02/2022 - Alicat bug fixes
         05/02/2022 - HPMA and COZIR support
         18/03/2022 - Omega Platinum meter & CC8870 current clamp support
+        25/09/2023 - FeelTech function generator support
+        
 """
 
 from .device import device
@@ -84,6 +86,7 @@ class serialDevice(device):
             'serial/cozir'             : COZIR CO2 sensor
             'serial/di148'             : DataQ DI-148 Analog-to-Digital Converter
             'serial/esd508'            : Leadshine ES-D508 Easy Servomotor Driver
+            'serial/fy3200s'           : FeelTech FY3200S Dual Channel Function Generator
             'serial/hpma'              : Honeywell HPMA115S0 Air Quality sensor
             'serial/k3hb/vlc'          : Omron K3HB-VLC Load Cell Amplifier with FLK1B communications board
             'serial/k3hb/x'            : Omron K3HB-X Ammeter with FLK1B communications board
@@ -334,6 +337,8 @@ class serialDevice(device):
             if not 'timeout' in self.params.keys(): self.params['timeout']=1. # sec for a single byte read/write
         elif (self.subdriver=='hpma') or (self.subdriver=='cozir'):
             if not 'timeout' in self.params.keys(): self.params['timeout']=0.1
+        elif (self.subdriver=='fy3200s'):
+            if not 'timeout' in self.params.keys(): self.params['timeout']=1.
 
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -473,6 +478,9 @@ class serialDevice(device):
                 # No settings can be modified at present.
                 pass
             elif subdriver=='cc8870':
+                # No settings can be modified at present.
+                pass
+            elif subdriver=='fy3200s':
                 # No settings can be modified at present.
                 pass
             else:
@@ -1383,6 +1391,29 @@ class serialDevice(device):
             self.config['ID']=str(self.serialCommsFunction('?ID\r\n').decode('ascii').strip().split(',')[1:])
             self.config['Serial Number']=str(self.serialCommsFunction('?SN\r\n').decode('ascii').strip().split(',')[1:])
             self.serialQuery=['Q']
+            
+        # ----------------------------------------------------------------------------------------
+        # Startup config for FY3200S Function Generator
+        elif subdriver=='fy3200s':
+            self.name = "FeelTech FY3200S"
+            self.config['channel_names']=[]
+            for ch in [1,2]:
+                for desc in ['Freq','Ampl','Offset','Duty','Phase','Active']:
+                    self.config['channel_names'].append('%s_%s' % (ch,desc))
+            self.params['n_channels']=len(self.config['channel_names'])          
+            self.params['raw_units']=['Hz','V','V','%','deg','']*2
+            self.config['eng_units']=self.params['raw_units']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.queryTerminator='\n'
+            self.serialQuery=['RMF','RMA','RMO','RMD','RMP','RMN',\
+                              'RFF','RFA','RFO','RFD','RFP','RFN']
+            self.config['ID'] = self.blockingRawSerialRequest('UID\n','\n',18,1,1.0).decode('ascii')
+            self.config['ID']+=' '+self.serialCommsFunction('UMO\n').decode('ascii')
+            self.name += ' '+self.config['ID']
+            for ch in [1,2]:
+                self.config['Ch%i_Wave' % ch]=self.serialCommsFunction('RMW\n').decode('ascii')
+                self.config['Ch%i_TrigMode' % ch]=self.serialCommsFunction('RPM\n').decode('ascii')
 
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.driver)
@@ -1892,6 +1923,10 @@ class serialDevice(device):
             
                 return [ np.float(value), state ]
 
+            # ----------------------------------------------------------------------------------------
+            if subdriver=='fy3200s':
+                return [ float(r.strip()) for r in rawData ]
+            
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         except ValueError:
