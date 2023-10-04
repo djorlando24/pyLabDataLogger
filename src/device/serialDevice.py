@@ -7,7 +7,7 @@
     @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
     @version 1.3.1
-    @date 25/09/2023
+    @date 04/10/2023
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -53,6 +53,7 @@
         05/02/2022 - HPMA and COZIR support
         18/03/2022 - Omega Platinum meter & CC8870 current clamp support
         25/09/2023 - FeelTech function generator support
+        04/10/2023 - LC-ADC-F103C8 support
         
 """
 
@@ -90,6 +91,7 @@ class serialDevice(device):
             'serial/hpma'              : Honeywell HPMA115S0 Air Quality sensor
             'serial/k3hb/vlc'          : Omron K3HB-VLC Load Cell Amplifier with FLK1B communications board
             'serial/k3hb/x'            : Omron K3HB-X Ammeter with FLK1B communications board
+            'serial/lc-adc-f103c8'     : LC STM32 10 channel ADC
             'serial/mx5060'            : Metrix MX5060 Bench Multimeter 
             'serial/omega-ir-usb'      : Omega IR-USB temperature probe with built in USB to Serial converter
             'serial/omega-iseries/232' : Omega iSeries Process Controller via RS232 transciever
@@ -339,6 +341,8 @@ class serialDevice(device):
             if not 'timeout' in self.params.keys(): self.params['timeout']=0.1
         elif (self.subdriver=='fy3200s'):
             if not 'timeout' in self.params.keys(): self.params['timeout']=1.
+        elif (self.subdriver=='lc-adc-f103c8'):
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=115200 
 
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -481,6 +485,9 @@ class serialDevice(device):
                 # No settings can be modified at present.
                 pass
             elif subdriver=='fy3200s':
+                # No settings can be modified at present.
+                pass
+            elif subdriver=='lc-adc-f103c8':
                 # No settings can be modified at present.
                 pass
             else:
@@ -1415,6 +1422,20 @@ class serialDevice(device):
                 self.config['Ch%i_Wave' % ch]=self.serialCommsFunction('RMW\n').decode('ascii')
                 self.config['Ch%i_TrigMode' % ch]=self.serialCommsFunction('RPM\n').decode('ascii')
 
+        # ----------------------------------------------------------------------------------------
+        # Startup config for LC 10ch ADC STM32
+        elif subdriver=='lc-adc-f103c8':
+            self.name = "LC STM32 10 channel ADC"
+            self.params['n_channels']=10
+            self.config['channel_names']=['Ch%i' % i for i in range(self.params['n_channels']) ]
+            self.params['raw_units']=['V']*self.params['n_channels']
+            self.config['eng_units']=['V']*self.params['n_channels']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.queryTerminator=''
+            self.responseTerminator='V'
+            self.serialQuery=['']*self.params['n_channels']
+                
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.driver)
             
@@ -1926,6 +1947,18 @@ class serialDevice(device):
             # ----------------------------------------------------------------------------------------
             if subdriver=='fy3200s':
                 return [ float(r.strip()) for r in rawData ]
+            
+            # ----------------------------------------------------------------------------------------
+            if subdriver=='lc-adc-f103c8':
+                vals=[np.nan]*self.params['n_channels']
+                for r in rawData:
+                    try:
+                        chStr,valStr = r.decode('ascii').strip().split('\t')
+                        chNum=int(chStr[2])
+                        vals[chNum] = float(valStr.strip('V'))
+                    except:
+                        continue
+                return vals
             
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])

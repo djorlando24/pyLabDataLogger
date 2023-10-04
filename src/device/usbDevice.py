@@ -101,6 +101,7 @@ usb_device_table = [
     {'vid':0x2a72, 'pid':0x0400, 'driver':'serial/omega-pt', 'name':'Omega Platinum Process Meter'},
     {'vid':0x04d8, 'pid':0x8870, 'driver':'serial/cc8870', 'name':'USB Current Clamp 8870'},
     {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/fy3200s', 'name':'FeelTech FY3200S Dual Channel Function Generator'},
+	{'vid':0x1a86, 'pid':0x7523, 'driver':'serial/lc-adc-f103c8', 'name':'LC STM32 10 channel ADC'},
 	
     # Microcontrollers using serial-over-USB
     {'vid':0x2341, 'pid':0x8036, 'driver':'arduino', 'name':'uDuino (Leonardo)'},
