@@ -129,6 +129,7 @@ class usbtmcDevice(device):
             cprint( "\tdetected %s" % self.params['IDN'] ,'green')
             if self.subdriver=='33220a' or self.subdriver=='dg1000z': 
                 self.write("SYST:BEEP") # beep the interface
+
         except KeyboardInterrupt: raise
         except:
             self.params['IDN']='?'

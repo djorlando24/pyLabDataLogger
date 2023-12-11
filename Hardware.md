@@ -75,6 +75,8 @@ The scope needs to be set up and armed before the acquisition is started. Single
 ## GPIB oscilloscopes
 Oscilloscopes using the GPIB-USB adapter (http://dangerousprototypes.com/blog/2014/01/13/open-source-hardware-gpib-usb-adapter/) should be set to GPIB bus address 1 by default. The code assumes there's only one device on the bus unless you specify 'gpib-address' when generating the device object.
 
+A HP 53131A counter can also be supported via GPIB-USB and is at its factory default GPIB address of 3.
+
 ## Extech USB-RS232 adapters
 The Extech brand USB to RS232 adapters are multifunction and some have a switch to choose between mode 1 & 2. You must select mode 2 for the communications to work.
 

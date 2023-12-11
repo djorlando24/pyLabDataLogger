@@ -6,8 +6,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
-    @version 1.3.1
-    @date 04/10/2023
+    @version 1.3.2
+    @date 11/12/2023
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -88,6 +88,7 @@ class serialDevice(device):
             'serial/di148'             : DataQ DI-148 Analog-to-Digital Converter
             'serial/esd508'            : Leadshine ES-D508 Easy Servomotor Driver
             'serial/fy3200s'           : FeelTech FY3200S Dual Channel Function Generator
+            'serial/hp53131agpib'      : HP Agilent 53131A Universal Counter via GPIB-USB adapter
             'serial/hpma'              : Honeywell HPMA115S0 Air Quality sensor
             'serial/k3hb/vlc'          : Omron K3HB-VLC Load Cell Amplifier with FLK1B communications board
             'serial/k3hb/x'            : Omron K3HB-X Ammeter with FLK1B communications board
@@ -286,6 +287,9 @@ class serialDevice(device):
         elif self.subdriver=='tds220gpib':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=460800
             if not 'gpib-address' in self.params.keys(): self.params['gpib-address']=1 # default GPIB address is 1
+        elif self.subdriver=='hp53131agpib':
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=460800
+            if not 'gpib-address' in self.params.keys(): self.params['gpib-address']=3 # default GPIB address is 3
         elif self.subdriver=='sd700':
             if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=True
             if not 'timeout' in self.params.keys(): self.params['timeout']=5
@@ -392,6 +396,10 @@ class serialDevice(device):
 
             # Apply subdriver-specific variable writes
             if subdriver=='tds220gpib':
+                # No settings can be modified at present.
+                # In future we could change voltage or time scale or switch channels on/off.
+                pass
+            if subdriver=='hp53131agpib':
                 # No settings can be modified at present.
                 # In future we could change voltage or time scale or switch channels on/off.
                 pass
@@ -674,7 +682,7 @@ class serialDevice(device):
             self.config['channel_names'].extend(['CH%i' % n for n in range(self.params['n_channels'])])
             self.params['raw_units']=['']
             self.params['raw_units'].extend(['']*self.params['n_channels'])
-            sself.config['eng_units']=['']
+            self.config['eng_units']=['']
             self.config['eng_units'].extend(['']*self.params['n_channels'])
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
@@ -685,6 +693,39 @@ class serialDevice(device):
             self.maxlen=999999 # large chunks of data will come back!
             self.sleeptime=0.5
 
+        # ----------------------------------------------------------------------------------------
+        if subdriver=='hp53131agpib': # Startup config for HP/Agilent 53131A via GPIB to serial
+            # Configure USB-GPIB adapter to talk to bus device no. 1
+            self.blockingSerialRequest('++addr %i\r' % self.params['gpib-address'],terminationChar='\r',min_response_length=0)
+            # Configure USB-GPIB to automatically send data back when we make a query
+            self.blockingSerialRequest('++auto 1\r',terminationChar='\r',min_response_length=0)
+            
+            # Find out what model we have
+            idstring = self.blockingSerialRequest('*IDN?\r\n',terminationChar='\r',min_response_length=1)
+            if idstring is None:  raise pyLabDataLoggerIOError("no response from GPIB device") 
+            else: cprint( "\tGPIB Address %i: Device ID string = %s" % (self.params['gpib-address'],idstring) , 'green')
+            
+            # Set up device
+            self.params['id']=idstring
+            self.name='HP 53131A GPIB %i' % self.params['gpib-address']
+            self.config['channel_names']=['DisplayedValue']
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.params['raw_units']=['']*self.params['n_channels']
+            self.config['eng_units']=['']*self.params['n_channels']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.serialQuery=[':READ?']
+            self.queryTerminator='\r\n'
+            self.responseTerminator='\r'
+            self.params['min_response_length']=4
+            #self.sleeptime=0.5
+            
+            # Set the format of the data to come back.
+            self.blockingSerialRequest(':FORM ASCII\r\n',terminationChar='\r',min_response_length=0)
+            
+            #self.blockingSerialRequest(':MEASURE:FREQ? 10 MHZ, 1HZ, (@2)\r\n',terminationChar='\r',min_response_length=8)
+            
+            
         # ----------------------------------------------------------------------------------------
         elif subdriver=='cozir': # Startup config for COZIR CO2 sensor
             self.name = 'COZIR CO2 Sensor'
@@ -1532,6 +1573,12 @@ class serialDevice(device):
     
                 return processed_curves
 
+    
+            # ----------------------------------------------------------------------------------------
+            elif subdriver=='hp53131agpib': 
+                # :FORM:ASCII mode
+                return [ float(s.decode('ascii')) for s in rawData]
+                
             # ----------------------------------------------------------------------------------------
             elif subdriver=='tc08rs232':
                 # This algorithm follows the TC-08 user manual.

@@ -6,8 +6,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
-    @version 1.3.0
-    @date 23/12/2022
+    @version 1.3.2
+    @date 11/12/2023
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -60,6 +60,7 @@ class pyvisaDevice(device):
             'pyvisa/ds1000z' : Rigol DS1000Z oscilloscope
             'pyvisa/33220a'  : Agilent 33220A programmable delay/function generator
             'pyvisa/eezbb3'  : Envox Experimental Zone BB3 programmable power supply
+            'pyvisa/hm8122'  : Hameg HM8122 Programmable Counter/Timer
     """
 
     def __init__(self,params={},quiet=True,**kwargs):
@@ -94,11 +95,16 @@ class pyvisaDevice(device):
 
         assert(self.rm)
         
+        
         if not 'resource' in self.params:
-            cprint( "pyVISA-py: Please specify a resource. Possible resources include but not limited to:", 'yellow', attrs=['bold'])
-            print(self.rm.list_resources())
-            print( "Network device resources can usually be determined by browsing to the device's IP address or checking the Network Settings control panel on the device." )
-            return
+            
+            list_of_resources = self.rm.list_resources()
+            if len(list_of_resources)==1: self.params['resource']=list_of_resources[0]
+            else:
+                cprint( "pyVISA-py: Please specify a resource. Possible resources include but not limited to:", 'yellow', attrs=['bold'])
+                print(list_of_resources)
+                print( "Network device resources can usually be determined by browsing to the device's IP address or checking the Network Settings control panel on the device." )
+                return
         
         self.activate(quiet=quiet)
         return
@@ -110,7 +116,7 @@ class pyvisaDevice(device):
             if 'eezbb3' in self.driver:
                 self.inst = self.rm.open_resource(self.params['resource'],timeout=5000,write_termination = '\n',read_termination='\n') # SOCKET mode
             else:
-                self.inst = self.rm.open_resource(self.params['resource'],timeout=30000) # INSTR mode
+                self.inst = self.rm.open_resource(self.params['resource'],timeout=3000) # INSTR mode
         except:
             raise pyLabDataLoggerIOError("Could not connect to VISA resource %s" % self.params['resource'])
         
@@ -162,6 +168,12 @@ class pyvisaDevice(device):
             elif self.subdriver=='33220a':
                 # currently no writeable options supported.
                 # in future could alter the DG settings from here.
+                pass
+
+            
+            elif self.subdriver=='hm8122':
+                # currently no writeable options supported.
+                # in future could alter the trigger settings from here.
                 pass
             else:
                 print(self.__doc__)
@@ -336,6 +348,29 @@ class pyvisaDevice(device):
             self.config['Unit ID'] = self.instrumentQuery('*IDN?').strip()
             cprint('\tIDN: %s' % self.config['Unit ID'],'green')
             
+        elif self.subdriver=='hm8122':  
+            self.inst.baud_rate = 9600
+            self.instrumentWrite("                                                             ") # ABR
+            self.instrumentQuery("*#VR")
+            
+            self.config['Unit ID'] = self.instrumentQuery('ID?').strip()
+            cprint('\tIDN: %s' % self.config['Unit ID'],'green')
+            
+            print(self.instrumentQuery("CNF?")) # get configuration
+            
+            self.name = "Hameg HM8122 - %s" % self.config['Unit ID']
+            self.config['channel_names']=['FreqA','FreqB']
+            self.params['n_channels']=len(self.config['channel_names'])   
+            self.params['raw_units']=['Hz']*self.params['n_channels']
+            self.config['eng_units']=['Hz']*self.params['n_channels']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.tmcQuery=['FRA','FRB']
+            
+            
+            
+            
+            
         else:
             print(self.__doc__)
             raise KeyError("Unknown device subdriver for pyvisa-py")
@@ -429,7 +464,8 @@ class pyvisaDevice(device):
         if not 'raw_units' in self.params.keys() or reset:
             
             # Set up device
-            self.params['name']=self.instrumentQuery("*IDN?").replace(',',' ')
+            if not 'hm8122' in self.subdriver:
+                self.params['name']=self.instrumentQuery("*IDN?").replace(',',' ')
             if self.driver in self.name: self.name="%s %s" % (self.params['name'],self.params['resource'])
             self.configure_device()
         
