@@ -235,7 +235,11 @@ class usbtmcDevice(device):
             # Check the mode
             self.params['mode'] = self.ask('FUNC?')
             
-            self.name = "Agilent 33220A function generator - %s" % self.params['IDN']
+            if self.subdriver=='33220a':
+                self.name = "Agilent 33220A function generator - %s" % self.params['IDN']
+            else:
+                self.name = "Agilent 33xxx function generator - %s" % self.params['IDN']
+            
             self.config['channel_names']=['frequency','amplitude','offset','duty cycle','pulse width']
             self.params['raw_units']=['Hz','V','V','','s']
             self.config['eng_units']=['Hz','V','V','','s']

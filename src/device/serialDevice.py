@@ -54,6 +54,7 @@
         18/03/2022 - Omega Platinum meter & CC8870 current clamp support
         25/09/2023 - FeelTech function generator support
         04/10/2023 - LC-ADC-F103C8 support
+        11/12/2023 - HP53131A and HM8122 support
         
 """
 
@@ -88,6 +89,7 @@ class serialDevice(device):
             'serial/di148'             : DataQ DI-148 Analog-to-Digital Converter
             'serial/esd508'            : Leadshine ES-D508 Easy Servomotor Driver
             'serial/fy3200s'           : FeelTech FY3200S Dual Channel Function Generator
+            'serial/hm8122'            : Hameg HM8122 Programmable Counter/Timer
             'serial/hp53131agpib'      : HP Agilent 53131A Universal Counter via GPIB-USB adapter
             'serial/hpma'              : Honeywell HPMA115S0 Air Quality sensor
             'serial/k3hb/vlc'          : Omron K3HB-VLC Load Cell Amplifier with FLK1B communications board
@@ -347,6 +349,14 @@ class serialDevice(device):
             if not 'timeout' in self.params.keys(): self.params['timeout']=1.
         elif (self.subdriver=='lc-adc-f103c8'):
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=115200 
+        elif (self.subdriver=='hm8122'):
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
+            if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.EIGHTBITS
+            if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_NONE
+            if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_TWO
+            if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=False
+            if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
+            if not 'timeout' in self.params.keys(): self.params['timeout']=1. # sec for a single byte read/write
 
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -496,6 +506,9 @@ class serialDevice(device):
                 # No settings can be modified at present.
                 pass
             elif subdriver=='lc-adc-f103c8':
+                # No settings can be modified at present.
+                pass
+            elif subdriver=='hm8122':
                 # No settings can be modified at present.
                 pass
             else:
@@ -1477,6 +1490,29 @@ class serialDevice(device):
             self.responseTerminator='V'
             self.serialQuery=['']*self.params['n_channels']
                 
+        
+        
+        # ----------------------------------------------------------------------------------------
+        # Startup config for Hameg HM8122
+        elif subdriver=='hm8122':
+            self.config['Unit ID'] = self.blockingRawSerialRequest(' ID?\r\n','\r',4,1,1)
+            cprint('\tIDN: %s' % self.config['Unit ID'],'green')
+            
+            print(self.blockingRawSerialRequest('CNF?\r\n','\r',4,1,1)) # get configuration
+            
+            self.name = "Hameg HM8122 - %s" % self.config['Unit ID']
+            self.config['channel_names']=['FreqA','FreqB']
+            self.params['n_channels']=len(self.config['channel_names'])   
+            self.params['raw_units']=['Hz']*self.params['n_channels']
+            self.config['eng_units']=['Hz']*self.params['n_channels']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.serialQuery=['FRA','FRB']
+            self.queryTerminator='\r\n'
+            self.responseTerminator='\n'
+        
+        # ----------------------------------------------------------------------------------------
+        
         else:
             raise KeyError("I don't know what to do with a device driver %s" % self.driver)
             
@@ -1994,6 +2030,10 @@ class serialDevice(device):
             # ----------------------------------------------------------------------------------------
             if subdriver=='fy3200s':
                 return [ float(r.strip()) for r in rawData ]
+            
+            # ----------------------------------------------------------------------------------------
+            elif subdriver=='hm8122':
+                return [ float(s.decode('ascii')) for s in rawData]
             
             # ----------------------------------------------------------------------------------------
             if subdriver=='lc-adc-f103c8':

@@ -24,8 +24,8 @@ for data in [8,7]:
         inst.parity=parity
         inst.flow_control=1
         #q="*IDN?"
-        q=" \r\n#VR"
-        #q="ID?"
+        #q=" \r\n#VR"
+        q="ID?\r\n"
 
 
         cprint('\t'+q,'green')

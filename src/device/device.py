@@ -153,12 +153,13 @@ class device:
                                                                 self.params['raw_units'][n]))
                     
                     else: # If numeric, use %g which will format big/smaller numbers in exp. notation.
+                        v = self.lastValue[n]
+                        if v is None: v=np.nan
                         if self.params['raw_units'][n] == '':
-                            sys.stdout.write(u'%s = %g' % (self.truncateName(self.config['channel_names'][n]),self.lastValue[n]))
+                            sys.stdout.write(u'%s = %g' % (self.truncateName(self.config['channel_names'][n]),v))
                         else:
                             sys.stdout.write(u'%s = %g %s' % (self.truncateName(self.config['channel_names'][n]),\
-                                                                self.lastValue[n],\
-                                                                self.params['raw_units'][n]))
+                                                                v,self.params['raw_units'][n]))
 
                     # Spacing between variables.
                     # New line every 4 vars, commas between them 

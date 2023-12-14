@@ -42,6 +42,38 @@ Those special configurations are explained below.
 
 - On Linux, if these devices sometimes fail to respond until they get unplugged & replugged, they might require a bus reset to avoid the physical unplugging. To get around this you can run `scripts/reset-WCH.CN.sh`. 
 
+## Omega Smart Probes
+Support for the Omega IF-001 USB Serial to MODBUS interface adapter is included. It's also possible to use I2C hardware (for example on the Raspberry Pi) with a custom cable, but this isn't supported in code yet.  The USB interface uses the cdc_acm driver in Linux, and you may need permissions to access the /dev/ttyACM0 or similar device without being root. You can do this by copying thirdParty/99-omegaIF001.rules with superuser priveliges into /etc/udev/rules.d and issuing 
+
+    udevadm control --reload-rules
+
+Then unplug and replug the device.
+
+## DataQ DI-14x USB interfaces
+These devices have a custom VID and PID but are actually just FTDI FT232R serial interfaces. To make these work on Linux, you can copy thirdParty/99-dataq.rules to /etc/udev/rules.d and make the change effective with:
+
+    udevadm control --reload-rules
+
+Then unplug and replug the device.
+
+## Thorlabs TSP01 and PM16 devices
+Make sure the usbtmc rules are added in /etc/udev/rules.d as per INSTALL.md
+If the device won't communicate, unplug & replug it.
+you will otherwise need to be a superuser to access the device.
+
+Please note: Thorlabs has updated the TSP01 since this code was written. If your TSP01 has "Rev B" sticker, it won't work.
+
+
+## Rigol DS-series oscilloscopes
+The Rigol DS scopes are working over USB via the sigrok driver, which seems to handle the non standard SCPI frame fsormat that usbtmc can't.
+
+Rigol DS scopes also work via their ethernet connection using the pyvisa driver. Get the resource string by browsing to the device's IP address in a web browser.
+python3-pyvisa should be installed. Use 'python3 -m visa info' to check for visa support on your system.
+
+The scope needs to be set up and armed before the acquisition is started. Single shot mode may not work, I find best results arming it in Auto mode and letting sigrok acquire what's most recently on the screen. If things go wrong you can set 'debugMode':True in the kwargs to the device driver and see what is happening behind the scenes.
+
+# Serial Devices
+
 ## Omega iSeries Process Controllers
 The iSeries process controllers need to be set in the following mode. How to do this is explained in the manual.
 - 9600 baud
@@ -52,25 +84,9 @@ The iSeries process controllers need to be set in the following mode. How to do 
 - For RS485, echo on. For RS232, echo off.
 - bus address 001 (in future this could be variable to support >1 controller on an RS-485 bus).
 
-
-## Thorlabs TSP01 and PM16 devices
-Make sure the usbtmc rules are added in /etc/udev/rules.d as per INSTALL.md
-If the device won't communicate, unplug & replug it.
-you will otherwise need to be a superuser to access the device.
-
-Please note: Thorlabs has updated the TSP01 since this code was written. If your TSP01 has "Rev B" sticker, it won't work.
-
-## Thorlabs scientific cameras
-Download the closed-source (boo!) drivers and SDK from https://www.thorlabs.com/software_pages/viewsoftwarepage.cfm?code=ThorCam
-Follow the install directions (which requires manually copying the libraries, installing the python package, and inserting udev rules).
-
-## Rigol DS-series oscilloscopes
-The Rigol DS scopes are working over USB via the sigrok driver, which seems to handle the non standard SCPI frame fsormat that usbtmc can't.
-
-Rigol DS scopes also work via their ethernet connection using the pyvisa driver. Get the resource string by browsing to the device's IP address in a web browser.
-python3-pyvisa should be installed. Use 'python3 -m visa info' to check for visa support on your system.
-
-The scope needs to be set up and armed before the acquisition is started. Single shot mode may not work, I find best results arming it in Auto mode and letting sigrok acquire what's most recently on the screen. If things go wrong you can set 'debugMode':True in the kwargs to the device driver and see what is happening behind the scenes.
+## Agilent / HP function generators
+When using the RS232 interface, a null-modem cable is required and the communication should be set to SCPI, 9600 baud 8N1. These use the pyvisa module.
+For newer models with a builtin USB interface, the usbtmc module can be used to automate the communication settings.
 
 ## GPIB oscilloscopes
 Oscilloscopes using the GPIB-USB adapter (http://dangerousprototypes.com/blog/2014/01/13/open-source-hardware-gpib-usb-adapter/) should be set to GPIB bus address 1 by default. The code assumes there's only one device on the bus unless you specify 'gpib-address' when generating the device object.
@@ -98,6 +114,12 @@ Assumes the default device address of 01 (factory setting).
 Assumes the serial comms are at 9600 baud 8N1. The factory default comms mode is 9600 7O2 and this needs to be fixed in the device's menus.
 The device doesn't indicate its units of measurement; the scale and offset must be set by the user on the device.
 
+# Video capture devices
+
+## Thorlabs scientific cameras
+Download the closed-source (boo!) drivers and SDK from https://www.thorlabs.com/software_pages/viewsoftwarepage.cfm?code=ThorCam
+Follow the install directions (which requires manually copying the libraries, installing the python package, and inserting udev rules).
+
 ## Webcams
 Webcame frame capture requires the OpenCV library. If your webcam is not detected you may need to add its VID and PID to the device table in src/device/usbDevice.py, and specify the 'opencv' driver. Then merge your changes so I can expand the supported deice list!
 
@@ -108,19 +130,7 @@ USB video capture device support depends on v4l2 support. A significant number o
 
 To get correct resolution detected for some v4l2 devices, I had to run v4l2-ctl --set-fmt-video=width=720,height=480 then I had to used v4l2ucp to check stream works ok. Those programs should be available through apt or yum, etc.
 
-## Omega Smart Probes
-Support for the Omega IF-001 USB Serial to MODBUS interface adapter is included. It's also possible to use I2C hardware (for example on the Raspberry Pi) with a custom cable, but this isn't supported in code yet.  The USB interface uses the cdc_acm driver in Linux, and you may need permissions to access the /dev/ttyACM0 or similar device without being root. You can do this by copying thirdParty/99-omegaIF001.rules with superuser priveliges into /etc/udev/rules.d and issuing 
 
-    udevadm control --reload-rules
-
-Then unplug and replug the device.
-
-## DataQ DI-14x USB interfaces
-These devices have a custom VID and PID but are actually just FTDI FT232R serial interfaces. To make these work on Linux, you can copy thirdParty/99-dataq.rules to /etc/udev/rules.d and make the change effective with:
-
-    udevadm control --reload-rules
-
-Then unplug and replug the device.
 
 ## Center 310 Hygrometer
 *Center 310* hygrometer support via RS-232 is now built-in, there are some test utilities in thirdParty/C310 if you experience problems.

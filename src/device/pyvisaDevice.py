@@ -58,7 +58,7 @@ class pyvisaDevice(device):
         The following subdriver modules are supported through either 'pyvisa' or 'nivisa':
             'pyvisa/dg1000z' : Rigol DG1000Z programmable delay/function generator
             'pyvisa/ds1000z' : Rigol DS1000Z oscilloscope
-            'pyvisa/33220a'  : Agilent 33220A programmable delay/function generator
+            'pyvisa/33xxx'   : Agilent 33xxx programmable delay/function generator
             'pyvisa/eezbb3'  : Envox Experimental Zone BB3 programmable power supply
             'pyvisa/hm8122'  : Hameg HM8122 Programmable Counter/Timer
     """
@@ -165,7 +165,7 @@ class pyvisaDevice(device):
                     else:
                         self.serialQuery.append(None)
                 
-            elif self.subdriver=='33220a':
+            elif self.subdriver == '33220a' or self.subdriver == '33xxx':
                 # currently no writeable options supported.
                 # in future could alter the DG settings from here.
                 pass
@@ -297,10 +297,16 @@ class pyvisaDevice(device):
             # Arm the scope in single shot mode
             self.instrumentWrite(":SING"); self.instrumentWrite(":RUN")
 
-        elif self.subdriver == '33220a':
+        elif self.subdriver == '33220a' or self.subdriver == '33xxx':
             
             self.instrumentWrite("SYST:BEEP") # beep the interface
-            self.params['mode'] = self.instrumentQuery('FUNC?') # Check the mode
+            time.sleep(1.0) # just on startup, give it time.
+            
+            if self.subdriver == '33220a': 
+                self.params['mode'] = self.instrumentQuery('FUNC?') # Check the mode - Agilent 33220A
+            else:
+                self.params['mode'] = self.instrumentQuery('FUNC:SHAP?') # Check the mode -Agilent 33120A
+                    
             self.config['channel_names']=['frequency','amplitude','offset','duty cycle','pulse width']
             self.params['raw_units']=['Hz','V','V','','s']
             self.config['eng_units']=['Hz','V','V','','s']
