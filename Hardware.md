@@ -88,10 +88,11 @@ The iSeries process controllers need to be set in the following mode. How to do 
 When using the RS232 interface, a null-modem cable is required and the communication should be set to SCPI, 9600 baud 8N1. These use the pyvisa module.
 For newer models with a builtin USB interface, the usbtmc module can be used to automate the communication settings.
 
-## GPIB oscilloscopes
-Oscilloscopes using the GPIB-USB adapter (http://dangerousprototypes.com/blog/2014/01/13/open-source-hardware-gpib-usb-adapter/) should be set to GPIB bus address 1 by default. The code assumes there's only one device on the bus unless you specify 'gpib-address' when generating the device object.
-
-A HP 53131A counter can also be supported via GPIB-USB and is at its factory default GPIB address of 3.
+## GPIB Devices
+Devices using the GPIB-USB adapter should be set to GPIB bus address 1 by default. 
+`http://dangerousprototypes.com/blog/2014/01/13/open-source-hardware-gpib-usb-adapter/`
+The code assumes there's only one device on the bus unless you specify 'gpib-address' when generating the device object.
+The HP 53131A counter can also be supported via GPIB-USB but is at its factory default GPIB address of 3.
 
 ## Extech USB-RS232 adapters
 The Extech brand USB to RS232 adapters are multifunction and some have a switch to choose between mode 1 & 2. You must select mode 2 for the communications to work.

@@ -6,8 +6,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
-    @version 1.3.2
-    @date 11/12/2023
+    @version 1.3.3
+    @date 16/12/2023
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -55,6 +55,7 @@
         25/09/2023 - FeelTech function generator support
         04/10/2023 - LC-ADC-F103C8 support
         11/12/2023 - HP53131A and HM8122 support
+        16/12/2023 - HP4263A support
         
 """
 
@@ -91,6 +92,7 @@ class serialDevice(device):
             'serial/fy3200s'           : FeelTech FY3200S Dual Channel Function Generator
             'serial/hm8122'            : Hameg HM8122 Programmable Counter/Timer
             'serial/hp53131agpib'      : HP Agilent 53131A Universal Counter via GPIB-USB adapter
+            'serial/hp4263agpib'       : HP 4263 LCR Meter via GPIB-USB adapter
             'serial/hpma'              : Honeywell HPMA115S0 Air Quality sensor
             'serial/k3hb/vlc'          : Omron K3HB-VLC Load Cell Amplifier with FLK1B communications board
             'serial/k3hb/x'            : Omron K3HB-X Ammeter with FLK1B communications board
@@ -107,7 +109,7 @@ class serialDevice(device):
             'serial/p6000a'            : Newport P6000A Frequency meter/counter/timer
             'serial/pt200m'            : PT Ltd. PT200M load cell amplifier (ptglobal.com)
             'serial/tc08rs232'         : Pico TC08 RS-232 thermocouple datalogger (USB version has a seperate driver 'picotc08')
-            'serial/tds220gpib'        : Tektronix TDS22x series oscilloscopes via the RS-232 port
+            'serial/tds220gpib'        : Tektronix TDS22x series oscilloscopes
             'serial/wtb'               : Radwag WTB precision balance/scale
     """
 
@@ -286,7 +288,7 @@ class serialDevice(device):
             if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_ONE
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=2400
             self.params['timeout']=1
-        elif self.subdriver=='tds220gpib':
+        elif self.subdriver=='tds220gpib' or self.subdriver=='hp4263agpib':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=460800
             if not 'gpib-address' in self.params.keys(): self.params['gpib-address']=1 # default GPIB address is 1
         elif self.subdriver=='hp53131agpib':
@@ -354,7 +356,7 @@ class serialDevice(device):
             if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.EIGHTBITS
             if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_NONE
             if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_TWO
-            if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=False
+            if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=True
             if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
             if not 'timeout' in self.params.keys(): self.params['timeout']=1. # sec for a single byte read/write
 
@@ -409,7 +411,11 @@ class serialDevice(device):
                 # No settings can be modified at present.
                 # In future we could change voltage or time scale or switch channels on/off.
                 pass
-            if subdriver=='hp53131agpib':
+            elif subdriver=='hp53131agpib':
+                # No settings can be modified at present.
+                # In future we could change voltage or time scale or switch channels on/off.
+                pass
+            elif subdriver=='hp4263agpib':
                 # No settings can be modified at present.
                 # In future we could change voltage or time scale or switch channels on/off.
                 pass
@@ -736,8 +742,35 @@ class serialDevice(device):
             # Set the format of the data to come back.
             self.blockingSerialRequest(':FORM ASCII\r\n',terminationChar='\r',min_response_length=0)
             
-            #self.blockingSerialRequest(':MEASURE:FREQ? 10 MHZ, 1HZ, (@2)\r\n',terminationChar='\r',min_response_length=8)
+        # ----------------------------------------------------------------------------------------
+        if subdriver=='hp4263agpib': # Startup config for HP 4263 LCR Meter
+            # Configure USB-GPIB adapter to talk to bus device no. 1
+            self.blockingSerialRequest('++addr %i\r' % self.params['gpib-address'],terminationChar='\r',min_response_length=0)
+            # Configure USB-GPIB to automatically send data back when we make a query
+            self.blockingSerialRequest('++auto 1\r',terminationChar='\r',min_response_length=0)
             
+            # Find out what model we have
+            idstring = self.blockingSerialRequest('*IDN?\r\n',terminationChar='\r',min_response_length=1)
+            if idstring is None:  raise pyLabDataLoggerIOError("no response from GPIB device") 
+            else: cprint( "\tGPIB Address %i: Device ID string = %s" % (self.params['gpib-address'],idstring) , 'green')
+            
+            # Set up device
+            self.params['id']=idstring
+            self.name='HP 4263A GPIB %i' % self.params['gpib-address']
+            self.config['channel_names']=['Displayed Values','Status','Mode','Frequency','Level','Bias']
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.params['raw_units']=['','','','Hz','V','V']
+            self.config['eng_units']=['','','','Hz','V','V']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.serialQuery=[':FETC?',':SENS:FUNC?',None,':SOUR:FREQ?',':SENS:FIMP:RANG?',':SOUR:VOLT:OFFS?']
+            self.queryTerminator='\r\n'
+            self.responseTerminator='\r'
+            self.params['min_response_length']=4
+            #self.sleeptime=0.5
+            
+            # Set the format of the data to come back.
+            self.blockingSerialRequest(':FORM ASCII\r\n',terminationChar='\r',min_response_length=0)
             
         # ----------------------------------------------------------------------------------------
         elif subdriver=='cozir': # Startup config for COZIR CO2 sensor
@@ -1614,6 +1647,20 @@ class serialDevice(device):
             elif subdriver=='hp53131agpib': 
                 # :FORM:ASCII mode
                 return [ float(s.decode('ascii')) for s in rawData]
+           
+            # ----------------------------------------------------------------------------------------
+            elif subdriver=='hp4263agpib':
+                # :FORM:ASCII mode
+                fetch = [ float(v) for v in rawData[0].decode('ascii').split(',') ]
+                if fetch[0] == 0: status='Normal'
+                elif fetch[0] == 0: status='Overload'
+                elif fetch[0] == 2: status='Non-contact'
+                else: status='?'
+                mode = rawData[1].decode('ascii').strip().strip('"')
+                res = [ np.array(fetch[1:]) ]
+                res.extend( [ status, mode ] )
+                res.extend( [ float(s.decode('ascii')) for s in rawData[2:] ] )
+                return res
                 
             # ----------------------------------------------------------------------------------------
             elif subdriver=='tc08rs232':
@@ -2064,38 +2111,39 @@ class serialDevice(device):
     def get_values(self):
         rawData=[]
         for n in range(len(self.serialQuery)):
-            if ',' in self.serialQuery[n]:
-                # Multiple commands must be sent. They are seperated by commas.
+            if self.serialQuery[n] is not None:
+                if ',' in self.serialQuery[n]:
+                    # Multiple commands must be sent. They are seperated by commas.
 
-                # A double comma denotes a long pause dictated by params['sample_period']
-                # The responses will be concatenated.
-                if ',,' in self.serialQuery[n] and not 'sample_period' in self.params:
-                    self.params['sample_period']=1.
-                    cprint( "sample_period not set for %s, default to 1 second" % self.name, 'yellow')
+                    # A double comma denotes a long pause dictated by params['sample_period']
+                    # The responses will be concatenated.
+                    if ',,' in self.serialQuery[n] and not 'sample_period' in self.params:
+                        self.params['sample_period']=1.
+                        cprint( "sample_period not set for %s, default to 1 second" % self.name, 'yellow')
 
-                # Split commands,set default values.
-                cmds=self.serialQuery[n].split(',')
-                resp=b'' 
-                maxlen = self.maxlen
-                sleeptime = self.sleeptime
-                # Loop commands
-                for i in range(len(cmds)):
-                    if i<len(cmds)-1: 
-                        if cmds[i+1]=='': # ',,' pause will come next
-                            sleeptime = self.params['sample_period'] # set the pause period longer
+                    # Split commands,set default values.
+                    cmds=self.serialQuery[n].split(',')
+                    resp=b'' 
+                    maxlen = self.maxlen
+                    sleeptime = self.sleeptime
+                    # Loop commands
+                    for i in range(len(cmds)):
+                        if i<len(cmds)-1: 
+                            if cmds[i+1]=='': # ',,' pause will come next
+                                sleeptime = self.params['sample_period'] # set the pause period longer
 
-                    if cmds[i]=='': # ',,' was detected
-                        maxlen=0 # following command is a 'stop' command and no response expected.
-                        sleeptime=self.sleeptime # reset sleeptime
-                    else: # send a command
-                        r=self.serialCommsFunction(cmds[i]+self.queryTerminator,self.responseTerminator,maxlen,self.params['min_response_length'],sleeptime)
-                        if r is not None: resp+=r # append response
-                rawData.append(resp)
-            else: 
-                # Only one command sent per value
-                rawData.append(self.serialCommsFunction(self.serialQuery[n]+self.queryTerminator,\
-                               self.responseTerminator,self.maxlen,self.params['min_response_length'],self.sleeptime))
-           
+                        if cmds[i]=='': # ',,' was detected
+                            maxlen=0 # following command is a 'stop' command and no response expected.
+                            sleeptime=self.sleeptime # reset sleeptime
+                        else: # send a command
+                            r=self.serialCommsFunction(cmds[i]+self.queryTerminator,self.responseTerminator,maxlen,self.params['min_response_length'],sleeptime)
+                            if r is not None: resp+=r # append response
+                    rawData.append(resp)
+                else: 
+                    # Only one command sent per value
+                    rawData.append(self.serialCommsFunction(self.serialQuery[n]+self.queryTerminator,\
+                                   self.responseTerminator,self.maxlen,self.params['min_response_length'],self.sleeptime))
+
         # Convert and store in lastValue
         self.lastValue = self.convert_raw_string_to_values(rawData,self.serialQuery)
 

@@ -9,8 +9,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
-    @version 1.3.2
-    @date 11/12/2023
+    @version 1.3.3
+    @date 16/12/2023
         __   ____________    ___    ______	
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -113,6 +113,8 @@ usb_device_table = [
     # such as a serial number that makes them uniquely identifiable.
     {'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/tds220gpib', 'name':'Tektronix TDS220 via usb-GPIB'},
     {'vid':0x0403, 'pid':0x6015, 'serial':0x3, 'driver':'serial/p6000a', 'name':'Newport P6000A Freq Counter'},
+    {'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/hp53131agpib', 'name':'HP Agilent 53131A Universal Counter'},
+    {'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/hp4263agpib', 'name':'HP 4263 LCR Meter'},
     
     # Devices using generic Serial-to-USB adapters whose VID and PID are not correlated specifically to a piece of hardware.
     # The VID and PID below are the defaults only and can be edited by the end user. If a unique adapter is set on a particular
@@ -136,12 +138,10 @@ usb_device_table = [
     {'vid':0x0403, 'pid':0x6015, 'genericAdapter':1, 'driver':'bno055', 'name':'BNO055 9-axis sensor'},
     {'vid':0xffff, 'pid':0xffff, 'genericAdapter':1, 'driver':'serial/hpma', 'name':'Honeywell HPMA115S0 Air Quality sensor'},
 	{'vid':0x0403, 'pid':0x6001, 'genericAdapter':1, 'driver':'serial/hm8122', 'name':'Hameg HM1822 Programmable Counter-Timer'},
-    {'vid':0x0403, 'pid':0x6015, 'genericAdapter':1, 'driver':'serial/hp53131agpib', 'name':'HP Agilent 53131A Universal Counter'},
     {'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'pyvisa/33xxx', 'name':'Agilent 33xxx Waveform Generator'},
     
     # Known but unsupported or generic
     #{'vid':0x1d6b, 'pid':0x0104, 'driver':'beaglebone', 'name':'Beaglebone Black'},
-    #{'vid':0x0403, 'pid':0x6015, 'serial':'DB00VHJZ', 'driver':'serial/gpib', 'name':'GPIB-USB adapter'},
     #{'vid':0x067b, 'pid':0x2303, 'driver':'arduino', 'name':'Generic USB to serial cable'},
     #{'vid':0x1a86, 'pid':0x7523, 'driver':'arduino', 'name':'Generic USB to serial cable'},
     #{'vid':0x0403, 'pid':0x6001, 'driver':'arduino', 'name':'FTDI USB to Serial'},

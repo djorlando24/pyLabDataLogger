@@ -6,8 +6,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
-    @version 1.3.0
-    @date 23/12/2022
+    @version 1.3.3
+    @date 16/12/2023
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         d.plotCh=0
         if 'subdriver' in dir(d):
             if 'fx2lafw' in d.subdriver:
-                d.plotCh=8
+                d.plotCh=8 # A0
             
         d.history=[np.nan]
         d.plotHandle,=ax.plot(sampledTimes,d.history,marker='o',markersize=2,\
@@ -110,9 +110,13 @@ if __name__ == '__main__':
                 d.log(logfilename)
                 
                 if (isinstance(d.lastScaled[d.plotCh],np.ndarray) or isinstance(d.lastScaled[d.plotCh],list)):
-                    d.history.append(np.nanmean(d.lastScaled[d.plotCh][-1])) # plot average of time series.
+                    if len(d.lastScaled[d.plotCh])>5:
+                        d.history.append(np.nanmean(d.lastScaled[d.plotCh][-1])) # plot average of large time series.
+                    else:
+                        d.history.append(d.lastScaled[d.plotCh][0]) # first element in vectors.
                 else:
-                    d.history.append(d.lastScaled[d.plotCh])
+                    d.history.append(d.lastScaled[d.plotCh]) # scalar value
+                
                 d.plotHandle.set_xdata(sampledTimes)
                 d.plotHandle.set_ydata(d.history)
                 if np.nanmin(d.history)<yrange[0]: yrange[0]=np.nanmin(d.history)*0.95
