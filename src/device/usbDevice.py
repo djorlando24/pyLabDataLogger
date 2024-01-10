@@ -137,8 +137,10 @@ usb_device_table = [
     {'vid':0x0403, 'pid':0x6015, 'genericAdapter':1, 'driver':'serial/cozir', 'name':'COZIR CO2 monitor'},
     {'vid':0x0403, 'pid':0x6015, 'genericAdapter':1, 'driver':'bno055', 'name':'BNO055 9-axis sensor'},
     {'vid':0xffff, 'pid':0xffff, 'genericAdapter':1, 'driver':'serial/hpma', 'name':'Honeywell HPMA115S0 Air Quality sensor'},
-	{'vid':0x0403, 'pid':0x6001, 'genericAdapter':1, 'driver':'serial/hm8122', 'name':'Hameg HM1822 Programmable Counter-Timer'},
+	{'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'serial/hm8122', 'name':'Hameg HM8122 Programmable Counter-Timer'},
+    {'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'serial/hm8131', 'name':'Hameg HM8131 Waveform Generator'},
     {'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'pyvisa/33xxx', 'name':'Agilent 33xxx Waveform Generator'},
+    {'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'serial/a5000', 'name':'Asahi Heiki A5000 Load Cell Amplifier'},
     
     # Known but unsupported or generic
     #{'vid':0x1d6b, 'pid':0x0104, 'driver':'beaglebone', 'name':'Beaglebone Black'},

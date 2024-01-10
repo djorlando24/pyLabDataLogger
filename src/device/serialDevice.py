@@ -56,6 +56,8 @@
         04/10/2023 - LC-ADC-F103C8 support
         11/12/2023 - HP53131A and HM8122 support
         16/12/2023 - HP4263A support
+        05/01/2024 - A5000 support
+        10/01/2024 - HM8131 support
         
 """
 
@@ -81,6 +83,7 @@ class serialDevice(device):
         in the params dict.
         
         The 'serial' driver supports the following hardware:
+            'serial/a5000'             : Asahi Heiki A5000 Load Cell Amplifier
             'serial/alicat'            : Alicat Scientific M-series mass flow meter
             'serial/andg'              : AND GX-K and GF-K series precision balances
             'serial/bkp168'            : BK Precision 168xx series power supply
@@ -91,6 +94,7 @@ class serialDevice(device):
             'serial/esd508'            : Leadshine ES-D508 Easy Servomotor Driver
             'serial/fy3200s'           : FeelTech FY3200S Dual Channel Function Generator
             'serial/hm8122'            : Hameg HM8122 Programmable Counter/Timer
+            'serial/hm8131'            : Hameg HM8131 Waveform Generator
             'serial/hp53131agpib'      : HP Agilent 53131A Universal Counter via GPIB-USB adapter
             'serial/hp4263agpib'       : HP 4263 LCR Meter via GPIB-USB adapter
             'serial/hpma'              : Honeywell HPMA115S0 Air Quality sensor
@@ -351,6 +355,22 @@ class serialDevice(device):
             if not 'timeout' in self.params.keys(): self.params['timeout']=1.
         elif (self.subdriver=='lc-adc-f103c8'):
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=115200 
+        elif (self.subdriver=='a5000'):
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
+            if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.SEVENBITS
+            if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_EVEN
+            if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_TWO
+            if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=False
+            if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
+            if not 'timeout' in self.params.keys(): self.params['timeout']=0.1 # sec for a single byte read/write
+        elif (self.subdriver=='hm8131'):
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
+            if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.EIGHTBITS
+            if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_NONE
+            if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_TWO
+            if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=True
+            if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
+            if not 'timeout' in self.params.keys(): self.params['timeout']=0.25 # sec for a single byte read/write
         elif (self.subdriver=='hm8122'):
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
             if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.EIGHTBITS
@@ -358,7 +378,7 @@ class serialDevice(device):
             if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_TWO
             if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=True
             if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
-            if not 'timeout' in self.params.keys(): self.params['timeout']=1. # sec for a single byte read/write
+            if not 'timeout' in self.params.keys(): self.params['timeout']=0.25 # sec for a single byte read/write
 
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -517,6 +537,9 @@ class serialDevice(device):
             elif subdriver=='hm8122':
                 # No settings can be modified at present.
                 pass
+            elif subdriver=='a5000':
+                # No settings can be modified at present.
+                pass
             else:
                 print(self.__doc__)
                 raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -656,7 +679,14 @@ class serialDevice(device):
         checksum=ord(s[1])
         for c in s[2:]: checksum ^= ord(c)
         return chr(checksum)
-
+    
+    ########################################################################################################################
+    # Special function to calculate BCC checksum for A5000 RS-232/RS-485 communications.
+    def a5000_checksum(self,s):
+        checksum=0
+        for c in s[1:]: checksum += ord(c)
+        checksumstr = str(hex(checksum & 0xff)).upper()
+        return checksumstr[3]+ checksumstr[2]
     
     ########################################################################################################################
     # Configure device based on what sub-driver is being used.
@@ -1249,7 +1279,37 @@ class serialDevice(device):
             self.params['min_response_length']=5
             #self.serialCommsFunction=self.blockingRawSerialRequest
             self.sleeptime=0.001
-
+        
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='a5000': # Startup config for Asahi Heiki A5000 Load Cell Amplifier
+            # Fixed settings.
+            self.name = "A5000 Load Cell Amplifier"
+            self.config['channel_names']=['Reading']
+            self.params['raw_units']=['kN']
+            self.config['eng_units']=['kN']
+            self.config['scale']=[1.]
+            self.config['offset']=[0.]
+            self.params['n_channels']=1
+            self.serialQuery=['\x02DSP\x03']
+            for i in range(len(self.serialQuery)):
+                self.serialQuery[i]+=self.a5000_checksum(self.serialQuery[i])
+            
+            self.queryTerminator='\r\n'
+            self.responseTerminator='\n'
+            self.params['min_response_length']=3
+            self.maxlen=15
+            self.serialCommsFunction=self.blockingRawSerialRequest
+            self.sleeptime=0.
+            
+            # Check device is online
+            
+            #st=''; for c in self.serialQuery[0]+'\r\n': st+=str(hex(ord(c)))+' '
+            #print(st);exit()
+            #device_id=self.blockingSerialRequest('\x0500\r\n','\n',sleeptime=0.05,min_response_length=3)
+            #device_id=self.blockingSerialRequest('\x02PRO\x03'+self.a5000_checksum('\x02PRO\x03')+'\r\n','\n',sleeptime=0.05,min_response_length=3)
+            
+            # Release a5000 communications link
+            # self.blockingSerialRequest('\x04\r\n',sleeptime=0.02)
         # ----------------------------------------------------------------------------------------
         elif subdriver=='radwag-r': # Startup config for RADWAG R-series
             self.name = "Radwag R-Series Balance"
@@ -1525,6 +1585,33 @@ class serialDevice(device):
                 
         
         
+        # ----------------------------------------------------------------------------------------
+        # Startup config for Hameg HM8131
+        elif subdriver=='hm8131':
+            self.serialCommsFunction=self.blockingRawSerialRequest
+            self.queryTerminator='\r\n'
+            self.responseTerminator=ord('\r')
+            self.params['min_response_length']=1
+            self.maxlen=32
+            self.config['Unit ID'] = self.serialCommsFunction(' ID?\r\n',ord('\r')).decode('ascii')
+            
+            cprint('\tID?: %s' % self.config['Unit ID'],'green')
+            self.name = "Hameg HM8131 - %s" % self.config['Unit ID']
+            self.config['channel_names']=['SweepTime','Freq','Phase','Amplitude']
+            self.params['n_channels']=len(self.config['channel_names'])   
+            self.params['raw_units']=['s','Hz','deg','V']
+            self.config['eng_units']=['s','Hz','deg','V']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.serialQuery=['SWT?','FRQ?','PHA?','AMP?']
+            
+            self.config['SerialNumber']=self.serialCommsFunction('SNR?\r\n',ord('\r')).decode('ascii')
+            self.config['Status']=self.serialCommsFunction('STA?\r\n',ord('\r')).decode('ascii')
+            cprint('\tSNR?: %s' % self.config['SerialNumber'],'green')
+            cprint('\tSTA?: %s' % self.config['Status'],'green')
+            self.config['eng_units'][2] = self.config['Status'].split(' ')[-1] # Set VPP or VRMS
+            
+            
         # ----------------------------------------------------------------------------------------
         # Startup config for Hameg HM8122
         elif subdriver=='hm8122':
@@ -2079,8 +2166,10 @@ class serialDevice(device):
                 return [ float(r.strip()) for r in rawData ]
             
             # ----------------------------------------------------------------------------------------
-            elif subdriver=='hm8122':
-                return [ float(s.decode('ascii')) for s in rawData]
+            elif subdriver=='a5000':
+                print(rawData)
+                return [ None ]
+                #return [ float(s.decode('ascii')) for s in rawData]
             
             # ----------------------------------------------------------------------------------------
             if subdriver=='lc-adc-f103c8':
@@ -2095,7 +2184,10 @@ class serialDevice(device):
                 return vals
             
             else:
-                raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
+                # Default behaviour, assuming rawData has a string holding a scalar float for each variable
+                return [ float(s.strip().decode('ascii')) for s in rawData]
+                
+                
         except ValueError:
             cprint( "\t!! Failure to unpack raw string from device: "+str( rawData ), 'red', attrs=['bold'])
             raise
