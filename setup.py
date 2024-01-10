@@ -4,10 +4,10 @@
     Laboratory datalogging for USB and Serial devices
 
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2023 LTRAC
+    @copyright (c) 2018-2024 LTRAC
     @license GPL-3.0+
-    @version 1.3.2
-    @date 11/12/2023
+    @version 1.3.4
+    @date 10/01/2024
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -34,7 +34,7 @@
 __author__="Daniel Duke <daniel.duke@monash.edu>"
 __version__="1.3.2"
 __license__="GPL-3.0+"
-__copyright__="Copyright (c) 2018-2023 LTRAC"
+__copyright__="Copyright (c) 2018-2024 LTRAC"
 
 
 #from distutils.core import setup

@@ -6,10 +6,10 @@
     In future can be a generic CSI/CSI2 interface for other SBCs.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2023 LTRAC
+    @copyright (c) 2018-2024 LTRAC
     @license GPL-3.0+
-    @version 1.3.0
-    @date 23/12/2022
+    @version 1.3.4
+    @date 10/01/2024
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /

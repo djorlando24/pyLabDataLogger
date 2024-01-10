@@ -4,9 +4,9 @@
     Serial device class - general serial port support
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2023 LTRAC
+    @copyright (c) 2018-2024 LTRAC
     @license GPL-3.0+
-    @version 1.3.3
+    @version 1.3.4
     @date 10/01/2024
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
@@ -54,10 +54,10 @@
         18/03/2022 - Omega Platinum meter & CC8870 current clamp support
         25/09/2023 - FeelTech function generator support
         04/10/2023 - LC-ADC-F103C8 support
-        11/12/2023 - HP53131A and HM8122 support
+        11/12/2023 - HP53131A support
         16/12/2023 - HP4263A support
         05/01/2024 - A5000 support
-        10/01/2024 - HM8131 support
+        10/01/2024 - Hameg support
         
 """
 
@@ -376,7 +376,7 @@ class serialDevice(device):
             if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.EIGHTBITS
             if not 'parity' in self.params.keys(): self.params['parity']=serial.PARITY_NONE
             if not 'stopbits' in self.params.keys(): self.params['stopbits']=serial.STOPBITS_TWO
-            if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=True
+            if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=False
             if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
             if not 'timeout' in self.params.keys(): self.params['timeout']=0.25 # sec for a single byte read/write
 
@@ -427,19 +427,7 @@ class serialDevice(device):
             if self.Serial is None: raise pyLabDataLoggerIOError("Could not access serial port.")
 
             # Apply subdriver-specific variable writes
-            if subdriver=='tds220gpib':
-                # No settings can be modified at present.
-                # In future we could change voltage or time scale or switch channels on/off.
-                pass
-            elif subdriver=='hp53131agpib':
-                # No settings can be modified at present.
-                # In future we could change voltage or time scale or switch channels on/off.
-                pass
-            elif subdriver=='hp4263agpib':
-                # No settings can be modified at present.
-                # In future we could change voltage or time scale or switch channels on/off.
-                pass
-            elif subdriver=='omega-ir-usb':
+            if subdriver=='omega-ir-usb':
                 e=self.config['set_emissivity']
                 if (e is not None) and (e>0) and (e<=1.): self.Serial.write("E%0.2f\n" % float(e))
                 else: raise ValueError
@@ -463,86 +451,13 @@ class serialDevice(device):
                 if not 'sample_period' in self.params: self.params['sample_period']=1.
                 # 6-10 bytes per sample, * sample period, * samples per second, dictates maxlen returned for 'PC'
                 self.maxlen= int(6*(self.params['sample_period']*self.config['sample_rate_Hz']+1))
-
-            elif subdriver=='ohaus7k':
-                # No settings can be modified at present. In future we could allow tare/zero or
-                # a change of units.
-                pass
-            elif subdriver=='center310':
-                # No settings can be modified at present.
-                # The comms is one-way, the device cannot be controlled remotely.
-                pass
-            elif subdriver=='cozir':
-                # No settings can be modified at present.
-                pass
-            elif subdriver=='hpma':
-                # No settings can be modified at present.
-                pass
-            elif subdriver=='omega-iseries':
-                # No settings can be modified at present. In future we could allow changing of
-                # set points.
-                pass
-            elif subdriver=='sd700':
-                # No settings can be modified.
-                pass
-            elif subdriver=='r5000':
-                # No settings can be modified at present. In future, we could allow zero/tare remotely.
-                pass
-            elif subdriver=='radwag-r':
-                # No settings can be modified at present. In future we could force certain units/mode.
-                pass
-            elif subdriver=='alicat':
-                # No settings can be modified at present. In future we could set units and gas type
-                # from software.
-                pass
-            elif subdriver=='esd508':
-                # The settings are actually passed to the driver when it's queried, rather than in advance.
-                # This could change in future.
-                pass
-            elif self.subdriver=='p6000a':
-                # No settings can be modified at present. In future we could send a string to set the mode
-                # from software. This is explained in the manual.
-                pass
-            elif self.subdriver=='pt200m':
-                # No settings can be modified at present. In future, could force zero or tare mode.
-                pass
-            elif (self.driver=='k3hb/vlc') or (self.driver=='k3hb/x'): 
-                pass
+            
             elif subdriver=='tc08rs232':
                 raise RuntimeError("Need to implement selection of thermocouple types! Contact the developer.")
-            elif subdriver=='mx5060':
-                # No settings can be modified at present. 
-                pass
-            elif subdriver=='di148':
-                # No settings can be modified at present. 
-                pass
-            elif subdriver=='bkp168':
-                # No settings can be modified at present. 
-                pass
-            elif subdriver=='andg':
-                # No settings can be modified at present.
-                pass
-            elif subdriver=='omega-pt':
-                # No settings can be modified at present.
-                pass
-            elif subdriver=='cc8870':
-                # No settings can be modified at present.
-                pass
-            elif subdriver=='fy3200s':
-                # No settings can be modified at present.
-                pass
-            elif subdriver=='lc-adc-f103c8':
-                # No settings can be modified at present.
-                pass
-            elif subdriver=='hm8122':
-                # No settings can be modified at present.
-                pass
-            elif subdriver=='a5000':
-                # No settings can be modified at present.
-                pass
-            else:
-                print(self.__doc__)
-                raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
+            
+            #else:
+            #    print(self.__doc__)
+            #    raise RuntimeError("I don't know what to do with a device driver %s" % self.params['driver'])
     
         except ValueError:
             raise
@@ -1615,21 +1530,24 @@ class serialDevice(device):
         # ----------------------------------------------------------------------------------------
         # Startup config for Hameg HM8122
         elif subdriver=='hm8122':
-            self.config['Unit ID'] = self.blockingRawSerialRequest(' ID?\r\n','\r',4,1,1)
-            cprint('\tIDN: %s' % self.config['Unit ID'],'green')
+            self.serialCommsFunction=self.blockingRawSerialRequest
+            self.queryTerminator='\r\n'
+            self.responseTerminator=ord('\r')
+            self.params['min_response_length']=1
+            self.maxlen=32
+            self.config['Unit ID'] = self.serialCommsFunction(' ID?\r\n',ord('\r'),maxlen=8).decode('ascii')
             
-            print(self.blockingRawSerialRequest('CNF?\r\n','\r',4,1,1)) # get configuration
+            cprint('\tID?: %s' % self.config['Unit ID'],'green')
             
             self.name = "Hameg HM8122 - %s" % self.config['Unit ID']
             self.config['channel_names']=['FreqA','FreqB']
-            self.params['n_channels']=len(self.config['channel_names'])   
+            self.params['n_channels']=len(self.config['channel_names']) 
             self.params['raw_units']=['Hz']*self.params['n_channels']
             self.config['eng_units']=['Hz']*self.params['n_channels']
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
-            self.serialQuery=['FRA','FRB']
-            self.queryTerminator='\r\n'
-            self.responseTerminator='\n'
+            self.serialQuery=['FRA?','FRB?']
+            
         
         # ----------------------------------------------------------------------------------------
         

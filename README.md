@@ -2,10 +2,10 @@
 Laboratory datalogging for USB and Serial devices
 
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2023 LTRAC
+    @copyright (c) 2018-2024 LTRAC
     @license GPL-3.0+
-    @version 1.3.3
-    @date 16/12/2023
+    @version 1.3.4
+    @date 10/01/2024
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
