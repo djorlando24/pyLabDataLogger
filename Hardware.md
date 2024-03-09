@@ -72,6 +72,12 @@ python3-pyvisa should be installed. Use 'python3 -m visa info' to check for visa
 
 The scope needs to be set up and armed before the acquisition is started. Single shot mode may not work, I find best results arming it in Auto mode and letting sigrok acquire what's most recently on the screen. If things go wrong you can set 'debugMode':True in the kwargs to the device driver and see what is happening behind the scenes.
 
+## Other oscilloscopes
+
+Tektronix TDS224 via GPIB-USB & TBS1052B via usbtmc are supported, as I have access to these hardware.
+Some other scopes and logic analysers are supported via sigrok and can be added to the device list as required.
+Support for other scopes depends on having test hardware available!
+
 # Serial Devices
 
 ## Omega iSeries Process Controllers
