@@ -63,6 +63,7 @@ class usbtmcDevice(device):
             'usbtmc/33220a'         : Agilent 33220A function generator via USB
             'usbtmc/rigol-ds'       : Rigol DS series oscilloscopes. Not reliable, suggest using sigrok or pyvisa drivers instead.
             'usbtmc/dg1000z'        : Rigol DG1000Z programmable delay/function generator
+            'usbtmc/tbs1052b'       : Tektronix TBS1052B Digital Oscilloscope via USB
     """
 
     def __init__(self,params={},quiet=True,**kwargs):
@@ -167,6 +168,9 @@ class usbtmcDevice(device):
             if self.subdriver=='dg1000z':
                 # Currently this is a read-only device. In future we could set the delay time etc. from here.
                 pass
+            if self.subdriver=='tbs1052b':
+                # Currently this is a read-only device. In future we could set the delay time etc. from here.
+                pass
 
             else:
                 raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -230,6 +234,7 @@ class usbtmcDevice(device):
     # This is done when self.query(reset=True) is called, as at
     # this point we might need to poll the device to check a setting.
     def configure_device(self):
+        # ---------------------------------------------------------------------------------------------------------
         if self.subdriver=='33220a':
             
             # Check the mode
@@ -262,6 +267,7 @@ class usbtmcDevice(device):
             # Get some other parameters that won't change often.
             self.params['Trigger source'] = self.ask("TRIG:SOUR?")
             
+        # ---------------------------------------------------------------------------------------------------------
         elif self.subdriver=='rigol-ds':
         
             # First let's put the device in SINGLE SHOT mode
@@ -298,6 +304,7 @@ class usbtmcDevice(device):
                 self.params['Ch%i Waveform Parameters' % n] = self.ask(":WAV:PRE?").split(',')
                 time.sleep(0.01)
         
+        # ---------------------------------------------------------------------------------------------------------
         elif self.subdriver=='thorlabs-tsp01':        
             self.name = "Thorlabs TSP01 Thermometer/Barometer - %s" % self.params['IDN']
             self.config['channel_names']=['T1','T2','T_internal','Humidity']
@@ -308,6 +315,7 @@ class usbtmcDevice(device):
             self.params['n_channels']=len(self.config['channel_names'])            
             self.tmcQuery=['SENS3:TEMP:DATA?','SENS4:TEMP:DATA?','SENS1:TEMP:DATA?','SENS2:HUM:DATA?']
 
+        # ---------------------------------------------------------------------------------------------------------
         elif self.subdriver=='thorlabs-pm':        
             self.name = "Thorlabs pm Power Meter - %s" % self.params['IDN']
             self.config['channel_names']=['Current','Power']
@@ -331,7 +339,8 @@ class usbtmcDevice(device):
             self.params['zero state'] = self.ask("SENS:CORR:COLL:ZERO:STAT?")            
             self.params['photodiode response'] =self.ask("SENS:CORR:POW:PDIOde:RESP?")+' A/W'
             #self.params['averaging'] = self.ask("SENS:AVER:COUNt?") # PM16 does not support
-            
+           
+        # ---------------------------------------------------------------------------------------------------------
         elif self.subdriver=='dg1000z':
             self.config['channel_names']=[]
             for n in range(1,3): self.config['channel_names'].extend(['CH%i_type' % n,\
@@ -351,6 +360,40 @@ class usbtmcDevice(device):
             self.tmcQuery = [':SOUR1:APPL?',':SOUR1FUNC:PULS:WIDT?',':SOUR1:BURS:STAT?',':SOUR1:BURS:TDEL?',\
                              ':SOUR2:APPL?',':SOUR2FUNC:PULS:WIDT?',':SOUR2:BURS:STAT?',':SOUR2:BURS:TDEL?']
             
+        # ---------------------------------------------------------------------------------------------------------
+        elif self.subdriver=='tbs1052b':
+            
+            #self.write(":WAV:MODE RAW") # return what's in memory
+            #self.write(":WAV:FORM BYTE") # one byte per 8bit sample
+            #self.ask(":RUN")
+        
+            self.name = self.params['IDN'].strip()
+            self.config['channel_names']=['Ch1','Ch2']
+            self.params['raw_units']=['V','V']
+            self.config['eng_units']=['V','V']
+            self.config['scale']=[1.,1.]
+            self.config['offset']=[0.,0.]
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.tmcQuery=[':WAV:SOUR 1,:WAV:DATA?',':WAV:SOUR 2,:WAV:DATA?']
+        
+            # Get some parameters that don't change often
+            #self.params['Samples_per_sec'] = self.ask(":ACQ:SRAT?")
+            #self.params['Seconds_per_div'] = self.ask(":TIM:SCAL?")
+            #self.params['Bandwidth Limit'] = self.scope_channel_params("BWL")
+            #self.params['Coupling'] = self.scope_channel_params("COUP")
+            #self.params['Voltage Scale'] = self.scope_channel_params("SCAL")
+            #self.params['Active channels'] = self.scope_channel_params("DISP")
+            #self.params['Inverted'] = self.scope_channel_params("INV")
+            #self.params['Vertical Offset'] = self.scope_channel_params("OFFS")
+            #self.params['Vertical Range'] = self.scope_channel_params("RANG")
+        
+            # Get some waveform parameters
+            #for n in range(self.params['n_channels']):
+            #    self.write(":WAV:SOUR %1i" % n)
+            #    time.sleep(0.01)
+            #    self.params['Ch%i Waveform Parameters' % n] = self.ask(":WAV:PRE?").split(',')
+            #    time.sleep(0.01)
+            
         else:
             print(self.__doc__)
             raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
@@ -366,9 +409,10 @@ class usbtmcDevice(device):
             return np.array([float(v) for v in data])
         elif self.subdriver=='thorlabs-pm':
             return np.array([float(v) for v in data])
+        elif self.subdriver=='tbs1052b':
+            return np.array( struct.unpack(data,'<b'), dtype=np.uint8 )
         elif self.subdriver=='dg1000z':
-            print(data)
-            raise RuntimeError
+            return np.array( struct.unpack(data,'<b'), dtype=np.uint8 ) # may need updating
         else: raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])
         return None
         
