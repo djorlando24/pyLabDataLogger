@@ -9,8 +9,8 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2024 LTRAC
     @license GPL-3.0+
-    @version 1.3.4
-    @date 10/01/2024
+    @version 1.3.5
+    @date 12/03/2024
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /
@@ -111,7 +111,7 @@ class usbtmcDevice(device):
     
         # Open channel to device
         self.instr =  usbtmc.Instrument(self.params['vid'],self.params['pid'])
-        self.instr.timeout = 2
+        self.instr.timeout = 10
         self.driverConnected = True
         
         # Reset device
@@ -363,36 +363,30 @@ class usbtmcDevice(device):
         # ---------------------------------------------------------------------------------------------------------
         elif self.subdriver=='tbs1052b':
             
-            #self.write(":WAV:MODE RAW") # return what's in memory
-            #self.write(":WAV:FORM BYTE") # one byte per 8bit sample
-            #self.ask(":RUN")
-        
+            #self.write(":REMOTE:CONTROL 1") # set to remote control mode
+            self.write(":ACQ:STATE STOP") # Prepare to take a single reading
+            self.write(":ACQ:STOPAfter SEQuence")
+            
+            # Read 10k points from Ch1
+            self.write(":DAT:SOU CH1")
+            self.write(":DAT:DEST REFA")
+            self.write(":DAT:START 1")
+            self.write(":DAT:STOP 10000")
+            
+            self.config['Data Format']=self.ask(":DAT?")
+            self.config['Horiz Pos'  ]=self.ask(':HOR:POS?')
+            self.config['Horiz Scale']=self.ask(':HOR:SCA?')
+            self.config['Channel1']=self.ask(':CH1?')
+            self.config['Channel2']=self.ask(':CH2?')
+            
             self.name = self.params['IDN'].strip()
-            self.config['channel_names']=['Ch1','Ch2']
-            self.params['raw_units']=['V','V']
-            self.config['eng_units']=['V','V']
-            self.config['scale']=[1.,1.]
-            self.config['offset']=[0.,0.]
+            self.config['channel_names']=['Ch1']#,'Ch2']
+            self.params['raw_units']=['V']#,'V']
+            self.config['eng_units']=['V']#,'V']
+            self.config['scale']=[1.]#,1.]
+            self.config['offset']=[0.]#,0.]
             self.params['n_channels']=len(self.config['channel_names'])
-            self.tmcQuery=[':WAV:SOUR 1,:WAV:DATA?',':WAV:SOUR 2,:WAV:DATA?']
-        
-            # Get some parameters that don't change often
-            #self.params['Samples_per_sec'] = self.ask(":ACQ:SRAT?")
-            #self.params['Seconds_per_div'] = self.ask(":TIM:SCAL?")
-            #self.params['Bandwidth Limit'] = self.scope_channel_params("BWL")
-            #self.params['Coupling'] = self.scope_channel_params("COUP")
-            #self.params['Voltage Scale'] = self.scope_channel_params("SCAL")
-            #self.params['Active channels'] = self.scope_channel_params("DISP")
-            #self.params['Inverted'] = self.scope_channel_params("INV")
-            #self.params['Vertical Offset'] = self.scope_channel_params("OFFS")
-            #self.params['Vertical Range'] = self.scope_channel_params("RANG")
-        
-            # Get some waveform parameters
-            #for n in range(self.params['n_channels']):
-            #    self.write(":WAV:SOUR %1i" % n)
-            #    time.sleep(0.01)
-            #    self.params['Ch%i Waveform Parameters' % n] = self.ask(":WAV:PRE?").split(',')
-            #    time.sleep(0.01)
+            self.tmcQuery=['*TRG,CURV?']
             
         else:
             print(self.__doc__)
@@ -404,13 +398,13 @@ class usbtmcDevice(device):
         if self.subdriver=='33220a':
             return np.array(data,dtype=np.float32)
         elif self.subdriver=='rigol-ds':
-            return np.array( struct.unpack(data,'<b'), dtype=np.uint8 )
+            return np.array( struct.unpack(data,'<b'), dtype=np.uint8 ) # 1 bytes/data point
         elif self.subdriver=='thorlabs-tsp01':
             return np.array([float(v) for v in data])
         elif self.subdriver=='thorlabs-pm':
             return np.array([float(v) for v in data])
         elif self.subdriver=='tbs1052b':
-            return np.array( struct.unpack(data,'<b'), dtype=np.uint8 )
+            return np.array( struct.unpack(data,'<h'), dtype=np.uint16 ) # 2 bytes/data point
         elif self.subdriver=='dg1000z':
             return np.array( struct.unpack(data,'<b'), dtype=np.uint8 ) # may need updating
         else: raise KeyError("I don't know what to do with a device driver %s" % self.params['driver'])

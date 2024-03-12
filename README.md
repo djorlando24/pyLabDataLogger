@@ -4,8 +4,8 @@ Laboratory datalogging for USB and Serial devices
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2024 LTRAC
     @license GPL-3.0+
-    @version 1.3.4
-    @date 10/01/2024
+    @version 1.3.5
+    @date 12/03/2024
         __   ____________    ___    ______    
        / /  /_  ____ __  \  /   |  / ____/    
       / /    / /   / /_/ / / /| | / /         
@@ -88,6 +88,7 @@ Try scripts/test_usb_devices.py to poll compatible USB devices.
     - Agilent 33220A waveform generator,
     - Thorlabs TSP01 temperature & humidity logger
     - Thorlabs PM16 series power meters
+    - Tektronix TBS 1052B oscilloscope
 
 - NI-VISA over Ethernet devices that use SCPI command set
     - Rigol DG1000Z series delay generators
