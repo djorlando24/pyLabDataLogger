@@ -6,13 +6,10 @@
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2023 LTRAC
     @license GPL-3.0+
-    @version 1.3.0
-    @date 23/12/2022
-        __   ____________    ___    ______
-       / /  /_  ____ __  \  /   |  / ____/
-      / /    / /   / /_/ / / /| | / /
-     / /___ / /   / _, _/ / ___ |/ /_________
-    /_____//_/   /_/ |__\/_/  |_|\__________/
+    @version 1.4.0
+    @date 08/06/25
+
+    Multiphase Flow Laboratory
 
     Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
     Monash University, Australia

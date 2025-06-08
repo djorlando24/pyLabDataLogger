@@ -4,17 +4,12 @@
     Serial device class - general serial port support
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2024 LTRAC
+    @copyright (c) 2018-2025 LTRAC
     @license GPL-3.0+
-    @version 1.3.4
-    @date 10/01/2024
-        __   ____________    ___    ______
-       / /  /_  ____ __  \  /   |  / ____/
-      / /    / /   / /_/ / / /| | / /
-     / /___ / /   / _, _/ / ___ |/ /_________
-    /_____//_/   /_/ |__\/_/  |_|\__________/
+    @version 1.4.0
+    @date 08/06/25
 
-    Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
+    Multiphase Flow Laboratory
     Monash University, Australia
 
     Note on implementation of serial commands: 
@@ -58,6 +53,7 @@
         16/12/2023 - HP4263A support
         05/01/2024 - A5000 support
         10/01/2024 - Hameg support
+        08/06/2025 - Chemyx support
         
 """
 
@@ -89,6 +85,7 @@ class serialDevice(device):
             'serial/bkp168'            : BK Precision 168xx series power supply
             'serial/cc8870'            : USB Current Clamp (E-Meter 8870 marking)
             'serial/center310'         : CENTER 310 Temperature and Humidity meter
+            'serial/chemyx'            : Chemyx syringe pump
             'serial/cozir'             : COZIR CO2 sensor
             'serial/di148'             : DataQ DI-148 Analog-to-Digital Converter
             'serial/esd508'            : Leadshine ES-D508 Easy Servomotor Driver
@@ -379,7 +376,9 @@ class serialDevice(device):
             if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=False
             if not 'rtscts' in  self.params.keys(): self.params['rtscts']=False
             if not 'timeout' in self.params.keys(): self.params['timeout']=0.25 # sec for a single byte read/write
-
+        elif (self.subdriver=='chemyx'):
+            if not 'baudrate' in self.params.keys(): self.params['baudrate']=115200 # default 9600, I choose 115.2k
+            
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
         if not 'bytesize' in self.params.keys(): self.params['bytesize']=serial.EIGHTBITS
@@ -510,7 +509,7 @@ class serialDevice(device):
                 s+=self.Serial.read(1)#.decode('ascii')
                 if len(s) == 0: # response timed out
                     break
-                if (s[-1:] == terminationChar.encode('ascii')) and (len(s)>min_response_length):
+                if (s[-1:] == terminationChar) and (len(s)>min_response_length):
                     response=s.strip()
                     break
                 if (time.time() - t_) > self.params['timeout_total']: raise pyLabDataLoggerIOError("timeout")
@@ -1547,7 +1546,23 @@ class serialDevice(device):
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
             self.serialQuery=['FRA?','FRB?']
+        
+        # ----------------------------------------------------------------------------------------
+        # Startup config for Chemyx syringe pump
+        elif subdriver=='chemyx':
+            self.serialCommsFunction=self.blockingRawSerialRequest
+            self.queryTerminator='\r\n'
+            self.responseTerminator=ord('>') # prompt for next command
+            self.params['min_response_length']=8
             
+            self.name = "Chemyx syringe pump"
+            self.config['channel_names']=['Dispensed','Time','Status','Pressure','Temperature']
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.params['raw_units']=['mL','s','','psi','degC']
+            self.config['eng_units']=['mL','s','','psi','degC']
+            self.config['scale']=[1.]*self.params['n_channels']
+            self.config['offset']=[0.]*self.params['n_channels']
+            self.serialQuery=['dispensed volume','elapsed time','status','read press and temp']
         
         # ----------------------------------------------------------------------------------------
         
@@ -2099,6 +2114,26 @@ class serialDevice(device):
                         vals[chNum] = float(valStr.strip('V'))
                     except:
                         continue
+                return vals
+                
+            # ----------------------------------------------------------------------------------------
+            if subdriver=='chemyx':
+                vals=[np.nan]*self.params['n_channels']
+                for j in range(2):
+                    if b'=' in rawData[j]:
+                        vals[j] = float(rawData[j].decode('ascii').split('=')[-1].strip('>').strip('\r').strip())
+                if b'status' in rawData[2]:
+                    match rawData[2].decode('ascii').split('\n')[-2].strip():
+                        case '0': vals[2]='stopped'
+                        case '1': vals[2]='running'
+                        case '2': vals[2]='paused'
+                        case '3': vals[2]='delayed'
+                        case '4': vals[2]='stalled'
+                        case _: vals[2]='?'
+                if b'press' in rawData[3]:
+                    s=rawData[3].decode('ascii').strip('>').strip('\r').strip().split(' ')
+                    vals[3]=float(s[4].replace('NC','nan'))
+                    vals[4]=float(s[6].replace('NC','nan'))
                 return vals
             
             else:

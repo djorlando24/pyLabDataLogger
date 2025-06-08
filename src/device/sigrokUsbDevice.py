@@ -4,17 +4,12 @@
     Sigrok-USB device class for pyPiDataLogger
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2024 LTRAC
+    @copyright (c) 2018-2025 D.Duke
     @license GPL-3.0+
-    @version 1.3.4
-    @date 10/01/2024
-        __   ____________    ___    ______
-       / /  /_  ____ __  \  /   |  / ____/
-      / /    / /   / /_/ / / /| | / /
-     / /___ / /   / _, _/ / ___ |/ /_________
-    /_____//_/   /_/ |__\/_/  |_|\__________/
+    @version 1.4.0
+    @date 08/06/25
 
-    Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
+    Multiphase Flow Laboratory
     Monash University, Australia
     
     This program is free software: you can redistribute it and/or modify

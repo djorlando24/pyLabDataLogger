@@ -4,7 +4,7 @@
     Generic device class - a template for making new devices
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2024 LTRAC
+    @copyright (c) 2018-2025 D.Duke
     @license GPL-3.0+
     @version 1.3.4
     @date 10/01/2024

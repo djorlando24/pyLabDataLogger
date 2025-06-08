@@ -4,17 +4,12 @@
     Laboratory datalogging for USB and Serial devices
 
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2024 LTRAC
+    @copyright (c) 2018-2025 D.Duke
     @license GPL-3.0+
-    @version 1.3.5
-    @date 12/03/2024
-        __   ____________    ___    ______
-       / /  /_  ____ __  \  /   |  / ____/
-      / /    / /   / /_/ / / /| | / /
-     / /___ / /   / _, _/ / ___ |/ /_________
-    /_____//_/   /_/ |__\/_/  |_|\__________/
+    @version 1.4.0
+    @date 08/06/25
 
-    Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
+    Multiphase Flow Laboratory
     Monash University, Australia
 
     This software searches for sensors and data acquisition devices
@@ -34,7 +29,7 @@
 __author__="Daniel Duke <daniel.duke@monash.edu>"
 __version__="1.3.5"
 __license__="GPL-3.0+"
-__copyright__="Copyright (c) 2018-2024 LTRAC"
+__copyright__="Copyright (c) 2018-2025 D.Duke"
 
 
 #from distutils.core import setup
@@ -61,7 +56,7 @@ if 'linux' in sys.platform:
     c_libraries.append(Extension("libmcp3424", sources = ["src/device/i2c/mcp3424.c"]))
 
 # Add platform-dependent include directories (ie Homebrew on MacOS)
-include_dirs=[numpy.get_include()]
+include_dirs=[numpy.get_include(), '/opt/homebrew/include']
 if 'darwin' in sys.platform:
     include_dirs.append('/usr/local/include')
 

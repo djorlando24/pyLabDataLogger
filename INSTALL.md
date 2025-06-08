@@ -71,11 +71,15 @@ You may need to copy some udev rules for certain USB devices - see Hardware.md f
 ## building on MacOS
 
 To compile the mcclibusb drivers, you need libusb installed. On MacOS you can get this
-from Homebrew. Once you've done "brew install libusb" you may then need to tell python
-where the headers are. On my machine, I used:
+from Homebrew. First install homebrew (https://brew.sh) and then install the required packages:
 
-    `CFLAGS="-I/usr/local/Cellar/libusb/1.0.22/include" python setup.py install --user`
+    brew install libusb
+    brew install hidapi
 
+With the current version of Homebrew on Sonoma 10.14.x:
+
+    CFLAGS="-I/opt/homebrew/Cellar/libusb/1.0.26/include -I/opt/homebrew/Cellar/hidapi/0.14.0/include" python3 setup.py install
+ 
 ## Optional Python modules
 
 From here on, all these modules are optional. They only need to be installed for specific hardware.
