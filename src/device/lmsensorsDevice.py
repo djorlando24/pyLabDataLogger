@@ -186,11 +186,11 @@ class lmsensorsDevice(device):
         
         # Temperatures
         #temperatures = {match[0]: float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)°C", sensors, re.MULTILINE)}
-        temperatures = [float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)°C", sensors.decode('utf-8'), re.MULTILINE)]
+        temperatures = [float(match[1]) for match in re.findall(r"^(.*?)\:\s+\+?(.*?)°C", sensors.decode('utf-8'), re.MULTILINE)]
 
         # Fan speeds
         #rpms = {match[0]: float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)RPM", sensors, re.MULTILINE)}
-        rpms = [float(match[1]) for match in re.findall("^(.*?)\:\s+\+?(.*?)RPM", sensors.decode('utf-8'), re.MULTILINE)]
+        rpms = [float(match[1]) for match in re.findall(r"^(.*?)\:\s+\+?(.*?)RPM", sensors.decode('utf-8'), re.MULTILINE)]
 
         # SMART hard disks?
         #for d in self.lm_sensors_chips:

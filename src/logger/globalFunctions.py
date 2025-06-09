@@ -32,17 +32,12 @@ def banner():
     
     stringData = ['  pyLabDataLogger - Easy data logging from USB, Serial and Network devices      ',\
                   '  @author Daniel Duke <daniel.duke@monash.edu>                                  ',\
-                  '  @copyright (c) 2018-2023 LTRAC                                                ',\
+                  '  @copyright (c) 2018-2025 D. Duke                                              ',\
                   '  @license GPL-3.0+                                                             ',\
-                  '  @version 1.3.0                                                                ',\
-                  '  @date 23/12/2022                                                              ',\
-                  '      __   ____________    ___    ______                                        ',\
-                  '     / /  /_  ____ __  \  /   |  / ____/                                        ',\
-                  '    / /    / /   / /_/ / / /| | / /                                             ',\
-                  '   / /___ / /   / _, _/ / ___ |/ /_________                                     ',\
-                  '  /_____//_/   /_/ |__\/_/  |_|\__________/                                     ',\
+                  '  @version 1.4.0                                                                ',\
+                  '  @date 08/06/2025                                                              ',\
                   '                                                                                ',\
-                  '  Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)          ',\
+                  '  Multiphase Flow Laboratory                                                    ',\
                   '  Monash University, Australia                                                  ']
 
     cprint('='*80, 'white', 'on_blue',attrs=['bold'])

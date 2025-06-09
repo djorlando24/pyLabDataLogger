@@ -27,7 +27,7 @@
 """
 
 __author__="Daniel Duke <daniel.duke@monash.edu>"
-__version__="1.3.5"
+__version__="1.4.0"
 __license__="GPL-3.0+"
 __copyright__="Copyright (c) 2018-2025 D.Duke"
 
@@ -48,12 +48,12 @@ cython_modules = [
 
 # Build C libraries that interface to hardware
 c_libraries = [
-    Extension("libmccusb1608G", sources = ["src/mcclibusb/usb-1608G.c"]),
 ]
 
 # Add platform-dependent C libraries
 if 'linux' in sys.platform:
     c_libraries.append(Extension("libmcp3424", sources = ["src/device/i2c/mcp3424.c"]))
+    c_libraries.append(Extension("libmccusb1608G", sources = ["src/mcclibusb/usb-1608G.c"]))
 
 # Add platform-dependent include directories (ie Homebrew on MacOS)
 include_dirs=[numpy.get_include(), '/opt/homebrew/include']
@@ -61,7 +61,7 @@ if 'darwin' in sys.platform:
     include_dirs.append('/usr/local/include')
 
 setup(name="pyLabDataLogger",
-      version="1.3",
+      version="1.4",
       description="Laboratory datalogging for USB and Serial devices.",
       author="Daniel Duke",
       author_email="daniel.duke@monash.edu",

@@ -2121,7 +2121,10 @@ class serialDevice(device):
                 vals=[np.nan]*self.params['n_channels']
                 for j in range(2):
                     if b'=' in rawData[j]:
-                        vals[j] = float(rawData[j].decode('ascii').split('=')[-1].strip('>').strip('\r').strip())
+                        try:
+                            vals[j] = float(rawData[j].decode('ascii').split('=')[-1].strip('>').strip('\r').strip())
+                        except ValueError:
+                            vals[j] = np.nan
                 if b'status' in rawData[2]:
                     match rawData[2].decode('ascii').split('\n')[-2].strip():
                         case '0': vals[2]='stopped'
