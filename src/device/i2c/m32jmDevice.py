@@ -4,10 +4,10 @@
     TE Connectivity M32JM I2C Pressure Transducer
 
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2023 LTRAC
+    @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
-    @version 1.4.0
-    @date 08/06/25
+    @version 1.5.0
+    @date 13/06/25
 
     Multiphase Flow Laboratory
     Monash University, Australia
@@ -51,8 +51,9 @@ class m32jmDevice(i2cDevice):
     # Establish connection to device
     def activate(self):
         assert self.params['address']
-        assert self.params['bus']
-        if 'name' in self.params: self.name = self.params['name']+' %i:%s' % (self.params['bus'],hex(self.params['address']))
+        if not self.bridge: assert self.params['bus']
+        else: assert self.bridgeDev
+        if 'name' in self.params: self.name = self.params['name']+' %s:%s' % (self.params['bus'],hex(self.params['address']))
         if not 'driver' in self.params.keys(): self.params['driver']=None
 
         self.params['n_channels']=3
@@ -86,9 +87,15 @@ class m32jmDevice(i2cDevice):
     # Update device with new value, update lastValue and lastValueTimestamp
     def query(self):
 
-        bus=smbus.SMBus(self.params['bus'])
-        bus.write_byte(self.params['address'],self.params['address'])
-        data = bus.read_i2c_block_data(self.params['address'],0,4)
+        if self.bridge:
+            self.bridgeDev.start(self.params['address'],1)
+            time.sleep(0.3)
+            data=self.bridgeDev.read(4)
+            self.bridgeDev.stop()
+        else:
+            bus=smbus.SMBus(self.params['bus'])
+            bus.write_byte(self.params['address'],self.params['address'])
+            data = bus.read_i2c_block_data(self.params['address'],0,4)
 
         pRaw = (data[0]<<8) | data[1]
         tRaw = (data[2]<<8) | data[3]
@@ -110,4 +117,7 @@ class m32jmDevice(i2cDevice):
 
     # End connection to device.
     def deactivate(self):
+        if self.bridge: 
+            self.bridgeDev.stop()
+            del self.bridgeDev
         pass

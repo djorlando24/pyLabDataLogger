@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
-    I2C device class - for Linux using SMBUS
+    I2C device class - for Linux using FTDI Bridge
     
     @author Daniel Duke <daniel.duke@monash.edu>
     @copyright (c) 2018-2026 Monash University
@@ -28,46 +28,102 @@
 
 from ..device import device
 from ..device import pyLabDataLoggerIOError
-import datetime, time
+import datetime, time, os
 import numpy as np
 from termcolor import cprint
 
+try:
+    import serial
+    import i2cdriver
+    
+except ImportError:
+    cprint( "Please install pySerial and i2cdriver", 'red', attrs=['bold'])
+    raise
+
+""" Find the serial port of the bridge. 
+    This code varies depending on OS, so has some branching logic. """
+
+def locationMatch(serialport,params):
+    if ('port_numbers' in params) and ('bus' in params) and ('location' in dir(serialport)):
+        search_location = '%i-%s' % (params['bus'],'.'.join(['%i'% nn for nn in params['port_numbers']]))
+        if search_location == serialport.location: return True
+        elif ((':' not in search_location) and (':' in serialport.location)): # if '2-1' doesn't match '2-1:1.0' for example.
+            if search_location in serialport.location: return True
+        else:        
+            return False
+    else:
+        # If the feature is unsupported, assume first device is the real one! We can't check.
+        return True
+    
+def findBridgeSerialPort(params):
+    from serial.tools import list_ports
+    for serialport in list_ports.comports():
+                
+        # Not all versions of pyserial have the list_ports_common module!		
+        if 'list_ports_common' in dir(serial.tools):
+            objtype=serial.tools.list_ports_common.ListPortInfo
+        else:
+            objtype=None
+
+        # if serialport returns a ListPortInfo object
+        if objtype is not None and isinstance(serialport,objtype):
+
+            thevid = serialport.vid
+            thepid = serialport.pid
+            if thevid==params['vid'] and thepid==params['pid'] and locationMatch(serialport,params):
+                params['tty']=serialport.device
+                port=serialport.device
+
+        # if the returned device is a list, tuple or dictionary
+        elif len(serialport)>1:
+
+            # Some versions return a dictionary, some return a tuple with the VID:PID in the last string.
+            if 'VID:PID' in serialport[-1]: # tuple or list
+                thename = serialport[0]
+                # Sometimes serialport[-1] will contain "USB VID:PID=0x0000:0x0000" and
+                # sometimes extra data will follow after, i.e. "USB VID:PID=1234:5678 SERIAL=90ab".
+                vididx = serialport[-1].upper().index('PID')
+                if vididx <= 0: raise IndexError("Can't interpret USB VID:PID information!")
+                vidpid = serialport[-1][vididx+4:vididx+13] # take fixed set of chars after 'PID='
+                thevid,thepid = [ int(val,16) for val in vidpid.split(':')]
+                if thevid==params['vid'] and thepid==params['pid'] and locationMatch(serialport,params):
+
+                    if thename is not None:
+                        port = thename # Linux
+                    else:
+                        port = serialport.device # MacOS
+                    if not tty_prefix in port: port = tty_prefix + port
+                    params['tty']=port
+
+            elif 'vid' in dir(serialport): # dictionary
+                if serialport.vid==params['vid'] and serialport.pid==params['pid'] and locationMatch(serialport,params):
+                    # Vid/Pid matching
+                    if not quiet: print( '\t'+str(serialport.hwid)+' '+str(serialport.name))
+                    if serialport.name is not None:
+                        port = serialport.name # Linux
+                    else:
+                        port = serialport.device # MacOS
+                    if not tty_prefix in port: port = tty_prefix + port
+                    params['tty']=port
+
+        # List or dict with only one entry.
+        elif len(list_ports.comports())==1: # only one found, use as default
+            port = serialport[0]
+            if not tty_prefix in port: port = tty_prefix + port
+            params['tty']=port
+
+        if 'tty' in params:
+            if os.path.exists(params['tty']): break
+
+    return params 
+
+
 """ Scan for available i2c addresses that may contain
     devices we can talk to. """
-def scan_for_devices(bus=1):
-    try:
-        import smbus
-        bus = smbus.SMBus(bus) # 1 indicates /dev/i2c-1
-    except ImportError:
-        cprint( "Error, smbus module could not be loaded", 'red', attrs=['bold'])
-        return
-    
-    devices=[]
-    for device in range(128):
-       try:
-           bus.write_byte(device,device)
-           get_ack=bus.read_byte(device)
-           #print(hex(device),hex(get_ack))
-           devices.append(device)
-       except OSError:
-           continue
-    return devices
+def scan_for_devices(port="/dev/ttyUSB0"):
+    i2c = i2cdriver.I2CDriver(port)
+    return i2c.scan(silent=True)
 
-""" Load devices based on a-priori knowledge of what addresses on the bus
-    correspond to what supported hardware. This won't work for devices that
-    share addresses.
-    
-    Supported devices:
-        Adafruit ads1x15 ADCs
-        Adafriut BMP085 and BMP150 pressure sensors
-        MCP3424 18-Bit ADC-4 Channel with Programmable Gain Amplifier
-        DS3231 real-time clock
-        Gravity SEN0322 Oxygen sensor
-
-    Future support for:
-        CCS811 Air quality sensor
-
-    """
     
 # Devices that can be logged.
 i2c_input_device_table = [
@@ -115,16 +171,13 @@ i2c_output_device_table = [
         
 ]
     
-# The default i2c bus is 1, which is the external bus on a Raspberry Pi.
-# On a desktop PC, this may not be correct - your motherboard may be using bus 1 for CPU temperatures and fan speeds, etc.
-# Use the `i2cdetect' tool in Linux to determine the correct bus number.
-#
-# You can use the addresses keyword to specify an i2c address to force-load
-def load_i2c_devices(addresses=None,bus=1,**kwargs):
+
+def load_i2c_devices(addresses=None,bridgeConfig={},**kwargs):
     if 'quiet' in kwargs: quiet=kwargs['quiet']
     else: quiet=False
-
-    if addresses is None: addresses=scan_for_devices(bus)
+    
+    bus=None
+    if addresses is None: addresses=scan_for_devices(kwargs['tty'])
     device_list=[]
     
     for a in addresses:
@@ -139,7 +192,7 @@ def load_i2c_devices(addresses=None,bus=1,**kwargs):
         
         if len(matches)>1:
             # Handle multiple matches (addresses are often overlappng between devices)
-            print( "\nMultiple IIC devices share the address %s. Please select which driver to use on bus %i:" % (hex(a),bus))
+            print( "\nMultiple I2C devices share the address %s. Please select which driver to use:" % (hex(a)))
             print( "0) None (don't use this device)")
             n=1; choose_n=-1
             for d in matches:
@@ -159,59 +212,59 @@ def load_i2c_devices(addresses=None,bus=1,**kwargs):
             continue
 
         if not quiet:
-            if len(device_list)==0: cprint("IIC: Found input devices:",'cyan')
+            if len(device_list)==0: cprint("I2C: Found input devices:",'cyan')
             print('\t',hex(a),matches)
 
         if matches[0]['driver']=='pcf8591':
            from pyLabDataLogger.device.i2c import pcf8591Device
-           device_list.append(pcf8591Device.pcf8591Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+           device_list.append(pcf8591Device.pcf8591Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
        
         elif matches[0]['driver']=='max30105':
            from pyLabDataLogger.device.i2c import max30105Device
-           device_list.append(max30105Device.max30105Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+           device_list.append(max30105Device.max30105Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
 
         elif matches[0]['driver']=='tsl2591':
            from pyLabDataLogger.device.i2c import tsl2591Device
-           device_list.append(tsl2591Device.tsl2591Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+           device_list.append(tsl2591Device.tsl2591Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
 
         elif matches[0]['driver']=='m32jm':
             from pyLabDataLogger.device.i2c import m32jmDevice
-            device_list.append(m32jmDevice.m32jmDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+            device_list.append(m32jmDevice.m32jmDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
 
         elif matches[0]['driver']=='ccs811':
            from pyLabDataLogger.device.i2c import ccs811Device
-           device_list.append(ccs811Device.ccs811Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+           device_list.append(ccs811Device.ccs811Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
 
         elif matches[0]['driver']=='mcp3424':
             from pyLabDataLogger.device.i2c import mcp3424Device
-            device_list.append(mcp3424Device.mcp3424Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+            device_list.append(mcp3424Device.mcp3424Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
 
         elif matches[0]['driver']=='ads1x15':
             from pyLabDataLogger.device.i2c import ads1x15Device
-            device_list.append(ads1x15Device.ads1x15Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+            device_list.append(ads1x15Device.ads1x15Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
         
         elif matches[0]['driver']=='bmp':
             from pyLabDataLogger.device.i2c import bmpDevice
-            device_list.append(bmpDevice.bmpDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+            device_list.append(bmpDevice.bmpDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
         
         elif matches[0]['driver']=='dfoxy':
             from pyLabDataLogger.device.i2c import dfoxyDevice
-            device_list.append(dfoxyDevice.dfoxyDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+            device_list.append(dfoxyDevice.dfoxyDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
 
         elif matches[0]['driver']=='ahtx0':
             from pyLabDataLogger.device.i2c import ahtx0Device
-            device_list.append(ahtx0Device.ahtx0Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+            device_list.append(ahtx0Device.ahtx0Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
 
         elif matches[0]['driver']=='h3lis331dl':
             from pyLabDataLogger.device.i2c import h3lis331dlDevice
-            device_list.append(h3lis331dlDevice.h3lis331dlDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+            device_list.append(h3lis331dlDevice.h3lis331dlDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
 
         elif matches[0]['driver']=='mpr121':
             from pyLabDataLogger.device.i2c import mpr121Device
-            device_list.append(mpr121Device.mpr121Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+            device_list.append(mpr121Device.mpr121Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
 
         elif matches[0]['driver']=='bno055': # The purpose of having this here is to ensure that a BNO055 isn't detected as something else by mistake.
-            cprint("IIC: BNO055 not currently supported as it requires clock-stretching",'yellow')
+            cprint("I2C: BNO055 not currently supported as it requires clock-stretching",'yellow')
 
         else:
             raise RuntimeError("Unknown device: %s" % str(matches[0]))
@@ -228,69 +281,3 @@ def load_i2c_devices(addresses=None,bus=1,**kwargs):
 
 
 
-########################################################################################################################
-class i2cDevice(device):
-    """ Class providing support for I2C devices. This class should not be used directly, it provides
-        common functions for specific i2c devices. """
-
-    def __init__(self,params={},bus=1,quiet=True,**kwargs):
-        self.config = {} # user-variable configuration parameters go here (ie scale, offset, eng. units)
-        self.params = params # fixed configuration paramaters go here (ie USB PID & VID, raw device units)
-        self.driverConnected = False # Goes to True when scan method succeeds
-        self.name = "untitled I2C device"
-        self.lastValue = None # Last known value (for logging)
-        self.lastValueTimestamp = None # Time when last value was obtained
-        
-        # Default I2C bus parameters.
-        # The default i2c bus is 1, which is the external bus on a Raspberry Pi.
-        # On a desktop PC, this may not be correct - your motherboard may be using bus 1 for CPU temperatures and fan speeds, etc.
-        # Use the `i2cdetect' tool in Linux to determine the correct bus number.
-        if not 'bus' in params.keys(): params['bus']=bus
-        
-        # apply kwargs to params
-        for k in ['differential','gain']:
-           if k in kwargs: self.params[k]=kwargs[k]
-        # apply kwargs to config
-        for k in ['channel_names']:
-           if k in kwargs: self.config[k]=kwargs[k]
-        if 'quiet' in kwargs: self.quiet = kwargs['quiet']
-        else: self.quiet=quiet
-        
-        if params is {}: return
-        self.scan(quiet=self.quiet)
-        return
-
-    # Detect if a device is present on bus
-    def scan(self,override_params=None,quiet=False):
-        if override_params is not None: self.params = override_params
-        
-        if not 'address' in self.params.keys():
-            cprint( "Error, no I2C address specified", 'red', attrs=['bold'])
-            return
-        
-        try:
-            if self.params['bus'] is None:  # BRIDGE
-                import i2cdriver 
-                bus =  i2cdriver.I2CDriver(self.params['tty'])
-                self.bridgeDev = bus
-                self.bridge=True
-            else: # DIRECT SMBUS
-                import smbus
-                bus = smbus.SMBus(self.params['bus'])
-                self.bridge=False
-            
-            try:
-                if self.bridge: bus.regrd(self.params['address'],0,1)
-                else: bus.read_byte(self.params['address'])
-            except:
-                cprint( "Error, no I2C devices found on bus %i address %s" % (self.params['bus'],self.params['address']), 'red', attrs=['bold'])
-                raise
-                return
-
-            self.activate()
-            self.query()
-            if not quiet: self.pprint()
-            
-        except ImportError:
-            cprint( "Error, smbus/i2cdriver module could not be loaded", 'red', attrs=['bold'])
-            return

@@ -5,10 +5,10 @@
     (serial TC08 devices are supported by serialDevice.py)
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2025 D.Duke
+    @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
-    @version 1.4.0
-    @date 08/06/25
+    @version 1.5.0
+    @date 13/06/25
 
     Multiphase Flow Laboratory
     Monash University, Australia

@@ -4,10 +4,10 @@
     Generic device class - a template for making new devices
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2025 D.Duke
+    @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
-    @version 1.3.4
-    @date 10/01/2024
+    @version 1.5.0
+    @date 13/06/25
         __   ____________    ___    ______
        / /  /_  ____ __  \  /   |  / ____/
       / /    / /   / /_/ / / /| | / /

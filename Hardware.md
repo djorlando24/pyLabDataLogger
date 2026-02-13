@@ -144,7 +144,11 @@ To get correct resolution detected for some v4l2 devices, I had to run v4l2-ctl 
 
 # I2C / IIC devices
 
-Please note that hardware I2C support has only been tested on **Rasberry Pi** so far. I cannot guarantee proper smbus support on other systems.
+I2C support is possible by two means:
+* SMBUS on Raspberry or other similar single board computer that has direct GPIO lines.
+* Via I2Cmini bridge (i.e. FTDI bridge).
+
+I2Cmini bridge support for specific devices is a work in progress.
 
 Adafruit devices use libraries from Adafruit which can be obtained mostly via pip (ie `sudo pip3 install adafruit_foo`). For those that can't use pip you can get a working module via github:
 - MPR121 - https://github.com/adafruit/Adafruit_CircuitPython_MPR121
