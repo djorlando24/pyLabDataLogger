@@ -56,8 +56,8 @@ class ahtx0Device(i2cDevice):
         if not 'channel_names' in self.config:
             self.config['channel_names']=['Temperature','Humidity']
 
-        self.params['raw_units']=['degC','%']
-        self.config['eng_units']=['degC','%']
+        self.params['raw_units']=['degC','%RH']
+        self.config['eng_units']=['degC','%RH']
         self.config['scale']=np.ones(self.params['n_channels'],)
         self.config['offset']=np.zeros(self.params['n_channels'],)
         if ('untitled' in self.name.lower()) or (self.name==''):

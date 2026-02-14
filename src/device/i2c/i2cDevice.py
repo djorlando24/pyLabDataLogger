@@ -86,6 +86,7 @@ i2c_input_device_table = [
     {'address':0x48, 'driver':'pcf8591', 'name':'PCF8591 8-bit ADC'},\
     {'address':(0x38,0x39), 'driver':'ahtx0', 'name':'AHTx0 temperature and humidity sensor'},\
     {'address':0x5a, 'driver':'mpr121', 'name':'MPR121 capacitative touch sensor'},\
+    {'address':0x69, 'driver':'sen5x', 'name':'Sensirion SEN5x air quality sensor'},\
 
     # Devices that have multiple addresses
     {'address':(0x18,0x19), 'driver':'h3lis331dl', 'name':'H3LIS331DL accelerometer'},\
@@ -209,8 +210,12 @@ def load_i2c_devices(addresses=None,bus=1,**kwargs):
 
         elif matches[0]['driver']=='ms5637':
             from pyLabDataLogger.device.i2c import ms5637Device
-            device_list.append(ms5637Device.ms5637Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
+            device_list.append(ms5637Device.ms5637Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
             
+        elif matches[0]['driver']=='sen5x':
+            from pyLabDataLogger.device.i2c import sen5xDevice
+            device_list.append(sen5xDevice.sen5xDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+       
         else:
             raise RuntimeError("Unknown device: %s" % str(matches[0]))
 

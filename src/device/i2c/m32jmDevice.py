@@ -53,7 +53,7 @@ class m32jmDevice(i2cDevice):
         assert self.params['address']
         if not self.bridge: assert self.params['bus']
         else: assert self.bridgeDev
-        if 'name' in self.params: self.name = self.params['name']+' %s:%s' % (self.params['bus'],hex(self.params['address']))
+        #if 'name' in self.params: self.name = self.params['name']+' %s:%s' % (self.params['bus'],hex(self.params['address']))
         if not 'driver' in self.params.keys(): self.params['driver']=None
 
         self.params['n_channels']=3
