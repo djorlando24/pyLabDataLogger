@@ -145,7 +145,7 @@ i2c_input_device_table = [
 
     # Devices that have multiple addresses
     {'address':(0x18,0x19), 'driver':'h3lis331dl', 'name':'H3LIS331DL accelerometer'},\
-    {'address':(0x76,0x77), 'driver':'ms5611', 'name':'MS5611 barometric pressure sensor'}, #0x76-0x77 \ 
+    {'address':(0x76,0x77), 'driver':'ms5637', 'name':'MS5637 barometric pressure sensor'}, #0x76-0x77 \ 
     {'address':0x40, 'driver':'ina226', 'name':'INA226 current sensor'}, #0x40-4f \
     {'address':0x40, 'driver':'ina219', 'name':'INA219 current sensor'}, #0x40,41,44,45 \
     {'address':0x60, 'driver':'mcp9600', 'name':'MCP9600 thermocouple'}, #0x60-67 \
@@ -263,9 +263,12 @@ def load_i2c_devices(addresses=None,bridgeConfig={},**kwargs):
             from pyLabDataLogger.device.i2c import mpr121Device
             device_list.append(mpr121Device.mpr121Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
 
-        elif matches[0]['driver']=='bno055': # The purpose of having this here is to ensure that a BNO055 isn't detected as something else by mistake.
-            cprint("I2C: BNO055 not currently supported as it requires clock-stretching",'yellow')
+        elif matches[0]['driver']=='ms5637':
+            from pyLabDataLogger.device.i2c import ms5637Device
+            device_list.append(ms5637Device.ms5637Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
 
+       
+            
         else:
             raise RuntimeError("Unknown device: %s" % str(matches[0]))
 

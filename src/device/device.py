@@ -132,6 +132,8 @@ class device:
                       ('offset' in self.config) and ('eng_units' in self.config) and\
                       not (np.all(np.array(self.config['scale'])==1.) and  np.all(np.array(self.config['offset'])==0.))
         
+        didNewline=False
+        
         # Print scalar variables with units where present. ################################################
         if (not isinstance( self.lastValue[0], list)) and (not isinstance(self.lastValue[0], np.ndarray)):
             if 'raw_units' in self.params:
@@ -161,7 +163,9 @@ class device:
                     if (((n%4)==3) & (n>0)): sys.stdout.write('\n'+lead) 
                     elif (n<self.params['n_channels']-1): sys.stdout.write(', ')
 
-                if self.params['n_channels']<=2: sys.stdout.write('\n')
+                if self.params['n_channels']<=2: 
+                    didNewline=True
+                    sys.stdout.write('\n')
                 
             else: # I have no idea what is in self.lastValue, print verbatim!
                 print(lead+'Raw values:',self.lastValue)
@@ -169,7 +173,8 @@ class device:
 
             # Only show the scaled units if they exist.
             if show_scaled:
-                sys.stdout.write('\n'+lead+'Scaled: ')
+                if not didNewline: sys.stdout.write('\n')
+                sys.stdout.write(lead+'Scaled: ')
                 for n in range(self.params['n_channels']):
                     sys.stdout.write(u'%s = %f %s' % (self.truncateName(self.config['channel_names'][n]), self.lastScaled[n],self.config['eng_units'][n]))
                     if (n<self.params['n_channels']-1): sys.stdout.write(', ')

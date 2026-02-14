@@ -69,10 +69,10 @@ class m32jmDevice(i2cDevice):
         if not 'T_MIN_COUNTS' in self.params: self.params['T_MIN_COUNTS']=512
         if not 'T_MAX_COUNTS' in self.params: self.params['T_MAX_COUNTS']=1075
 
-        self.params['raw_units']=['PSIG','degC','']
-        self.config['eng_units']=['PSIG','degC','']
-        self.config['scale']=np.ones(self.params['n_channels'],)
-        self.config['offset']=np.zeros(self.params['n_channels'],)
+        self.params['raw_units']=['psig','degC','']
+        self.config['eng_units']=['kPa g','degC','']
+        self.config['scale']=[6.89476,1.,1]
+        self.config['offset']=[0.,0.,0]
         if ('untitled' in self.name.lower()) or (self.name==''):
             self.name = 'TE M3200 Series pressure transducer I2C %i:%s' % (self.params['bus'],self.params['address'])
 
