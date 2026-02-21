@@ -49,7 +49,7 @@ class mpr121Device(i2cDevice):
     def activate(self):
         assert self.params['address']
         assert self.params['bus']
-        if 'name' in self.params: self.name = self.params['name']+' %i:%s' % (self.params['bus'],hex(self.params['address']))
+        if 'name' in self.params: self.name = self.params['name']+' 0x%s' % (hex(self.params['address']))
         if not 'driver' in self.params.keys(): self.params['driver']=None
 
         if not 'channel_names' in self.config:
@@ -61,7 +61,7 @@ class mpr121Device(i2cDevice):
         self.config['scale']=np.ones(self.params['n_channels'],)
         self.config['offset']=np.zeros(self.params['n_channels'],)
         if ('untitled' in self.name.lower()) or (self.name==''):
-            self.name = 'MPR121 capacitative touch sensor I2C %i:%s' % (self.params['bus'],self.params['address'])
+            self.name = 'MPR121 capacitative touch sensor I2C 0x%s' % (self.params['address'])
 
         self.i2c = busio.I2C(board.SCL, board.SDA)
         self.dev=adafruit_mpr121.MPR121(self.i2c)

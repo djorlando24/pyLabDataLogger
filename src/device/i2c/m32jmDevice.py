@@ -53,7 +53,7 @@ class m32jmDevice(i2cDevice):
         assert self.params['address']
         if not self.bridge: assert self.params['bus']
         else: assert self.bridgeDev
-        #if 'name' in self.params: self.name = self.params['name']+' %s:%s' % (self.params['bus'],hex(self.params['address']))
+        if 'name' in self.params: self.name = self.params['name']+' 0x%x' % (self.params['address'])
         if not 'driver' in self.params.keys(): self.params['driver']=None
 
         self.params['n_channels']=3
@@ -74,7 +74,7 @@ class m32jmDevice(i2cDevice):
         self.config['scale']=[6.89476,1.,1]
         self.config['offset']=[0.,0.,0]
         if ('untitled' in self.name.lower()) or (self.name==''):
-            self.name = 'TE M3200 Series pressure transducer I2C %i:%s' % (self.params['bus'],self.params['address'])
+            self.name = 'TE M3200 Series pressure transducer I2C 0x%x' % (self.params['address'])
 
          
         return

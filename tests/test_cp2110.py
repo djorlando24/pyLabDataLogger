@@ -1,101 +1,55 @@
 #!/usr/bin/env python3
-# -*- coding: UTF-8 -*-
-"""
-    CP2110 HID USB UART BRIDGE TEST
-    
-    @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2026 Monash University
-    @license GPL-3.0+
-    @version 1.5.0
-    @date 13/06/25
 
-    Multiphase Flow Laboratory
-    Monash University, Australia
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-    Version history:
-        DD/MM/YYYY - First version.
-"""
-
-import numpy as np
+'''
 import cp2110
 
-if __name__ == '__main__':
+usb_info = cp2110.enumerate()
 
-    # This will raise an exception if a device is not found.
-    try:
-        d = cp2110.CP2110Device(vid=0x10c4, pid=0xea80)
-    except:
-        raise IOError("Device not found")
-
-    # You can also find a device by path.
-    #cp2110.CP2110Device(path='/dev/hidraw0')
-
-    #usb_info = cp2110.enumerate(vid=0x10c4, pid=0xea80)
-    #if usb_info:
-    #    print(usb_info.as_dict())
+# Initialize device
+try:
+    d = cp2110.CP2110Device(path=b'/dev/hidraw4')
     
+    # Configure UART
+    d.set_uart_config(cp2110.UARTConfig(
+        baud=19200,
+        parity=cp2110.PARITY.ODD,
+        flow_control=cp2110.FLOW_CONTROL.DISABLED,
+        data_bits=cp2110.DATA_BITS.SEVEN,
+        stop_bits=cp2110.STOP_BITS.SHORT))
     
-    #19200 7O1 expected for UNI-T D02 type cables
-    baud=115200 #19200
-    parity=cp2110.PARITY.ODD
-    data_bits=cp2110.DATA_BITS.SEVEN
+    #print(d.is_uart_enabled())
+    d.enable_uart()
     
-    for stop_bits in [cp2110.STOP_BITS.SHORT, cp2110.STOP_BITS.LONG ]:
-      for flow_control in [cp2110.FLOW_CONTROL.DISABLED,cp2110.FLOW_CONTROL.ENABLED]:
-    #    for parity in [cp2110.PARITY.EVEN, cp2110.PARITY.MARK, cp2110.PARITY.ODD, cp2110.PARITY.SPACE ]:
-    #      for data_bits in [ cp2110.DATA_BITS.EIGHT, cp2110.DATA_BITS.FIVE,\
-    #                         cp2110.DATA_BITS.SEVEN, cp2110.DATA_BITS.SIX]:
-    #        for baud in np.arange(1200,256001,1200):
+    # Write data
+    #d.write(b'\x00')
+    # Read data
+    data = d.read(14)
+    print(repr(data))
+except Exception as e:
+    raise
+    print(f"Error: {e}")
 
-                # The UART settings are dictated by the device that embeds the CP2110.  It
-                # may be configured correctly by default, or you may need to set manually.
-                d.set_uart_config(cp2110.UARTConfig(
-                    baud=int(baud),
-                    parity=parity,
-                    flow_control=flow_control,
-                    data_bits=data_bits,
-                    stop_bits=stop_bits))
-                    
-                # Fetch the current uart configuration.  This is the UART connection from the
-                # CP2110 to the microcontroller (or whatever) it's wired up to.
-                c = d.get_uart_config()
-                
-                # And you can clear any pending data in the on-chip I/O buffers.
-                d.purge_fifos()  # The default is cp2110.FIFO.BOTH
-                d.purge_fifos(cp2110.FIFO.TX)
-                d.purge_fifos(cp2110.FIFO.RX)
 
-                # The UART in your device may need to be explicitly enabled, particularly if
-                # you've already explicitly disabled it as in this example.
-                #if not d.is_uart_enabled(): d.enable_uart()
-                d.enable_uart()
-                
-                # The write method accepts byte strings or arrays of ints.
-                d.write(b'\x06\xab\xcd\x03\x5e\x01\xd9')
-                #d.write([0x06,0xab,0xcd,0x03,0x5e,0x01,0xd9])
+'''
+import serial, hid
 
-                # The default read size will return 63 bytes (at most), which is the maximum
-                # supported by this chip.  Reads do not block.
-                rv = d.read()
-                print(c.__dict__)
-                if len(rv) > 0:
-                    print("\t",repr(rv))
-                    print("")
-                    d.disable_uart()
-                    exit(1)
-                
-                # If you ever need to disable the UART, you can.
-                #d.disable_uart()
+hid_devs=hid.enumerate()
+for hd in hid_devs:
+    if 'CP2110' in hd['product_string'].upper():
+        hid_path=hd['path']
+        for key in hd.keys(): print('\t%s: %s' % (key,hd[key]))
+        break
+    
+port="cp2110://"+hid_path.decode('ascii')
+
+
+with serial.serial_for_url(port,baudrate=19200,bytesize=serial.SEVENBITS,parity=serial.PARITY_ODD,\
+                           stopbits=serial.STOPBITS_ONE,timeout=2,rtscts=False,dsrdtr=False,xonxoff=False) as s:
+    for n in range(4):
+        s._dtr_state=bool(n%2)
+        s._rts_state=bool(n/2)
+        s.write(b'\x00')
+        print(s._dtr_state, s._rts_state)
+        data=s.read(14)
+        print(len(data),repr(data))

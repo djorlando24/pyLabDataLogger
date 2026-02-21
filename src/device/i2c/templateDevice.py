@@ -33,9 +33,10 @@ import numpy as np
 from termcolor import cprint
 
 try:
-    import Lib
+    import smbus
+    import i2cdevice
 except ImportError:
-    cprint("Please install Lib.",'red')
+    cprint("Please install smbus, i2cdevice.",'red')
     
 ########################################################################################################################
 class _Device(i2cDevice):
@@ -48,8 +49,12 @@ class _Device(i2cDevice):
     # Establish connection to device
     def activate(self):
         assert self.params['address']
+        if not self.bridge: assert self.params['bus']
+        else: assert self.bridgeDev
+            
+        assert self.params['address']
         assert self.params['bus']
-        if 'name' in self.params: self.name = self.params['name']+' %i:%s' % (self.params['bus'],hex(self.params['address']))
+        if 'name' in self.params: self.name = self.params['name']+' 0x%s' % (hex(self.params['address']))
         if not 'driver' in self.params.keys(): self.params['driver']=None
 
         if not 'channel_names' in self.config:
@@ -62,9 +67,7 @@ class _Device(i2cDevice):
         self.config['scale']=np.ones(self.params['n_channels'],)
         self.config['offset']=np.zeros(self.params['n_channels'],)
         if ('untitled' in self.name.lower()) or (self.name==''):
-            self.name = '? I2C %i:%s' % (self.params['bus'],self.params['address'])
-
-        self.dev=None
+            self.name = '? I2C 0x:%s' % (self.params['address'])
 
         return
 

@@ -74,4 +74,4 @@ if __name__ == '__main__':
     except: # all other errors
         raise
 
-    cprint("Average loop time = %0.3f sec (%i loops)" % (running_average, loop_counter), 'cyan', attrs=['bold'])    
+    cprint("Average loop time = %0.3f sec (%i loops, %f Hz max possible)" % (running_average, loop_counter, 1.0/running_average), 'cyan', attrs=['bold'])    

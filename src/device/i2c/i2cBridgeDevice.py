@@ -145,6 +145,7 @@ i2c_input_device_table = [
     {'address':0x69, 'driver':'sen5x', 'name':'Sensirion SEN5x air quality sensor'},\
     
     # Devices that have multiple addresses
+    {'address':0x16, 'driver':'mpx5700', 'name':'MPX5700 Pressure sensor'},\
     {'address':(0x18,0x19), 'driver':'h3lis331dl', 'name':'H3LIS331DL accelerometer'},\
     {'address':(0x76,0x77), 'driver':'ms5637', 'name':'MS5637 barometric pressure sensor'}, #0x76-0x77 \ 
     {'address':0x40, 'driver':'ina226', 'name':'INA226 current sensor'}, #0x40-4f \
@@ -272,6 +273,10 @@ def load_i2c_devices(addresses=None,bridgeConfig={},**kwargs):
             from pyLabDataLogger.device.i2c import sen5xDevice
             device_list.append(sen5xDevice.sen5xDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
        
+        elif matches[0]['driver']=='mpx5700':
+            from pyLabDataLogger.device.i2c import mpx5700Device
+            device_list.append(mpx5700Device.mpx5700Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver'], 'tty':bridgeConfig['tty']},**kwargs))
+        
             
         else:
             raise RuntimeError("Unknown device: %s" % str(matches[0]))

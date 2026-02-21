@@ -31,6 +31,8 @@ from pyLabDataLogger.logger import globalFunctions
 import time
 from termcolor import cprint
 
+INTERVAL_SECONDS = 0  # set to zero to go as fast as possible
+
 if __name__ == '__main__':
 
     globalFunctions.banner()
@@ -46,17 +48,30 @@ if __name__ == '__main__':
     if len(usbDevicesFound) == 0: exit()
 
     devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
-   
+
+    loop_counter = 0
+    running_average = 0.
+    
     try:
         while True:
+            t0 = time.time()
             for d in devices:
                 cprint( d.name, 'magenta', attrs=['bold'] )
                 d.query()
                 d.pprint()
-            time.sleep(.01)
+            #time.sleep(.01)
+            dt = time.time()-t0
+            running_average = ((running_average*float(loop_counter)) + dt)/(float(loop_counter)+1)
+            loop_counter += 1
+            
+            if ((dt<INTERVAL_SECONDS) and (loop_counter>0)): time.sleep(INTERVAL_SECONDS-dt)
+            cprint("Polling time = %0.3f sec" % dt, 'cyan')
+            
     except KeyboardInterrupt:
         cprint("Stopped.",'red',attrs=['bold'])
         for d in devices: d.deactivate()
 
     except: # all other errors
         raise
+
+    cprint("Average loop time = %0.3f sec (%i loops, %f Hz max possible)" % (running_average, loop_counter, 1.0/running_average), 'cyan', attrs=['bold'])  

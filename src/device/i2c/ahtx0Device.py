@@ -49,7 +49,7 @@ class ahtx0Device(i2cDevice):
     def activate(self):
         assert self.params['address']
         assert self.params['bus']
-        if 'name' in self.params: self.name = self.params['name']+' %i:%s' % (self.params['bus'],hex(self.params['address']))
+        if 'name' in self.params: self.name = self.params['name']+' I2C 0x%x' % (self.params['address'])
         if not 'driver' in self.params.keys(): self.params['driver']=None
 
         self.params['n_channels']=2
@@ -61,7 +61,7 @@ class ahtx0Device(i2cDevice):
         self.config['scale']=np.ones(self.params['n_channels'],)
         self.config['offset']=np.zeros(self.params['n_channels'],)
         if ('untitled' in self.name.lower()) or (self.name==''):
-            self.name = '%s temperature sensor I2C %i:%s' % (self.params['driver'],self.params['bus'],self.params['address'])
+            self.name = '%s temperature sensor I2C 0x%x' % (self.params['driver'],self.params['address'])
 
         self.i2c = busio.I2C(board.SCL, board.SDA)
         self.dev = adafruit_ahtx0.AHTx0(self.i2c)
