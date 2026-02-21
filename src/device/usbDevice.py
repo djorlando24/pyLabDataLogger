@@ -79,7 +79,7 @@ usb_device_table = [
     {'vid':0x0f7e, 'pid':0x9002, 'driver':'fluke/568', 'name':'Fluke 568 IR Thermometer'},
     {'vid':0x2a72, 'pid':0x0400, 'driver':'omegaSmartProbe', 'name':'Omega Smart Probe (Autodetect)'},
     {'vid':0x1a86, 'pid':0xe008, 'driver':'uni-t/ut32x', 'name':'UT32x or 72-771x Thermocouple Reader'},
-    {'vid':0x10c4, 'pid':0xea80, 'driver':'multicomp/mp730679', 'name':'Multicomp Pro MP730679 Multimeter'},
+    {'vid':0x10c4, 'pid':0xea80, 'driver':'mp730679', 'name':'Multicomp Pro MP730679 / Uni-T UT16e+ Multimeter'},
     {'vid':0x0483, 'pid':0xa0f7, 'driver':'serial/radwag-r', 'name':'Radwag R series balance'},
     
     # Multiple devices with same VID and PID are seperated by the serial number as a unique descriptor.
@@ -350,6 +350,9 @@ def load_usb_devices(devs=None,**kwargs):
         elif driverClass == 'bno055':
             from pyLabDataLogger.device import bno055Device
             device_list.append(bno055Device.bno055Device(params=d,**kwargs))
+        elif driverClass == 'mp730679':
+            from pyLabDataLogger.device import mp730679Device
+            device_list.append(mp730679Device.mp730679Device(params=d,**kwargs))
         elif driverClass == 'i2c':
             from pyLabDataLogger.device.i2c import i2cBridgeDevice
             d=i2cBridgeDevice.findBridgeSerialPort(d)

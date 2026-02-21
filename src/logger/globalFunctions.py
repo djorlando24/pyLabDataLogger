@@ -32,10 +32,10 @@ def banner():
     
     stringData = ['  pyLabDataLogger - Easy data logging from USB, Serial and Network devices      ',\
                   '  @author Daniel Duke <daniel.duke@monash.edu>                                  ',\
-                  '  @copyright (c) 2018-2025 D. Duke                                              ',\
+                  '  @copyright (c) 2018-2026 D. Duke                                              ',\
                   '  @license GPL-3.0+                                                             ',\
-                  '  @version 1.4.0                                                                ',\
-                  '  @date 08/06/2025                                                              ',\
+                  '  @version 1.5.0                                                                ',\
+                  '  @date 21/02/2026                                                              ',\
                   '                                                                                ',\
                   '  Multiphase Flow Laboratory                                                    ',\
                   '  Monash University, Australia                                                  ']

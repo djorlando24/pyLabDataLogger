@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
     if len(devices) == 0: exit()
     
-    SAMPLE_PERIOD=0.25 # will attempt to hit this, it is just a *minimum*.
+    SAMPLE_PERIOD=0.1 # will attempt to hit this, it is just a *minimum*.
     
     # Setup figure
     fig = plt.figure()

@@ -65,7 +65,7 @@ if __name__ == '__main__':
             loop_counter += 1
             
             if ((dt<INTERVAL_SECONDS) and (loop_counter>0)): time.sleep(INTERVAL_SECONDS-dt)
-            cprint("Polling time = %0.3f sec" % dt, 'cyan')
+            if len(devices)>0: cprint("Polling time = %0.3f sec" % dt, 'cyan')
             
     except KeyboardInterrupt:
         cprint("Stopped.",'red',attrs=['bold'])
