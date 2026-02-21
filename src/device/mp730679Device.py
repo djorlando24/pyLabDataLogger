@@ -72,11 +72,15 @@ class mp730679Device(device):
 
     # Establish connection to device (ie open serial port)
     def activate(self,quiet=False):
-        self.dev = UT61EPLUS()
-        self.driverConnected=True
-        # Make first query to get units, description, etc.
-        self.query(reset=True)
-        if not quiet: self.pprint()
+        try:
+            self.dev = UT61EPLUS()
+            self.driverConnected=True
+            # Make first query to get units, description, etc.
+            self.query(reset=True)
+            if not quiet: self.pprint()
+        except OSError:
+            cprint("HID USB device: You may need to run the program as root/administrator",'red', attrs=['bold'])
+            self.driverConnected=False
         return
 
     # Deactivate connection to device (close serial port)
@@ -108,12 +112,19 @@ class mp730679Device(device):
     # Handle query for values
     def query(self, reset=False):
         
-        measurement = self.dev.takeMeasurement()
-        
-        if not measurement:
+        try:
+            assert self.dev
+            measurement = self.dev.takeMeasurement()
+            if not measurement:
+                self.lastValue=[np.nan]*self.params['n_channels']
+                self.lastScaled = np.array(self.lastValue) * self.config['scale'] + self.config['offset']
+                return self.lastValue
+        except AttributeError:
+            cprint("MP730679 unable to connect.",'red')
             self.lastValue=[np.nan]*self.params['n_channels']
             self.lastScaled = np.array(self.lastValue) * self.config['scale'] + self.config['offset']
             return self.lastValue
+        
         
         # If first time or reset, get measurement units
         if not 'raw_units' in self.params.keys() or reset:
