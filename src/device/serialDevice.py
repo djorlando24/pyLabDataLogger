@@ -7,7 +7,7 @@
     @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
     @version 1.5.0
-    @date 13/06/25
+    @date 23/02/26
 
     Multiphase Flow Laboratory
     Monash University, Australia
@@ -54,6 +54,7 @@
         05/01/2024 - A5000 support
         10/01/2024 - Hameg support
         08/06/2025 - Chemyx support
+        23/02/2026 - CA100 support
         
 """
 
@@ -83,6 +84,7 @@ class serialDevice(device):
             'serial/alicat'            : Alicat Scientific M-series mass flow meter
             'serial/andg'              : AND GX-K and GF-K series precision balances
             'serial/bkp168'            : BK Precision 168xx series power supply
+            'serial/ca100'             : Yokogawa CA100 Calibrator
             'serial/cc8870'            : USB Current Clamp (E-Meter 8870 marking)
             'serial/center310'         : CENTER 310 Temperature and Humidity meter
             'serial/chemyx'            : Chemyx syringe pump
@@ -378,6 +380,8 @@ class serialDevice(device):
             if not 'timeout' in self.params.keys(): self.params['timeout']=0.25 # sec for a single byte read/write
         elif (self.subdriver=='chemyx'):
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=115200 # default 9600, I choose 115.2k
+        elif (self.subdriver=='ca100'):
+            if not 'rtscts' in self.params.keys(): self.params['rtscts']=True # 9600 8N1 default
             
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -777,12 +781,26 @@ class serialDevice(device):
             self.config['eng_units']=['C','F','C','F','']
             self.config['scale']=[1.,1.,1.,1.,1.]
             self.config['offset']=[0.,0.,0.,0.,0.]
-            self.params['n_channels']=5
+            self.params['n_channels']=len(self.config['channel_names'])
             self.serialQuery=['C','F','A','E']
             self.queryTerminator='\r\n'
             self.responseTerminator='\r'
             self.config['set_emissivity']=None
-
+        
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='ca100': # Statup config for Yokogawa CA100
+            self.name = "Yokogawa CA100"
+            self.config['channel_names']=['measure','measure_mode','measure_range','source','source_mode','source_range']
+            self.params['raw_units']=['','','','','','']
+            self.config['eng_units']=['','','','','',''] # units get updated when device polled
+            self.config['scale']=[1.,1.,1.,1.,1.,1.]
+            self.config['offset']=[0.,0.,0.,0.,0.,0.]
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.serialQuery=['CS?','CMF?','MR?','CD?','CSF?','CR?']
+            self.queryTerminator='\r\n'
+            self.responseTerminator='\n'
+            #self.serialCommsFunction=self.blockingRawSerialRequest
+        
         # ----------------------------------------------------------------------------------------
         elif subdriver=='omega-pt': # Statup config for Omega Platinum via USB with Omega protocol
             # See https://bl831.als.lbl.gov/~gmeigs/PDF/CN8_serial_comm.pdf for decoding the strings
@@ -1888,7 +1906,7 @@ class serialDevice(device):
                 return [humidity, temperature, time_min*60 + time_sec, hold, minmax]
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='omega-iseries':
+            elif subdriver=='omega-iseries':
                 """ Omega iSeries returns binary that doesn't always conform to ASCII standard.
                     The number of bits returned can also vary. Values from RAM are converted to
                     quasi-ascii format while values in EEPROM tend to be in a custom binary floating
@@ -1941,7 +1959,7 @@ class serialDevice(device):
                 return vals
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='sd700':
+            elif subdriver=='sd700':
                 vals = []
                 for i in range(len(rawData)):
 
@@ -1959,7 +1977,7 @@ class serialDevice(device):
                 return vals
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='alicat':
+            elif subdriver=='alicat':
                 valStrings= [ s for s in rawData[0].decode('utf-8').split(' ') if s!='' ]
                 if valStrings[0].upper() != self.params['ID'].upper():
                     raise pyLabDataLoggerIOError("Alicat Device ID mismatch - wrong serial port?")
@@ -1967,7 +1985,7 @@ class serialDevice(device):
                 return [ float(valStrings[1]), float(valStrings[2]), float(valStrings[3]), float(valStrings[4]), valStrings[5].strip() ]
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='esd508':
+            elif subdriver=='esd508':
                 # Data was already processed, just need to split it apart & add to previous encoder value.
                 
                 if np.isnan(self.lastValue[1]) or (self.lastValue[1] is None):
@@ -1978,7 +1996,7 @@ class serialDevice(device):
                 return [ starting_position + rawData[0], starting_position + rawData[0][-1] ]
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='mx5060':
+            elif subdriver=='mx5060':
                 if rawData[0] is None:
                     pri_val = np.nan
                 else:
@@ -2008,7 +2026,7 @@ class serialDevice(device):
                 return [ float(pri_val), float(sec_val) ]
             
             # ----------------------------------------------------------------------------------------
-            if subdriver=='r5000':
+            elif subdriver=='r5000':
                 s=rawData[0].strip()
                 start=s.index(b'\x02')+1
                 end=s.index(b'\x03')-1
@@ -2021,7 +2039,7 @@ class serialDevice(device):
                 return [ float(s[start:end].replace(b' ',b'')) ]
            
             # ----------------------------------------------------------------------------------------
-            if subdriver=='radwag-r':
+            elif subdriver=='radwag-r':
                 values=[]
                 for n in range(2):
                     if self.serialQuery[n].encode('ascii') in rawData[n]:
@@ -2036,7 +2054,7 @@ class serialDevice(device):
                 return values 
 
             # ----------------------------------------------------------------------------------------
-            if (self.driver==['k3hb','vlc']) or (self.driver==['k3hb','x']): 
+            elif (self.driver==['k3hb','vlc']) or (self.driver==['k3hb','x']): 
                 vals = []
                     
                 for r in rawData:
@@ -2052,7 +2070,7 @@ class serialDevice(device):
                 return vals
                 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='bkp168': 
+            elif subdriver=='bkp168': 
                 if len(rawData)<4: return [np.nan, np.nan, np.nan, np.nan]
 
                 if (len(rawData[0])<9) or (not b'OK' in rawData[1]): return [np.nan, np.nan, np.nan, np.nan]
@@ -2069,7 +2087,7 @@ class serialDevice(device):
                 return vals
             
             # ----------------------------------------------------------------------------------------
-            if subdriver=='cc8870':
+            elif subdriver=='cc8870':
                 s=rawData[0].strip()
                 if b'z>\x00' in s: s=s[s.index(b'z>\x00')+3:]
                 if b'A' in s: s=s.strip(b'A') # remove unit of amp, it never changes anyway 
@@ -2077,7 +2095,7 @@ class serialDevice(device):
 
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='andg':
+            elif subdriver=='andg':
                 if not b',' in rawData[0]: return [np.nan,np.nan]
                 state,reading=rawData[0].decode('ascii').strip().split(',')
                 units='?'
@@ -2095,7 +2113,7 @@ class serialDevice(device):
                 return [ np.float(value), state ]
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='fy3200s':
+            elif subdriver=='fy3200s':
                 return [ float(r.strip()) for r in rawData ]
             
             # ----------------------------------------------------------------------------------------
@@ -2105,7 +2123,7 @@ class serialDevice(device):
                 #return [ float(s.decode('ascii')) for s in rawData]
             
             # ----------------------------------------------------------------------------------------
-            if subdriver=='lc-adc-f103c8':
+            elif subdriver=='lc-adc-f103c8':
                 vals=[np.nan]*self.params['n_channels']
                 for r in rawData:
                     try:
@@ -2117,7 +2135,7 @@ class serialDevice(device):
                 return vals
                 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='chemyx':
+            elif subdriver=='chemyx':
                 vals=[np.nan]*self.params['n_channels']
                 for j in range(2):
                     if b'=' in rawData[j]:
@@ -2138,6 +2156,14 @@ class serialDevice(device):
                     vals[3]=float(s[4].replace('NC','nan'))
                     vals[4]=float(s[6].replace('NC','nan'))
                 return vals
+            
+            # ----------------------------------------------------------------------------------------
+            elif subdriver=='ca100':
+                
+                # Here get rawData for the mode and units, and put these into eng_units.
+                # Handle scaling of non-numerics correctly.
+                #raise NotImplementedError
+                return [ float(s.strip().decode('ascii')) for s in rawData]
             
             else:
                 # Default behaviour, assuming rawData has a string holding a scalar float for each variable

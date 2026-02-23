@@ -121,6 +121,7 @@ usb_device_table = [
     # machine then the user-interactive device selection stage can be skipped when starting the data logging.
     # Otherwise, a generic adapter in the list below will prompt the user to pick any of the devices below.
     # Changing the default PID/VID will require reinstallation of the module.
+    {'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'serial/ca100', 'name':'Yokogawa CA100 Calibrator'},
     {'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'serial/center310', 'name':'CENTER 310 Humidity meter'},
     {'vid':0x0557, 'pid':0x2008, 'genericAdapter':1, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},
     {'vid':0x0408, 'pid':0x6051, 'genericAdapter':1, 'driver':'arduino', 'name':'Arduino Pro via FTDI FT231X'},
