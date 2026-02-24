@@ -121,6 +121,13 @@ Assumes the default device address of 01 (factory setting).
 Assumes the serial comms are at 9600 baud 8N1. The factory default comms mode is 9600 7O2 and this needs to be fixed in the device's menus.
 The device doesn't indicate its units of measurement; the scale and offset must be set by the user on the device.
 
+## Yokogawa CA100 Calibrator
+Requires hardware flow control (RTS/CTS) to be enabled, and assumes default 9600 bps 8N1 configuration.
+In the device menu (press ZERO and NEXT together), you must go to COM options and turn on communications.
+Then set HANDshake mode to 3, NORmal communications mode, and the rest default (ie CR+LF line endings on).
+
+Note this device requires a Null Modem cable to connect to a USB-Serial dongle.
+
 # Video capture devices
 
 ## Thorlabs scientific cameras

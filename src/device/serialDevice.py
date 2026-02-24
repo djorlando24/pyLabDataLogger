@@ -7,7 +7,7 @@
     @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
     @version 1.5.0
-    @date 23/02/26
+    @date 24/02/26
 
     Multiphase Flow Laboratory
     Monash University, Australia
@@ -381,7 +381,8 @@ class serialDevice(device):
         elif (self.subdriver=='chemyx'):
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=115200 # default 9600, I choose 115.2k
         elif (self.subdriver=='ca100'):
-            if not 'rtscts' in self.params.keys(): self.params['rtscts']=True # 9600 8N1 default
+            if not 'rtscts' in self.params.keys(): self.params['rtscts']=True # 9600 8N1 default, hardware flow control must be on and requires null-modem cable
+            if not 'timeout' in self.params.keys(): self.params['timeout']=3 #s
             
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -505,7 +506,6 @@ class serialDevice(device):
                 if not self.quiet:
                     sys.stdout.write('\t'+self.port+':'+repr(request)+'\t')
                     sys.stdout.flush()
-                #self.Serial.write(request) #python2
                 self.Serial.write(request.encode('ascii'))
             t_=time.time()
             time.sleep(sleeptime)
@@ -532,7 +532,6 @@ class serialDevice(device):
             if not self.quiet:
                 sys.stdout.write('\t'+self.port+':'+repr(request)+'\t')
                 sys.stdout.flush()
-            #if len(request)>0: self.Serial.write(request) # python2
             if len(request)>0: self.Serial.write(request.encode('ascii'))
             t_=time.time()
             time.sleep(sleeptime)
@@ -724,11 +723,12 @@ class serialDevice(device):
         elif subdriver=='cozir': # Startup config for COZIR CO2 sensor
             self.name = 'COZIR CO2 Sensor'
             self.config['channel_names']=['humidity','temperature','z1','z2']
-            self.params['raw_units']=['%','degC','ppm','ppm']
-            self.config['eng_units']=['%','degC','ppm','ppm']
+            self.params['raw_units']=['%',u'\u03a9','ppm','ppm']
+            self.config['eng_units']=['%',u'\u03a9','ppm','ppm']
             self.config['scale']=[1.,1.,1.,1.]
             self.config['offset']=[0.,0.,0.,0.]
-            self.params['n_channels']=4
+            self.params['n_channels']=4        
+
             self.serialQuery=['Q']
             self.queryTerminator='\r\n'
             self.responseTerminator='\r'
@@ -790,17 +790,27 @@ class serialDevice(device):
         # ----------------------------------------------------------------------------------------
         elif subdriver=='ca100': # Statup config for Yokogawa CA100
             self.name = "Yokogawa CA100"
-            self.config['channel_names']=['measure','measure_mode','measure_range','source','source_mode','source_range']
+            self.config['channel_names']=['measure','measure_range','measure_mode','source','source_range','source_mode']
             self.params['raw_units']=['','','','','','']
             self.config['eng_units']=['','','','','',''] # units get updated when device polled
             self.config['scale']=[1.,1.,1.,1.,1.,1.]
             self.config['offset']=[0.,0.,0.,0.,0.,0.]
             self.params['n_channels']=len(self.config['channel_names'])
-            self.serialQuery=['CS?','CMF?','MR?','CD?','CSF?','CR?']
+            self.serialQuery=['OD','MR?','MF?','SD?','SR?','SF?']
             self.queryTerminator='\r\n'
-            self.responseTerminator='\n'
+            self.responseTerminator=b'\n'
+            self.params['min_response_length']=4
+            self.params['maxlen']=16
+            self.sleeptime=0.1
             #self.serialCommsFunction=self.blockingRawSerialRequest
-        
+
+            # turn on measurement mode please
+            self.Serial.write(b'MO1\r\n')
+            time.sleep(.1)          
+
+            
+            
+            
         # ----------------------------------------------------------------------------------------
         elif subdriver=='omega-pt': # Statup config for Omega Platinum via USB with Omega protocol
             # See https://bl831.als.lbl.gov/~gmeigs/PDF/CN8_serial_comm.pdf for decoding the strings
@@ -1002,7 +1012,7 @@ class serialDevice(device):
         # ----------------------------------------------------------------------------------------
         elif subdriver=='omega-iseries': # Startup config for Omega iSeries Process Controller
             self.name = "Omega iSeries Process Controller"
-            if not 'units' in self.params: u='degC'
+            if not 'units' in self.params: u=u'\u03a9'
             else: u=self.params['units']
             self.config['channel_names']=['Current Value','Set Point 1','Set Point 2','Alarm']
             self.params['n_channels']=len(self.config['channel_names'])
@@ -1085,8 +1095,8 @@ class serialDevice(device):
             # Mode 2 switch selected
             self.name = "Extech SD700 Barometric PTH Datalogger"
             self.config['channel_names']=['humidity','temperature','pressure']
-            self.params['raw_units']=['%','degC','hPa'] # temp units will be determined when query runs
-            self.config['eng_units']=['%','degC','hPa']
+            self.params['raw_units']=['%',u'\u03a9','hPa'] # temp units will be determined when query runs
+            self.config['eng_units']=['%',u'\u03a9','hPa']
             self.config['scale']=[1.,1.,1.]
             self.config['offset']=[0.,0.,0.]
             self.params['n_channels']=3
@@ -1576,8 +1586,8 @@ class serialDevice(device):
             self.name = "Chemyx syringe pump"
             self.config['channel_names']=['Dispensed','Time','Status','Pressure','Temperature']
             self.params['n_channels']=len(self.config['channel_names'])
-            self.params['raw_units']=['mL','s','','psi','degC']
-            self.config['eng_units']=['mL','s','','psi','degC']
+            self.params['raw_units']=['mL','s','','psi',u'\u03a9']
+            self.config['eng_units']=['mL','s','','psi',u'\u03a9']
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
             self.serialQuery=['dispensed volume','elapsed time','status','read press and temp']
@@ -2160,10 +2170,72 @@ class serialDevice(device):
             # ----------------------------------------------------------------------------------------
             elif subdriver=='ca100':
                 
-                # Here get rawData for the mode and units, and put these into eng_units.
-                # Handle scaling of non-numerics correctly.
-                #raise NotImplementedError
-                return [ float(s.strip().decode('ascii')) for s in rawData]
+                vals=[]
+                vals.append(float(rawData[0].strip().strip(b' ').decode('ascii'))) # measure value
+                vals.append(int(rawData[1].strip()[2:].decode('ascii'))) # meas range indicator
+                vals.append(int(rawData[2].strip()[2:].decode('ascii'))) # meas fun indicator
+                vals.append(float(rawData[3].strip()[2:].decode('ascii'))) # source value
+                vals.append(int(rawData[4].strip()[2:].decode('ascii'))) # source range indicator
+                vals.append(int(rawData[5].strip()[2:].decode('ascii'))) # source fun indicator
+                
+                # Update engineering units and function strings
+                if vals[2]==0:
+                    self.config['eng_units'][0] = 'V DC'
+                    self.params['raw_units'][0] = 'V DC'
+                    vals[2]='V DC'
+                    if vals[1]==0: vals[1]='500 mV'
+                    elif vals[1]==1: vals[1]='5 V'
+                    elif vals[1]==2: vals[1]='35 V'
+                elif vals[2]==1:
+                    self.config['eng_units'][0] = 'mA'
+                    self.params['raw_units'][0] = 'mA'
+                    vals[2]='mA'
+                    if vals[1]==0: vals[1]='20 mA'
+                    elif vals[1]==1: vals[1]='100 mA'
+                    elif vals[1]==2: vals[1]='-'
+                elif vals[2]==2:
+                    self.config['eng_units'][0] = u'\u03a9'
+                    self.params['raw_units'][0] = u'\u03a9'
+                    vals[2]=u'\u03a9'
+                    if vals[1]==0: vals[1]=u'500 \u03a9'
+                    elif vals[1]==1: vals[1]=u'5 k\u03a9'
+                    elif vals[1]==2: vals[1]=u'50 k\u03a9'
+                        
+                if vals[5]==0:
+                    self.config['eng_units'][3] = 'V DC'
+                    self.params['raw_units'][3] = 'V DC'
+                    vals[5]='V DC'
+                    if vals[4]==0: vals[4]='100 mV'
+                    elif vals[4]==1: vals[4]='1 V'
+                    elif vals[4]==2: vals[4]='10 V'
+                elif vals[5]==1:
+                    self.config['eng_units'][3] = 'mA'
+                    self.params['raw_units'][3] = 'mA'
+                    vals[5]='mA'
+                    vals[4]='-'
+                elif vals[5]==2:
+                    self.config['eng_units'][3] = u'\u03a9'
+                    self.params['raw_units'][3] = u'\u03a9'
+                    vals[5] = u'\u03a9'
+                    if vals[4]==0: vals[1]=u'500\u03a9'
+                    elif vals[4]==1: vals[1]=u'5k\u03a9'
+                    elif vals[4]==2: vals[1]=u'50k\u03a9'
+                elif (vals[5]==3) or (vals[5]==4):
+                    self.config['eng_units'][3] = u'\u00b0C'
+                    self.params['raw_units'][3] = u'\u00b0C'
+                    vals[5]=u'\u00b0C'
+                    if vals[4]==0: vals[4]='PT100'
+                    else: vals[4]='-'
+                elif vals[5]>=5:
+                    self.config['eng_units'][3] = 'Hz'
+                    self.params['raw_units'][3] = 'Hz'
+                    vals[5]='Hz'
+                    if vals[4]==0: vals[4]='1 kHz'
+                    elif vals[4]==1: vals[4]='10 kHz'
+                    elif vals[4]==2: vals[4]='50 kHz'
+                    else: vals[4]='-'
+                    
+                return vals
             
             else:
                 # Default behaviour, assuming rawData has a string holding a scalar float for each variable
