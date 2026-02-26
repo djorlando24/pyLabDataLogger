@@ -154,7 +154,7 @@ class uniTDevice(device):
     # this point we might need to poll the device to check a setting.
     def configure_device(self):
         if self.subdriver=='ut32x':
-            self.name = "Uni-T or Tenma Thermometer"
+            self.name = "UT Thermometer"
             self.config['channel_names']=['Temperature','Timer','Timer String','InputChannel','Mode','Stored Record Count']
             self.params['raw_units']=['?','sec','mm:ss','','','']
             self.config['eng_units']=['?','sec','mm:ss','','','']

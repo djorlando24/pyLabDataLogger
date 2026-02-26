@@ -84,8 +84,10 @@ if __name__ == '__main__':
                 d.plotCh=8 # A0
             
         d.history=[np.nan]
+        shortName=d.name
+        if len(shortName)>10: shortName=shortName[:10]
         d.plotHandle,=ax.plot(sampledTimes,d.history,marker='o',markersize=2,\
-                              lw=1,label='%s %s [%s]' % (d.name,d.config['channel_names'][d.plotCh],\
+                              lw=1,label='%s %s [%s]' % (shortName,d.config['channel_names'][d.plotCh],\
                               d.config['eng_units'][d.plotCh]))
     plt.legend(loc=1)
     plt.ion()
