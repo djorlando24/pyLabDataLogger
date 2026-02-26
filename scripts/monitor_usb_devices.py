@@ -68,7 +68,9 @@ if __name__ == '__main__':
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.grid(alpha=.33)
-    plt.title("pyLabDataLogger")
+    man=plt.get_current_fig_manager()
+    man.set_window_title('pyLabDataLogger')
+    plt.title(logfilename)
     plt.xlabel("Time [s]")
     plt.ylabel("Process Variables")
     sampledTimes=[0.]
