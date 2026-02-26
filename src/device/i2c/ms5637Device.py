@@ -49,7 +49,7 @@ class ms5637Device(i2cDevice):
         if 'name' in self.params: self.name = self.params['name']+' %s' % (hex(self.params['address']))
         self.params['n_channels']=2
         if not 'channel_names' in self.config:
-            self.config['channel_names']=['Temperature','Pressure']
+            self.config['channel_names']=['Pressure','Temperature']
 
         self.params['raw_units']=['hPa','degC']
         self.config['eng_units']=['kPa','degC']
