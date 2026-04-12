@@ -1082,17 +1082,17 @@ class serialDevice(device):
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
             self.serialQuery = [ struct.pack('>B',n) for n in [ 0,20,40,60,80,0xA0,0xC0,0xE0,0x22,0x42 ] ]
-            self.queryTerminator=''
-            self.responseTerminator=''
+            self.queryTerminator=b''
+            self.responseTerminator=b''
             self.serialCommsFunction=self.blockingRawSerialRequest
+            self.sleeptime = 0.01
             self.params['min_response_length']=3 # bytes
             self.maxlen=3
-
+            
             # Set RTS and DTR to provide power to the device, as per user manual.
             # Have confirmed these are the right ones.
             self.Serial.rts = True
             self.Serial.dtr = False
-            time.sleep(1.)
 
             # Try and get device version code.
             self.params['version']=None
@@ -1100,7 +1100,7 @@ class serialDevice(device):
             while True:
                 ver=struct.unpack('>3c',self.blockingRawSerialRequest(struct.pack('>B',1),terminationChar='',\
                                                               sleeptime=.01,min_response_length=3,maxlen=3))
-                self.params['version'] = ver[0]+binascii.hexlify(ver[1])
+                self.params['version'] = ver[0].decode('ascii')+binascii.hexlify(ver[1]).decode('ascii')
                 if self.params['version'][0] == 'V': break
                 time.sleep(.5)
             cprint( '\tTC08 version = '+str(self.params['version']), 'green' )
@@ -1759,7 +1759,7 @@ class serialDevice(device):
                 microvolts = np.array([ struct.unpack('>H',s[1:]) for s in rawData ]).astype(np.float)
                 # Apply sign
                 for n in range(len(microvolts)):
-                    neg = struct.unpack('?',rawData[n][0])
+                    neg = struct.unpack('?',rawData[n][:1])
                     if neg: microvolts[n] *= -1
                 microvolts *= 0.9082780194 # 65535 counts == 59524uV
                 # Calculate cold junction temperature
@@ -2306,7 +2306,9 @@ class serialDevice(device):
         rawData=[]
         for n in range(len(self.serialQuery)):
             if self.serialQuery[n] is not None:
-                if ',' in self.serialQuery[n]:
+                if type(self.serialQuery[n]) is bytes: sendMultipleCmds= b',' in self.serialQuery[n]
+                else: sendMultipleCmds=',' in self.serialQuery[n]
+                if sendMultipleCmds:
                     # Multiple commands must be sent. They are seperated by commas.
 
                     # A double comma denotes a long pause dictated by params['sample_period']
