@@ -33,7 +33,7 @@
 usb_device_table = [
     
     # I2C FTDI bridge
-    {'vid':0x0403, 'pid':0x6015, 'driver':'i2c', 'name':'FTDI I2C Bridge'},
+    {'vid':0x0403, 'pid':0x6015, 'driver':'i2c', 'bcdDevice':0x1000, 'name':'FTDI I2C Bridge'},
 
     # Sigrok devices with fixed VID and PID
     {'vid':0x1a86, 'pid':0xe008, 'driver':'sigrok/tenma-72-7730', 'name':'Tenma 72-7730A Multimeter'},
@@ -165,6 +165,7 @@ from termcolor import cprint
 # Search table for a match
 def match_device(dev):
     matches=[]
+    optionalKeyMatch=False
     for match in usb_device_table:
         # Find matching VID and PID (mandatory)
         if (dev.idVendor == match['vid']) and (dev.idProduct == match['pid']):
@@ -172,11 +173,12 @@ def match_device(dev):
             # Match optionals
             for key in ['bcdDevice','serial_number','manufacturer']:
                 if key in match.keys():
-                    if match[key] != get_property(dev,key):
-                        matching=False
-                        #print(match[key], get_property(dev,key))
+                    if match[key] == get_property(dev,key):
+                        matching=True
+                        optionalKeyMatch=True # optional key finds exact match, ignore others
+                        matches.append(match)
                     elif match[key] is None: matching=True
-            if matching: matches.append(match)
+            if matching and not optionalKeyMatch: matches.append(match)
     return matches
 
 # Get device property, catch exception if not possible.
