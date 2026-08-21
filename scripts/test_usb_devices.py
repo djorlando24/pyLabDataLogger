@@ -4,10 +4,10 @@
     Test device support.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2023 LTRAC
+    @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
-    @version 1.4.0
-    @date 08/06/25
+    @version 1.5.0
+    @date 13/06/25
 
     Multiphase Flow Laboratory
     Monash University, Australia
@@ -31,6 +31,8 @@ from pyLabDataLogger.logger import globalFunctions
 import time
 from termcolor import cprint
 
+INTERVAL_SECONDS = 0  # set to zero to go as fast as possible
+
 if __name__ == '__main__':
 
     globalFunctions.banner()
@@ -46,17 +48,30 @@ if __name__ == '__main__':
     if len(usbDevicesFound) == 0: exit()
 
     devices = usbDevice.load_usb_devices(usbDevicesFound, **special_args)
-   
+
+    loop_counter = 0
+    running_average = 0.
+    
     try:
         while True:
+            t0 = time.time()
             for d in devices:
                 cprint( d.name, 'magenta', attrs=['bold'] )
                 d.query()
                 d.pprint()
-            time.sleep(.01)
+            #time.sleep(.01)
+            dt = time.time()-t0
+            running_average = ((running_average*float(loop_counter)) + dt)/(float(loop_counter)+1)
+            loop_counter += 1
+            
+            if ((dt<INTERVAL_SECONDS) and (loop_counter>0)): time.sleep(INTERVAL_SECONDS-dt)
+            if len(devices)>0: cprint("Polling time = %0.3f sec" % dt, 'cyan')
+            
     except KeyboardInterrupt:
         cprint("Stopped.",'red',attrs=['bold'])
         for d in devices: d.deactivate()
 
     except: # all other errors
         raise
+
+    cprint("Average loop time = %0.3f sec (%i loops, %f Hz max possible)" % (running_average, loop_counter, 1.0/running_average), 'cyan', attrs=['bold'])  

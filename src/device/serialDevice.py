@@ -4,10 +4,10 @@
     Serial device class - general serial port support
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2025 LTRAC
+    @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
-    @version 1.4.0
-    @date 08/06/25
+    @version 1.5.0
+    @date 26/02/26
 
     Multiphase Flow Laboratory
     Monash University, Australia
@@ -54,6 +54,8 @@
         05/01/2024 - A5000 support
         10/01/2024 - Hameg support
         08/06/2025 - Chemyx support
+        23/02/2026 - CA100 support
+        26/02/2026 - Updated alicat support for newer models firmware
         
 """
 
@@ -81,8 +83,10 @@ class serialDevice(device):
         The 'serial' driver supports the following hardware:
             'serial/a5000'             : Asahi Heiki A5000 Load Cell Amplifier
             'serial/alicat'            : Alicat Scientific M-series mass flow meter
+            'serial/alicat-legacy'     : Alicat Scientific M-series mass flow meter (older firmware)
             'serial/andg'              : AND GX-K and GF-K series precision balances
             'serial/bkp168'            : BK Precision 168xx series power supply
+            'serial/ca100'             : Yokogawa CA100 Calibrator
             'serial/cc8870'            : USB Current Clamp (E-Meter 8870 marking)
             'serial/center310'         : CENTER 310 Temperature and Humidity meter
             'serial/chemyx'            : Chemyx syringe pump
@@ -298,8 +302,9 @@ class serialDevice(device):
         elif self.subdriver=='sd700':
             if not 'xonxoff' in  self.params.keys(): self.params['xonxoff']=True
             if not 'timeout' in self.params.keys(): self.params['timeout']=5
-        elif self.subdriver=='alicat':
+        elif 'alicat' in self.subdriver:
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=19200
+            if not 'timeout' in self.params.keys(): self.params['timeout']=1
             if not 'ID' in self.params.keys(): self.params['ID']='A' # default unit ID is 'A'
         elif self.subdriver=='omega-usbh':
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=115200
@@ -378,6 +383,9 @@ class serialDevice(device):
             if not 'timeout' in self.params.keys(): self.params['timeout']=0.25 # sec for a single byte read/write
         elif (self.subdriver=='chemyx'):
             if not 'baudrate' in self.params.keys(): self.params['baudrate']=115200 # default 9600, I choose 115.2k
+        elif (self.subdriver=='ca100'):
+            if not 'rtscts' in self.params.keys(): self.params['rtscts']=True # 9600 8N1 default, hardware flow control must be on and requires null-modem cable
+            if not 'timeout' in self.params.keys(): self.params['timeout']=3 #s
             
         # Default serial port parameters passed to pySerial
         if not 'baudrate' in self.params.keys(): self.params['baudrate']=9600
@@ -482,11 +490,21 @@ class serialDevice(device):
         else: cprint( "Error resetting %s: device is not detected" % self.name, 'red', attrs=['bold'])
 
     ########################################################################################################################
-    # Blocking call to send raw bytes on the serial port.
-    def simpleSerialRequest(self,request,terminationChar=None,maxlen=None,min_response_length=0,sleeptime=0):
-         self.Serial.write(request)
-         if sleeptime>0: time.sleep(sleeptime)
-         return self.Serial.read(min_response_length)
+    # Blocking call to send raw bytes on the serial port.  
+    # This function will keep on transmitting at regular intervals until it gets a reply or hits timeout,
+    # unlike `blockingSerialRequest' which only sends once and waits for a reply until timeout.
+    def simpleSerialRequest(self,request,terminationChar=None,maxlen=None,min_response_length=0,sleeptime=0.1):
+        self.Serial.reset_output_buffer()
+        self.Serial.reset_input_buffer()
+        data=b''
+        t_=time.time()
+        while (data==b'') or (len(data)<min_response_length): # while read buffer not full enough
+            time.sleep(sleeptime)
+            if type(request)==bytes: self.Serial.write(request)
+            else: self.Serial.write(request.encode('ascii'))
+            data+=self.Serial.read(self.Serial.in_waiting)
+            if ((time.time()-t_) > self.params['timeout']): break
+        return data
 
     ########################################################################################################################
     # Blocking call to send a request and get a string back.
@@ -501,8 +519,8 @@ class serialDevice(device):
                 if not self.quiet:
                     sys.stdout.write('\t'+self.port+':'+repr(request)+'\t')
                     sys.stdout.flush()
-                #self.Serial.write(request) #python2
-                self.Serial.write(request.encode('ascii'))
+                if type(request)==bytes: self.Serial.write(request)
+                else: self.Serial.write(request.encode('ascii'))
             t_=time.time()
             time.sleep(sleeptime)
             while len(s)<maxlen:
@@ -528,8 +546,9 @@ class serialDevice(device):
             if not self.quiet:
                 sys.stdout.write('\t'+self.port+':'+repr(request)+'\t')
                 sys.stdout.flush()
-            #if len(request)>0: self.Serial.write(request) # python2
-            if len(request)>0: self.Serial.write(request.encode('ascii'))
+            if len(request)>0:
+                if type(request)==bytes: self.Serial.write(request)
+                else: self.Serial.write(request.encode('ascii'))
             t_=time.time()
             time.sleep(sleeptime)
             data=b''
@@ -720,11 +739,12 @@ class serialDevice(device):
         elif subdriver=='cozir': # Startup config for COZIR CO2 sensor
             self.name = 'COZIR CO2 Sensor'
             self.config['channel_names']=['humidity','temperature','z1','z2']
-            self.params['raw_units']=['%','degC','ppm','ppm']
-            self.config['eng_units']=['%','degC','ppm','ppm']
+            self.params['raw_units']=['%',u'\u03a9','ppm','ppm']
+            self.config['eng_units']=['%',u'\u03a9','ppm','ppm']
             self.config['scale']=[1.,1.,1.,1.]
             self.config['offset']=[0.,0.,0.,0.]
-            self.params['n_channels']=4
+            self.params['n_channels']=4        
+
             self.serialQuery=['Q']
             self.queryTerminator='\r\n'
             self.responseTerminator='\r'
@@ -777,12 +797,36 @@ class serialDevice(device):
             self.config['eng_units']=['C','F','C','F','']
             self.config['scale']=[1.,1.,1.,1.,1.]
             self.config['offset']=[0.,0.,0.,0.,0.]
-            self.params['n_channels']=5
+            self.params['n_channels']=len(self.config['channel_names'])
             self.serialQuery=['C','F','A','E']
             self.queryTerminator='\r\n'
             self.responseTerminator='\r'
             self.config['set_emissivity']=None
+        
+        # ----------------------------------------------------------------------------------------
+        elif subdriver=='ca100': # Statup config for Yokogawa CA100
+            self.name = "Yokogawa CA100"
+            self.config['channel_names']=['measure','measure_range','measure_mode','source','source_range','source_mode']
+            self.params['raw_units']=['','','','','','']
+            self.config['eng_units']=['','','','','',''] # units get updated when device polled
+            self.config['scale']=[1.,1.,1.,1.,1.,1.]
+            self.config['offset']=[0.,0.,0.,0.,0.,0.]
+            self.params['n_channels']=len(self.config['channel_names'])
+            self.serialQuery=['OD','MR?','MF?','SD?','SR?','SF?']
+            self.queryTerminator='\r\n'
+            self.responseTerminator=b'\n'
+            self.params['min_response_length']=4
+            self.params['maxlen']=16
+            self.sleeptime=0.1
+            #self.serialCommsFunction=self.blockingRawSerialRequest
 
+            # turn on measurement mode please
+            self.Serial.write(b'MO1\r\n')
+            time.sleep(.1)          
+
+            
+            
+            
         # ----------------------------------------------------------------------------------------
         elif subdriver=='omega-pt': # Statup config for Omega Platinum via USB with Omega protocol
             # See https://bl831.als.lbl.gov/~gmeigs/PDF/CN8_serial_comm.pdf for decoding the strings
@@ -984,7 +1028,7 @@ class serialDevice(device):
         # ----------------------------------------------------------------------------------------
         elif subdriver=='omega-iseries': # Startup config for Omega iSeries Process Controller
             self.name = "Omega iSeries Process Controller"
-            if not 'units' in self.params: u='degC'
+            if not 'units' in self.params: u=u'\u03a9'
             else: u=self.params['units']
             self.config['channel_names']=['Current Value','Set Point 1','Set Point 2','Alarm']
             self.params['n_channels']=len(self.config['channel_names'])
@@ -1038,17 +1082,17 @@ class serialDevice(device):
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
             self.serialQuery = [ struct.pack('>B',n) for n in [ 0,20,40,60,80,0xA0,0xC0,0xE0,0x22,0x42 ] ]
-            self.queryTerminator=''
-            self.responseTerminator=''
+            self.queryTerminator=b''
+            self.responseTerminator=b''
             self.serialCommsFunction=self.blockingRawSerialRequest
+            self.sleeptime = 0.01
             self.params['min_response_length']=3 # bytes
             self.maxlen=3
-
+            
             # Set RTS and DTR to provide power to the device, as per user manual.
             # Have confirmed these are the right ones.
             self.Serial.rts = True
             self.Serial.dtr = False
-            time.sleep(1.)
 
             # Try and get device version code.
             self.params['version']=None
@@ -1056,7 +1100,7 @@ class serialDevice(device):
             while True:
                 ver=struct.unpack('>3c',self.blockingRawSerialRequest(struct.pack('>B',1),terminationChar='',\
                                                               sleeptime=.01,min_response_length=3,maxlen=3))
-                self.params['version'] = ver[0]+binascii.hexlify(ver[1])
+                self.params['version'] = ver[0].decode('ascii')+binascii.hexlify(ver[1]).decode('ascii')
                 if self.params['version'][0] == 'V': break
                 time.sleep(.5)
             cprint( '\tTC08 version = '+str(self.params['version']), 'green' )
@@ -1067,8 +1111,8 @@ class serialDevice(device):
             # Mode 2 switch selected
             self.name = "Extech SD700 Barometric PTH Datalogger"
             self.config['channel_names']=['humidity','temperature','pressure']
-            self.params['raw_units']=['%','degC','hPa'] # temp units will be determined when query runs
-            self.config['eng_units']=['%','degC','hPa']
+            self.params['raw_units']=['%',u'\u03a9','hPa'] # temp units will be determined when query runs
+            self.config['eng_units']=['%',u'\u03a9','hPa']
             self.config['scale']=[1.,1.,1.]
             self.config['offset']=[0.,0.,0.]
             self.params['n_channels']=3
@@ -1106,7 +1150,7 @@ class serialDevice(device):
             self.params['min_response_length']=1 # bytes
         
         # ----------------------------------------------------------------------------------------
-        elif subdriver=='alicat':
+        elif 'alicat' in subdriver:
             self.name = "Alicat Scientific M-series mass flow meter" # update w/model number later
             self.params['n_channels']=5
             self.config['channel_names']=['','','','',''] # will be obtained by query below
@@ -1117,15 +1161,30 @@ class serialDevice(device):
             if not 'ID' in self.params.keys(): self.params['ID']='A' # default unit ID is 'A'
             self.serialQuery=[self.params['ID']] # one command returns all the variables.
             self.queryTerminator='\r'
-            self.responseTerminator='\r'
-            self.params['min_response_length']=1 # bytes
-
+            self.responseTerminator=b'\r'
+            self.params['min_response_length']=8 # bytes
+            
+            
+             # clear serial buffer
+            self.Serial.reset_input_buffer()
+            self.Serial.reset_output_buffer()
+            
             # talk to flowmeter-
             # get params for model, serial number etc, and add to device name for uniqueness in logfile
-            self.params['model']=self.blockingSerialRequest(self.params['ID']+'??m4'+self.queryTerminator,'\r')
-            self.params['serial']=self.blockingSerialRequest(self.params['ID']+'??m5'+self.queryTerminator,'\r')
-            self.params['cal_date']=self.blockingSerialRequest(self.params['ID']+'??m7'+self.queryTerminator,'\r')
-            self.params['firmware']=self.blockingSerialRequest(self.params['ID']+'??m9'+self.queryTerminator,'\r')
+            if subdriver=='alicat-legacy': 
+                self.serialCommsFunction=self.blockingSerialRequest
+                self.params['model']=self.serialCommsFunction(self.params['ID']+'??m4'+self.queryTerminator,'\r')
+                self.params['serial']=self.serialCommsFunction(self.params['ID']+'??m5'+self.queryTerminator,'\r')
+                self.params['cal_date']=self.serialCommsFunction(self.params['ID']+'??m7'+self.queryTerminator,'\r')
+                self.params['firmware']=self.serialCommsFunction(self.params['ID']+'??m9'+self.queryTerminator,'\r')
+            else: 
+                self.serialCommsFunction=self.simpleSerialRequest
+                self.params['model']=self.serialCommsFunction(self.params['ID']+'??M5'+self.queryTerminator,'\r')
+                self.params['serial']=self.serialCommsFunction(self.params['ID']+'??M6'+self.queryTerminator,'\r')
+                self.params['cal_date']=self.serialCommsFunction(self.params['ID']+'??M8'+self.queryTerminator,'\r')
+                self.params['firmware']=self.serialCommsFunction(self.params['ID']+'??M9'+self.queryTerminator,'\r')
+           
+
             try:
                 serialNumInt = int(self.params['serial'].split(' ')[-1])
                 modelString  = self.params['model'].split(' ')[-1]
@@ -1136,17 +1195,28 @@ class serialDevice(device):
 
             # get units & channel names
             for j in range(2,7):
-                descStr = self.blockingSerialRequest(self.params['ID']+'??d%i' % j +self.queryTerminator,'\r').decode('utf-8').strip('\x08').strip()
+                if subdriver=='alicat-legacy': 
+                    descStr = self.serialCommsFunction(self.params['ID']+'??d%i' % j +self.queryTerminator,'\r').decode('utf-8').strip('\x08').strip()
+                else:
+                    self.Serial.flush()
+                    if j==2:  self.serialCommsFunction(self.params['ID']+'??D%i' % j +self.queryTerminator,'\r')
+                    descStr = self.serialCommsFunction(self.params['ID']+'??D%i' % j +self.queryTerminator,'\r').decode('utf-8').strip('\x08').strip()
                 try:
-                    unitStr = descStr.split()[-1].replace('`','deg')
-                    nameStr = descStr.split()[3].strip()
+                    unitStr = descStr.split()[-1].replace('`',u'\u00b0')
+                    if subdriver=='alicat-legacy': nameStr = descStr.split()[3].strip()
+                    else: nameStr =  '_'.join(descStr.split()[3:5]).strip()
                     if j<6: # skip units for 'gas type'
                         self.params['raw_units'][j-2] = unitStr
                         self.config['eng_units'][j-2] = unitStr
+                        nameStr=nameStr.replace('_string','')
                     self.config['channel_names'][j-2]=nameStr
                 except:
                     raise pyLabDataLoggerIOError("Unable to parse Alicat channel descriptor string.\nCheck the baud rate is %i and the device ID is %s"\
                                  % (self.params['baudrate'],self.params['ID']))
+                    
+            # dummy read to flush buffer
+            self.Serial.flush()
+            self.serialCommsFunction(self.params['ID']+self.queryTerminator,'\r')
         
         # ----------------------------------------------------------------------------------------
         elif subdriver=='mx5060': # Startup config for MX5060 multimeter
@@ -1558,8 +1628,8 @@ class serialDevice(device):
             self.name = "Chemyx syringe pump"
             self.config['channel_names']=['Dispensed','Time','Status','Pressure','Temperature']
             self.params['n_channels']=len(self.config['channel_names'])
-            self.params['raw_units']=['mL','s','','psi','degC']
-            self.config['eng_units']=['mL','s','','psi','degC']
+            self.params['raw_units']=['mL','s','','psi',u'\u03a9']
+            self.config['eng_units']=['mL','s','','psi',u'\u03a9']
             self.config['scale']=[1.]*self.params['n_channels']
             self.config['offset']=[0.]*self.params['n_channels']
             self.serialQuery=['dispensed volume','elapsed time','status','read press and temp']
@@ -1689,7 +1759,7 @@ class serialDevice(device):
                 microvolts = np.array([ struct.unpack('>H',s[1:]) for s in rawData ]).astype(np.float)
                 # Apply sign
                 for n in range(len(microvolts)):
-                    neg = struct.unpack('?',rawData[n][0])
+                    neg = struct.unpack('?',rawData[n][:1])
                     if neg: microvolts[n] *= -1
                 microvolts *= 0.9082780194 # 65535 counts == 59524uV
                 # Calculate cold junction temperature
@@ -1888,7 +1958,7 @@ class serialDevice(device):
                 return [humidity, temperature, time_min*60 + time_sec, hold, minmax]
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='omega-iseries':
+            elif subdriver=='omega-iseries':
                 """ Omega iSeries returns binary that doesn't always conform to ASCII standard.
                     The number of bits returned can also vary. Values from RAM are converted to
                     quasi-ascii format while values in EEPROM tend to be in a custom binary floating
@@ -1941,7 +2011,7 @@ class serialDevice(device):
                 return vals
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='sd700':
+            elif subdriver=='sd700':
                 vals = []
                 for i in range(len(rawData)):
 
@@ -1959,15 +2029,21 @@ class serialDevice(device):
                 return vals
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='alicat':
+            elif 'alicat' in subdriver:
                 valStrings= [ s for s in rawData[0].decode('utf-8').split(' ') if s!='' ]
-                if valStrings[0].upper() != self.params['ID'].upper():
-                    raise pyLabDataLoggerIOError("Alicat Device ID mismatch - wrong serial port?")
-                #cprint( self.config['channel_names'], 'red' )
+                
+                # Convert empty '-' into zero to make it a float later, but avoid 'replace' command as it could catch negative sign
+                for i in range(len(valStrings)):
+                    if valStrings[i]=='-': valStrings[i]='0'
+                
+                if subdriver=='alicat-legacy':
+                    if valStrings[0].upper() != self.params['ID'].upper():
+                        raise pyLabDataLoggerIOError("Alicat Device ID mismatch - wrong serial port?")
+                
                 return [ float(valStrings[1]), float(valStrings[2]), float(valStrings[3]), float(valStrings[4]), valStrings[5].strip() ]
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='esd508':
+            elif subdriver=='esd508':
                 # Data was already processed, just need to split it apart & add to previous encoder value.
                 
                 if np.isnan(self.lastValue[1]) or (self.lastValue[1] is None):
@@ -1978,7 +2054,7 @@ class serialDevice(device):
                 return [ starting_position + rawData[0], starting_position + rawData[0][-1] ]
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='mx5060':
+            elif subdriver=='mx5060':
                 if rawData[0] is None:
                     pri_val = np.nan
                 else:
@@ -2008,7 +2084,7 @@ class serialDevice(device):
                 return [ float(pri_val), float(sec_val) ]
             
             # ----------------------------------------------------------------------------------------
-            if subdriver=='r5000':
+            elif subdriver=='r5000':
                 s=rawData[0].strip()
                 start=s.index(b'\x02')+1
                 end=s.index(b'\x03')-1
@@ -2021,7 +2097,7 @@ class serialDevice(device):
                 return [ float(s[start:end].replace(b' ',b'')) ]
            
             # ----------------------------------------------------------------------------------------
-            if subdriver=='radwag-r':
+            elif subdriver=='radwag-r':
                 values=[]
                 for n in range(2):
                     if self.serialQuery[n].encode('ascii') in rawData[n]:
@@ -2036,7 +2112,7 @@ class serialDevice(device):
                 return values 
 
             # ----------------------------------------------------------------------------------------
-            if (self.driver==['k3hb','vlc']) or (self.driver==['k3hb','x']): 
+            elif (self.driver==['k3hb','vlc']) or (self.driver==['k3hb','x']): 
                 vals = []
                     
                 for r in rawData:
@@ -2052,7 +2128,7 @@ class serialDevice(device):
                 return vals
                 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='bkp168': 
+            elif subdriver=='bkp168': 
                 if len(rawData)<4: return [np.nan, np.nan, np.nan, np.nan]
 
                 if (len(rawData[0])<9) or (not b'OK' in rawData[1]): return [np.nan, np.nan, np.nan, np.nan]
@@ -2069,7 +2145,7 @@ class serialDevice(device):
                 return vals
             
             # ----------------------------------------------------------------------------------------
-            if subdriver=='cc8870':
+            elif subdriver=='cc8870':
                 s=rawData[0].strip()
                 if b'z>\x00' in s: s=s[s.index(b'z>\x00')+3:]
                 if b'A' in s: s=s.strip(b'A') # remove unit of amp, it never changes anyway 
@@ -2077,7 +2153,7 @@ class serialDevice(device):
 
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='andg':
+            elif subdriver=='andg':
                 if not b',' in rawData[0]: return [np.nan,np.nan]
                 state,reading=rawData[0].decode('ascii').strip().split(',')
                 units='?'
@@ -2095,7 +2171,7 @@ class serialDevice(device):
                 return [ np.float(value), state ]
 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='fy3200s':
+            elif subdriver=='fy3200s':
                 return [ float(r.strip()) for r in rawData ]
             
             # ----------------------------------------------------------------------------------------
@@ -2105,7 +2181,7 @@ class serialDevice(device):
                 #return [ float(s.decode('ascii')) for s in rawData]
             
             # ----------------------------------------------------------------------------------------
-            if subdriver=='lc-adc-f103c8':
+            elif subdriver=='lc-adc-f103c8':
                 vals=[np.nan]*self.params['n_channels']
                 for r in rawData:
                     try:
@@ -2117,7 +2193,7 @@ class serialDevice(device):
                 return vals
                 
             # ----------------------------------------------------------------------------------------
-            if subdriver=='chemyx':
+            elif subdriver=='chemyx':
                 vals=[np.nan]*self.params['n_channels']
                 for j in range(2):
                     if b'=' in rawData[j]:
@@ -2137,6 +2213,76 @@ class serialDevice(device):
                     s=rawData[3].decode('ascii').strip('>').strip('\r').strip().split(' ')
                     vals[3]=float(s[4].replace('NC','nan'))
                     vals[4]=float(s[6].replace('NC','nan'))
+                return vals
+            
+            # ----------------------------------------------------------------------------------------
+            elif subdriver=='ca100':
+                
+                vals=[]
+                vals.append(float(rawData[0].strip().strip(b' ').decode('ascii'))) # measure value
+                vals.append(int(rawData[1].strip()[2:].decode('ascii'))) # meas range indicator
+                vals.append(int(rawData[2].strip()[2:].decode('ascii'))) # meas fun indicator
+                vals.append(float(rawData[3].strip()[2:].decode('ascii'))) # source value
+                vals.append(int(rawData[4].strip()[2:].decode('ascii'))) # source range indicator
+                vals.append(int(rawData[5].strip()[2:].decode('ascii'))) # source fun indicator
+                
+                # Update engineering units and function strings
+                if vals[2]==0:
+                    self.config['eng_units'][0] = 'V DC'
+                    self.params['raw_units'][0] = 'V DC'
+                    vals[2]='V DC'
+                    if vals[1]==0: vals[1]='500 mV'
+                    elif vals[1]==1: vals[1]='5 V'
+                    elif vals[1]==2: vals[1]='35 V'
+                elif vals[2]==1:
+                    self.config['eng_units'][0] = 'mA'
+                    self.params['raw_units'][0] = 'mA'
+                    vals[2]='mA'
+                    if vals[1]==0: vals[1]='20 mA'
+                    elif vals[1]==1: vals[1]='100 mA'
+                    elif vals[1]==2: vals[1]='-'
+                elif vals[2]==2:
+                    self.config['eng_units'][0] = u'\u03a9'
+                    self.params['raw_units'][0] = u'\u03a9'
+                    vals[2]=u'\u03a9'
+                    if vals[1]==0: vals[1]=u'500 \u03a9'
+                    elif vals[1]==1: vals[1]=u'5 k\u03a9'
+                    elif vals[1]==2: vals[1]=u'50 k\u03a9'
+                        
+                if vals[5]==0:
+                    self.config['eng_units'][3] = 'V DC'
+                    self.params['raw_units'][3] = 'V DC'
+                    vals[5]='V DC'
+                    if vals[4]==0: vals[4]='100 mV'
+                    elif vals[4]==1: vals[4]='1 V'
+                    elif vals[4]==2: vals[4]='10 V'
+                elif vals[5]==1:
+                    self.config['eng_units'][3] = 'mA'
+                    self.params['raw_units'][3] = 'mA'
+                    vals[5]='mA'
+                    vals[4]='-'
+                elif vals[5]==2:
+                    self.config['eng_units'][3] = u'\u03a9'
+                    self.params['raw_units'][3] = u'\u03a9'
+                    vals[5] = u'\u03a9'
+                    if vals[4]==0: vals[1]=u'500\u03a9'
+                    elif vals[4]==1: vals[1]=u'5k\u03a9'
+                    elif vals[4]==2: vals[1]=u'50k\u03a9'
+                elif (vals[5]==3) or (vals[5]==4):
+                    self.config['eng_units'][3] = u'\u00b0C'
+                    self.params['raw_units'][3] = u'\u00b0C'
+                    vals[5]=u'\u00b0C'
+                    if vals[4]==0: vals[4]='PT100'
+                    else: vals[4]='-'
+                elif vals[5]>=5:
+                    self.config['eng_units'][3] = 'Hz'
+                    self.params['raw_units'][3] = 'Hz'
+                    vals[5]='Hz'
+                    if vals[4]==0: vals[4]='1 kHz'
+                    elif vals[4]==1: vals[4]='10 kHz'
+                    elif vals[4]==2: vals[4]='50 kHz'
+                    else: vals[4]='-'
+                    
                 return vals
             
             else:
@@ -2160,7 +2306,9 @@ class serialDevice(device):
         rawData=[]
         for n in range(len(self.serialQuery)):
             if self.serialQuery[n] is not None:
-                if ',' in self.serialQuery[n]:
+                if type(self.serialQuery[n]) is bytes: sendMultipleCmds= b',' in self.serialQuery[n]
+                else: sendMultipleCmds=',' in self.serialQuery[n]
+                if sendMultipleCmds:
                     # Multiple commands must be sent. They are seperated by commas.
 
                     # A double comma denotes a long pause dictated by params['sample_period']

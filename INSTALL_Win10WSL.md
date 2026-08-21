@@ -1,18 +1,10 @@
 # Installation instructions for pyLabDataLogger using WSL2 on Windows 10
 
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2023 LTRAC
+    @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
-    @version 1.3.0
-    @date 23/12/2022
-        __   ____________    ___    ______    
-       / /  /_  ____ __  \  /   |  / ____/    
-      / /    / /   / /_/ / / /| | / /         
-     / /___ / /   / _, _/ / ___ |/ /_________ 
-    /_____//_/   /_/ |__\/_/  |_|\__________/ 
-
-    Laboratory for Turbulence Research in Aerospace & Combustion (LTRAC)
-    Monash University, Australia
+    @version 1.5.0
+    @date 13/06/25
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

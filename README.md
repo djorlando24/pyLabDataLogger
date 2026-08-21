@@ -2,10 +2,10 @@
 Laboratory datalogging for USB and Serial devices
 
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2025 D.Duke
+    @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
-    @version 1.4.0
-    @date 09/06/2025
+    @version 1.5.0
+    @date 13/06/25
 
     Multiphase Flow Laboratory
     Monash University, Australia
@@ -43,6 +43,9 @@ This program provides the minimal set of Open Source tools required to record da
 It's not desgined to *control* devices remotely, or provide feedback for PID etc. It's also not designed to provide a pretty user interface. If you need that, you should use LabView. 
 
 ## Changelog
+
+**Version 1.5**
+- Added support for i2cmini FTDI to I2C USB adapter.
 
 **Version 1.3**
 - Removed distutils and replace with setuptools to support Python 3.12.

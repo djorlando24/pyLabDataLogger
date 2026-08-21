@@ -7,10 +7,10 @@
     - Handle VID/PID conflicts for devices that use generic serial ports i.e. FTDI chips.
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2025 LTRAC
+    @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
-    @version 1.4.0
-    @date 08/06/25
+    @version 1.5.0
+    @date 13/06/25
 
     Multiphase Flow Laboratory
     Monash University, Australia
@@ -31,6 +31,9 @@
 
 # Known hardware.
 usb_device_table = [
+    
+    # I2C FTDI bridge
+    {'vid':0x0403, 'pid':0x6015, 'driver':'i2c', 'name':'FTDI I2C Bridge'},
 
     # Sigrok devices with fixed VID and PID
     {'vid':0x1a86, 'pid':0xe008, 'driver':'sigrok/tenma-72-7730', 'name':'Tenma 72-7730A Multimeter'},
@@ -76,7 +79,7 @@ usb_device_table = [
     {'vid':0x0f7e, 'pid':0x9002, 'driver':'fluke/568', 'name':'Fluke 568 IR Thermometer'},
     {'vid':0x2a72, 'pid':0x0400, 'driver':'omegaSmartProbe', 'name':'Omega Smart Probe (Autodetect)'},
     {'vid':0x1a86, 'pid':0xe008, 'driver':'uni-t/ut32x', 'name':'UT32x or 72-771x Thermocouple Reader'},
-    {'vid':0x10c4, 'pid':0xea80, 'driver':'multicomp/mp730679', 'name':'Multicomp Pro MP730679 Multimeter'},
+    {'vid':0x10c4, 'pid':0xea80, 'driver':'mp730679', 'name':'Multicomp Pro MP730679 / Uni-T UT16e+ Multimeter'},
     {'vid':0x0483, 'pid':0xa0f7, 'driver':'serial/radwag-r', 'name':'Radwag R series balance'},
     
     # Multiple devices with same VID and PID are seperated by the serial number as a unique descriptor.
@@ -118,7 +121,8 @@ usb_device_table = [
     # machine then the user-interactive device selection stage can be skipped when starting the data logging.
     # Otherwise, a generic adapter in the list below will prompt the user to pick any of the devices below.
     # Changing the default PID/VID will require reinstallation of the module.
-    {'vid':0x0403, 'pid':0x6015,  'driver':'serial/center310', 'name':'CENTER 310 Humidity meter'},
+    {'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'serial/ca100', 'name':'Yokogawa CA100 Calibrator'},
+    {'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'serial/center310', 'name':'CENTER 310 Humidity meter'},
     {'vid':0x0557, 'pid':0x2008, 'genericAdapter':1, 'driver':'serial/ohaus7k', 'name':'OHAUS Valor 7000 scale (RS232)'},
     {'vid':0x0408, 'pid':0x6051, 'genericAdapter':1, 'driver':'arduino', 'name':'Arduino Pro via FTDI FT231X'},
     {'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'serial/tc08rs232', 'name':'Picolog RS-232 TC-08 thermocouple datalogger'},
@@ -139,6 +143,7 @@ usb_device_table = [
     {'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'serial/hm8131', 'name':'Hameg HM8131 Waveform Generator'},
     {'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'pyvisa/33xxx', 'name':'Agilent 33xxx Waveform Generator'},
     {'vid':0x067b, 'pid':0x2303, 'genericAdapter':1, 'driver':'serial/a5000', 'name':'Asahi Heiki A5000 Load Cell Amplifier'},
+
     
     # Known but unsupported or generic
     #{'vid':0x1d6b, 'pid':0x0104, 'driver':'beaglebone', 'name':'Beaglebone Black'},
@@ -346,6 +351,17 @@ def load_usb_devices(devs=None,**kwargs):
         elif driverClass == 'bno055':
             from pyLabDataLogger.device import bno055Device
             device_list.append(bno055Device.bno055Device(params=d,**kwargs))
+        elif driverClass == 'mp730679':
+            from pyLabDataLogger.device import mp730679Device
+            device_list.append(mp730679Device.mp730679Device(params=d,**kwargs))
+        elif driverClass == 'i2c':
+            from pyLabDataLogger.device.i2c import i2cBridgeDevice
+            d=i2cBridgeDevice.findBridgeSerialPort(d)
+            found = i2cBridgeDevice.scan_for_devices(d['tty'])
+            if len(found)==0: 
+                print("No I2C devices found.")
+            else:
+                device_list.extend(i2cBridgeDevice.load_i2c_devices(found, bridgeConfig=d, **kwargs)) 
         else:
             cprint( "\tI don't know what to do with this device" ,'red', attrs=['bold'])
 

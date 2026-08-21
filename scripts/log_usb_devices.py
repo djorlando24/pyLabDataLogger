@@ -4,10 +4,10 @@
     Test device support - log to file
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2023 LTRAC
+    @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
-    @version 1.4.0
-    @date 08/06/25
+    @version 1.5.0
+    @date 13/06/25
 
     Multiphase Flow Laboratory
     Monash University, Australia
@@ -74,4 +74,4 @@ if __name__ == '__main__':
     except: # all other errors
         raise
 
-    cprint("Average loop time = %0.3f sec (%i loops)" % (running_average, loop_counter), 'cyan', attrs=['bold'])    
+    cprint("Average loop time = %0.3f sec (%i loops, %f Hz max possible)" % (running_average, loop_counter, 1.0/running_average), 'cyan', attrs=['bold'])    

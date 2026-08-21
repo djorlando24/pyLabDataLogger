@@ -4,10 +4,10 @@
     Laboratory datalogging for USB and Serial devices
 
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2025 D.Duke
+    @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
-    @version 1.4.0
-    @date 08/06/25
+    @version 1.5.0
+    @date 13/06/25
 
     Multiphase Flow Laboratory
     Monash University, Australia
@@ -60,6 +60,12 @@ include_dirs=[numpy.get_include(), '/opt/homebrew/include']
 if 'darwin' in sys.platform:
     include_dirs.append('/usr/local/include')
 
+try:
+    from distutils.msvccompiler import get_build_version as get_build_msvc_version
+except ImportError:
+    def get_build_msvc_version():
+        return None
+
 setup(name="pyLabDataLogger",
       version="1.4",
       description="Laboratory datalogging for USB and Serial devices.",
@@ -67,7 +73,7 @@ setup(name="pyLabDataLogger",
       author_email="daniel.duke@monash.edu",
       license="GPL-3.0+",
       long_description=long_description,
-      packages=['pyLabDataLogger','pyLabDataLogger.logger','pyLabDataLogger.device','pyLabDataLogger.device.i2c','pyLabDataLogger.mcclibusb'],
+      packages=['pyLabDataLogger','pyLabDataLogger.logger','pyLabDataLogger.device','pyLabDataLogger.device.i2c','pyLabDataLogger.device.ut61eplus','pyLabDataLogger.mcclibusb'],
       package_dir={'pyLabDataLogger': 'src'},
       url='daniel-duke.net',
       ext_modules=cythonize(cython_modules) + c_libraries,

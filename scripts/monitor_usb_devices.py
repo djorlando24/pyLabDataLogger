@@ -4,10 +4,10 @@
     Test device support - display using Matplotlib
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2023 LTRAC
+    @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
-    @version 1.4.0
-    @date 08/06/25
+    @version 1.5.0
+    @date 13/06/25
 
     Multiphase Flow Laboratory
     Monash University, Australia
@@ -62,13 +62,15 @@ if __name__ == '__main__':
 
     if len(devices) == 0: exit()
     
-    SAMPLE_PERIOD=0.25 # will attempt to hit this, it is just a *minimum*.
+    SAMPLE_PERIOD=0.1 # will attempt to hit this, it is just a *minimum*.
     
     # Setup figure
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.grid(alpha=.33)
-    plt.title("pyLabDataLogger")
+    man=plt.get_current_fig_manager()
+    man.set_window_title('pyLabDataLogger')
+    plt.title(logfilename)
     plt.xlabel("Time [s]")
     plt.ylabel("Process Variables")
     sampledTimes=[0.]
@@ -82,8 +84,10 @@ if __name__ == '__main__':
                 d.plotCh=8 # A0
             
         d.history=[np.nan]
+        shortName=d.name
+        if len(shortName)>10: shortName=shortName[:10]
         d.plotHandle,=ax.plot(sampledTimes,d.history,marker='o',markersize=2,\
-                              lw=1,label='%s %s [%s]' % (d.name,d.config['channel_names'][d.plotCh],\
+                              lw=1,label='%s %s [%s]' % (shortName,d.config['channel_names'][d.plotCh],\
                               d.config['eng_units'][d.plotCh]))
     plt.legend(loc=1)
     plt.ion()

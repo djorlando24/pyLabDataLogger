@@ -4,10 +4,10 @@
     Uni-T USB HID device support
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2025 D.Duke
+    @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
-    @version 1.4.0
-    @date 08/06/25
+    @version 1.5.0
+    @date 13/06/25
 
     Multiphase Flow Laboratory
     Monash University, Australia
@@ -154,7 +154,7 @@ class uniTDevice(device):
     # this point we might need to poll the device to check a setting.
     def configure_device(self):
         if self.subdriver=='ut32x':
-            self.name = "Uni-T or Tenma Thermometer"
+            self.name = "UT Thermometer"
             self.config['channel_names']=['Temperature','Timer','Timer String','InputChannel','Mode','Stored Record Count']
             self.params['raw_units']=['?','sec','mm:ss','','','']
             self.config['eng_units']=['?','sec','mm:ss','','','']

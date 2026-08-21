@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
-    I2C device class - for Linux
+    I2C device class - for Linux using SMBUS
     
     @author Daniel Duke <daniel.duke@monash.edu>
-    @copyright (c) 2018-2023 LTRAC
+    @copyright (c) 2018-2026 Monash University
     @license GPL-3.0+
-    @version 1.4.0
-    @date 08/06/25
+    @version 1.5.0
+    @date 13/06/25
 
     Multiphase Flow Laboratory
     Monash University, Australia
@@ -86,10 +86,12 @@ i2c_input_device_table = [
     {'address':0x48, 'driver':'pcf8591', 'name':'PCF8591 8-bit ADC'},\
     {'address':(0x38,0x39), 'driver':'ahtx0', 'name':'AHTx0 temperature and humidity sensor'},\
     {'address':0x5a, 'driver':'mpr121', 'name':'MPR121 capacitative touch sensor'},\
+    {'address':0x69, 'driver':'sen5x', 'name':'Sensirion SEN5x air quality sensor'},\
 
     # Devices that have multiple addresses
+    {'address':0x16, 'driver':'mpx5700', 'name':'MPX5700 Pressure sensor'},\
     {'address':(0x18,0x19), 'driver':'h3lis331dl', 'name':'H3LIS331DL accelerometer'},\
-    {'address':(0x76,0x77), 'driver':'ms5611', 'name':'MS5611 barometric pressure sensor'}, #0x76-0x77 \ 
+    {'address':(0x76,0x77), 'driver':'ms5637', 'name':'MS5637 barometric pressure sensor'}, #0x76-0x77 \ 
     {'address':0x40, 'driver':'ina226', 'name':'INA226 current sensor'}, #0x40-4f \
     {'address':0x40, 'driver':'ina219', 'name':'INA219 current sensor'}, #0x40,41,44,45 \
     {'address':0x60, 'driver':'mcp9600', 'name':'MCP9600 thermocouple'}, #0x60-67 \
@@ -100,9 +102,6 @@ i2c_input_device_table = [
     {'address':(0x71,0x72,0x73), 'driver':'dfoxy', 'name':'DFRobot Oxygen Sensor'},    # 0x70-0x73 \
     {'address':(0x6a,0x6c,0x6e), 'driver':'mcp3424', 'name':'MCP3424 18-bit ADC'}, # 0x6a/c/e \
    
-    # Not supported well on the Rasberry Pi - requires clock stretching
-    {'address':(0x28,0x29), 'driver':'bno055', 'name':'BNO055 orientation sensor'},\
-    #{'address':0x28, 'driver':'tfmini-lidar', 'name':'TFMini I2C LiDAR ToF Laser Range Sensor'}, # Not required since >1 other device on 0x28 \
 ]
 
 
@@ -210,9 +209,20 @@ def load_i2c_devices(addresses=None,bus=1,**kwargs):
             from pyLabDataLogger.device.i2c import mpr121Device
             device_list.append(mpr121Device.mpr121Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
 
-        elif matches[0]['driver']=='bno055': # The purpose of having this here is to ensure that a BNO055 isn't detected as something else by mistake.
-            cprint("IIC: BNO055 not currently supported as it requires clock-stretching",'yellow')
-
+        elif matches[0]['driver']=='ms5637':
+            from pyLabDataLogger.device.i2c import ms5637Device
+            device_list.append(ms5637Device.ms5637Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+            
+        elif matches[0]['driver']=='sen5x':
+            from pyLabDataLogger.device.i2c import sen5xDevice
+            device_list.append(sen5xDevice.sen5xDevice(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+        
+        elif matches[0]['driver']=='mpx5700':
+            from pyLabDataLogger.device.i2c import mpx5700Device
+            device_list.append(mpx5700Device.mpx5700Device(params={'address':a, 'bus':bus, 'name':matches[0]['name'], 'driver':matches[0]['driver']},**kwargs))
+        
+    
+    
         else:
             raise RuntimeError("Unknown device: %s" % str(matches[0]))
 
@@ -269,11 +279,19 @@ class i2cDevice(device):
             return
         
         try:
-            import smbus
-            bus = smbus.SMBus(self.params['bus'])
+            if self.params['bus'] is None:  # BRIDGE
+                import i2cdriver 
+                bus =  i2cdriver.I2CDriver(self.params['tty'])
+                self.bridgeDev = bus
+                self.bridge=True
+            else: # DIRECT SMBUS
+                import smbus
+                bus = smbus.SMBus(self.params['bus'])
+                self.bridge=False
+            
             try:
-                #bus.read_byte(int(self.params['address'],16))
-                bus.read_byte(self.params['address'])
+                if self.bridge: bus.regrd(self.params['address'],0,1)
+                else: bus.read_byte(self.params['address'])
             except:
                 cprint( "Error, no I2C devices found on bus %i address %s" % (self.params['bus'],self.params['address']), 'red', attrs=['bold'])
                 raise
@@ -284,5 +302,5 @@ class i2cDevice(device):
             if not quiet: self.pprint()
             
         except ImportError:
-            cprint( "Error, smbus module could not be loaded", 'red', attrs=['bold'])
+            cprint( "Error, smbus/i2cdriver module could not be loaded", 'red', attrs=['bold'])
             return
