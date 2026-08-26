@@ -83,10 +83,11 @@ usb_device_table = [
     {'vid':0x0483, 'pid':0xa0f7, 'driver':'serial/radwag-r', 'name':'Radwag R series balance'},
     
     # Multiple devices with same VID and PID are seperated by the serial number as a unique descriptor.
-    {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'name':'Thorlabs APT motor driver (generic)'},
+    #{'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'name':'Thorlabs APT motor driver (generic)'},
     {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'serial_number':'27501777', 'name':'Thorlabs APT motor driver (X)'},
     {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'serial_number':'27250971', 'name':'Thorlabs APT motor driver (Y)'},
-        
+    {'vid':0x0403, 'pid':0xfaf0, 'driver':'pyapt', 'serial_number':'27003519', 'name':'Thorlabs APT motor driver (Z)'},
+    
     # Serial-over-USB devices with fixed VID and PID
     {'vid':0x1a86, 'pid':0x7523, 'driver':'serial/chemyx', 'name':'Chemyx Syringe Pump'},
     {'vid':0x0416, 'pid':0x5011, 'driver':'tenmaserial/722710', 'name':'Tenma 72-2710 Power Supply'},
@@ -165,20 +166,24 @@ from termcolor import cprint
 # Search table for a match
 def match_device(dev):
     matches=[]
-    optionalKeyMatch=False
     for match in usb_device_table:
         # Find matching VID and PID (mandatory)
         if (dev.idVendor == match['vid']) and (dev.idProduct == match['pid']):
             matching=True
             # Match optionals
+            optionalKeyMatch=False
             for key in ['bcdDevice','serial_number','manufacturer']:
                 if key in match.keys():
                     if match[key] == get_property(dev,key):
                         matching=True
-                        optionalKeyMatch=True # optional key finds exact match, ignore others
-                        matches.append(match)
-                    elif match[key] is None: matching=True
-            if matching and not optionalKeyMatch: matches.append(match)
+                        optionalKeyMatch=True
+                    elif match[key] is None: 
+                        matching=True
+                        optionalKeyMatch=False
+                    else:
+                        optionalKeyMatch=False
+            if optionalKeyMatch: return [match]
+            if matching: matches.append(match)
     return matches
 
 # Get device property, catch exception if not possible.
