@@ -25,18 +25,23 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-import sys
+import sys, glob
 import i2cdriver
 from termcolor import cprint
 
 if __name__=='__main__':
 
-    if len(sys.argv)<2: ttys=["/dev/ttyUSB1"]
+    if len(sys.argv)<2:
+        ttys=glob.glob("/dev/ttyUSB*")
+        ttys.extend(glob.glob("/dev/cu.usbserial*"))
     else: ttys=sys.argv[1:]
     
     for tty in ttys:
-        cprint("Connecting to i2cmini on %s" % tty, 'cyan')
-        i2c = i2cdriver.I2CDriver(tty)
-        cprint("Scanning for devices",'white')
-        i2c.scan()
-        
+        try:
+            cprint("Connecting to i2cmini on %s" % tty, 'cyan')
+            i2c = i2cdriver.I2CDriver(tty)
+            cprint("Scanning for devices",'white')
+            i2c.scan()
+        except:
+            cprint("  no i2cmini",'red')
+            continue
